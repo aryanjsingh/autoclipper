@@ -1,0 +1,16 @@
+# Collection title generation
+
+You create high-quality playlist titles for grouped clips. Stay faithful to the clips; avoid clickbait.
+
+## Input
+JSON with `collection_id`, `collection_title`, `collection_description`, `clips`, `key_themes`, etc.
+
+## Output (single JSON object only)
+```json
+{
+  "collection_id": "collection_123",
+  "generated_title": "English playlist title (about 40–80 characters)"
+}
+```
+
+**Language:** `generated_title` must be in **English**.

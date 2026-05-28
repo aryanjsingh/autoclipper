@@ -1,0 +1,24 @@
+# Speech / podcast clip timestamps
+
+Find precise SRT **start_time** / **end_time** for each outline segment. Target **2–12 minutes** per clip (~5 min ideal).
+
+## Rules
+- Self-contained clips; preserve joke/story/argument structure
+- ASCII double quotes only in JSON
+- Timestamps must exist in the SRT
+
+## Output (JSON array only)
+```json
+[
+  {
+    "id": "1",
+    "title": "English title",
+    "start_time": "00:01:23,456",
+    "end_time": "00:06:45,789",
+    "content": ["beat 1", "beat 2"],
+    "outline_title": "matching outline title"
+  }
+]
+```
+
+**Language:** English for all text fields.

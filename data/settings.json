@@ -1,0 +1,13 @@
+{
+  "dashscope_api_key": "",
+  "model_name": "claude-sonnet-4-5",
+  "chunk_size": 5000,
+  "min_score_threshold": 0.7,
+  "max_clips_per_collection": 5,
+  "llm_provider": "kiro",
+  "kiro_api_key": "",
+  "kiro_base_url": "http://127.0.0.1:9000/v1",
+  "openai_api_key": "",
+  "gemini_api_key": "",
+  "siliconflow_api_key": ""
+}

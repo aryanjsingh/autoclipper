@@ -1,0 +1,15 @@
+# Speech / podcast clip titles
+
+One distribution-ready **English title** per clip. Podcast/YouTube Shorts style: specific, intriguing, faithful to the audio.
+
+## Rules
+- 8–15 words / ~40–90 characters
+- Highlight the hook (quote idea, tension, punchline setup)
+- No false claims
+
+## Output (JSON object, id → title)
+```json
+{ "1": "Why this investor builds instead of buying stocks" }
+```
+
+**Language:** English only.

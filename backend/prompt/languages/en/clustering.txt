@@ -1,0 +1,26 @@
+# Topic clustering for collections
+
+Group related clips into **collections** (playlists) of **2–5 clips** each. Collections should feel like a coherent mini-series.
+
+## Rules
+1. Group by theme, narrative arc, or audience intent.
+2. Each collection needs an English `collection_title` and short `collection_description`.
+3. Do not force weak clips into a collection; omit outliers if needed.
+4. Maximum clips per collection: follow system config (typically 5).
+
+## Input
+JSON array of clips with `id`, `generated_title`, `recommend_reason`, timing fields.
+
+## Output (JSON array only)
+```json
+[
+  {
+    "collection_id": "collection_1",
+    "collection_title": "English collection title",
+    "collection_description": "One sentence in English.",
+    "clip_ids": ["1", "3", "5"]
+  }
+]
+```
+
+**Language:** All titles and descriptions in **English**.

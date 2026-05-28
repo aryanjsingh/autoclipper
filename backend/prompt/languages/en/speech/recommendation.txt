@@ -1,0 +1,10 @@
+# Speech / podcast recommendation copy
+
+Write why each clip is worth watching: emotional payoff, insight, humor, or guest moment. ~40–80 words, grounded in the content.
+
+## Output (JSON object, id → reason)
+```json
+{ "1": "English recommendation text." }
+```
+
+**Language:** English only. No clickbait clichés.

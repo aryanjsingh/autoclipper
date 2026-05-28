@@ -1,0 +1,17 @@
+# Speech / podcast collection clustering
+
+Group clips into themed playlists (2–5 clips). Examples: same guest thread, one debate, one story arc, or one meme running joke.
+
+## Output (JSON array)
+```json
+[
+  {
+    "collection_id": "collection_1",
+    "collection_title": "English playlist title",
+    "collection_description": "Short English description.",
+    "clip_ids": ["1", "2"]
+  }
+]
+```
+
+**Language:** English only.
