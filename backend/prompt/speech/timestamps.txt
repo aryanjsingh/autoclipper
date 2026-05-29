@@ -1,0 +1,134 @@
+# Speech & Talk Show Video Timestamp Positioning Prompt
+
+## Core Principles: Complete Expression, Emotional Coherence, Effect Preservation
+
+1.  **Expression Completeness**: Timestamps must strictly correspond to complete expression units and content segments.
+2.  **Emotional Coherence**: The time range must completely cover the beginning, development, climax, and conclusion of emotional expression, ensuring complete emotional logic.
+3.  **Natural Boundaries**: Prioritize positioning timestamps at topic transitions, emotional transitions, or natural boundaries of expression rhythm.
+
+---
+
+## Key Instructions: How to Determine `start_time` and `end_time`
+
+### Determining `start_time`:
+-   Should be positioned at the start time of the **first core sentence** of that topic's expression.
+-   Ignore irrelevant transitions, pauses, or background music before that content.
+-   **Preferred Choice**: Start at the point where the topic is clearly stated or emotional expression begins, ensuring expression completeness.
+-   **Special Consideration for Speech & Talk Show**: If there is important buildup, introduction, or atmosphere creation, the start time should be moved earlier accordingly.
+
+### Determining `end_time` (Most Important):
+-   **Must be** the end timestamp of the **last sentence** covering the core expression of that topic.
+-   **Expression Completeness**: Ensure that core content such as viewpoint exposition, story telling, and punchline presentation is complete without gaps in expression.
+-   **Natural Ending**: Prioritize ending at summary statements, after emotional climaxes, or at topic transitions.
+-   **Effect Preservation**: If there are important audience reactions, laughter, or applause at the end of the topic, they should be included.
+-   If the topic expression discussion continues to the end of the provided SRT text block, then `end_time` should be the end timestamp of the last relevant subtitle.
+-   **Wrong Practice**: Mindlessly setting `end_time` to the end time of the entire text block. This must be absolutely avoided.
+
+### Speech & Talk Show Duration Control Principles:
+-   **Target Duration**: Each topic segment should be between 3-8 minutes
+-   **In-Depth Speech Duration**: Speeches involving deep thinking or complex arguments can be extended to 10 minutes
+-   **Exciting Jokes**: Independent complete jokes or punchlines can be compressed to 2-3 minutes
+-   **Important Speeches**: Core keynote speeches or important viewpoint expositions can be extended to 12 minutes
+
+### Special Handling for Speech & Talk Show Content:
+-   **Complete Jokes**: Complete jokes containing buildup, development, and punchline should be treated as a whole
+-   **Emotional Expression**: Important emotional rendering and atmosphere building should be fully preserved
+-   **Audience Interaction**: Interactions with the audience, Q&A, and live reactions should appear together
+-   **Viewpoint Exposition**: The presentation, argumentation, and summary of core viewpoints should be fully included
+
+---
+
+## Input Format
+You will receive a JSON object containing:
+-   `outline`: A JSON array containing **multiple** speech topics to process.
+-   `srt_text`: A **single** SRT text block related to this batch of topics, formatted as `sequence number\nstart --> end\ntext\n\n`.
+
+## Output Format
+-   Strictly following the input outline structure, supplement each topic object with `start_time` and `end_time` fields.
+-   **Key**: In the output, rename the input `title` field to `outline`, and rename the `subtopics` field to `content`.
+-   Finally output a JSON array containing **all** processed topics.
+-   Ensure the time format is `HH:MM:SS,mmm`.
+
+**Strict JSON Output Requirements:**
+1. Output must start with `[` and end with `]`; do not add any explanatory text, titles, or Markdown code block markers
+2. Use standard English double quotes ", never use Chinese quotes "" or single quotes
+3. Ensure all brackets and square brackets match correctly; objects are separated by commas, with no comma after the last object
+4. Quotes within strings must be escaped as \"
+5. Must not contain any comments, extra text, or control characters
+6. Ensure the JSON is completely valid and can be parsed by a standard JSON parser
+
+## Speech & Talk Show Timestamp Positioning Examples
+
+### Correct Timestamp Positioning:
+- **Speech Viewpoint**: Starts from "I want to share a viewpoint with you..." and ends with "That's my view"
+- **Talk Show Joke**: Starts from the joke's setup and ends with the punchline and audience reaction
+- **Story Sharing**: Starts from "Let me tell you a story..." and ends with the story conclusion and reflection
+- **Live Interaction**: Starts from the interaction initiation and ends with the interaction completion and response summary
+
+### Errors to Avoid:
+- Breaking at the punchline of a joke
+- Separating viewpoint exposition from the argumentation process
+- Truncating at the climax of emotional expression
+- Ignoring important audience reactions or live effects
+
+## Special Considerations for Speech & Talk Show Content
+
+### 1. Speech Content:
+- Ensure complete exposition and argumentation of viewpoints
+- Preserve important emotional expressions and impactful content
+- Include audience interactions and live reactions
+- Ensure complete transmission of inspirational content
+
+### 2. Talk Show Content:
+- Maintain the completeness and humor effect of jokes
+- Include the complete structure of setup, development, and punchline
+- Preserve audience laughter and live reactions
+- Ensure complete demonstration of humor techniques
+
+### 3. Interview Content:
+- Include the complete process of question asking and answering
+- Maintain the natural flow and logic of dialogue
+- Ensure the completeness of in-depth exchange
+- Include important viewpoint collisions and intellectual exchange
+
+### 4. Live Performance Content:
+- Preserve the completeness and naturalness of impromptu performance
+- Include real-time interaction and feedback with the audience
+- Ensure complete demonstration of performance skills
+- Maintain the live atmosphere and emotional impact
+
+## Timestamp Positioning Strategies for Different Speech & Talk Show Types
+
+### Keynote Speech:
+- Position by viewpoint level: Core viewpoint - Supporting evidence - Summary elevation
+- Maintain the completeness of argumentation logic
+- Include important emotional rendering and impactful content
+- Ensure complete transmission of inspiration and education
+
+### Talk Show Performance:
+- Position by joke unit: Independent jokes - Continuous punchlines - Theme connection
+- Maintain the completeness of humor effects
+- Include audience reactions and live effects
+- Maximize entertainment value
+
+### Interview Dialogue:
+- Position by topic discussion: Question raising - In-depth exchange - Viewpoint summary
+- Maintain the natural flow of dialogue
+- Include important viewpoint collisions and intellectual exchange
+- Ensure the completeness of information transmission
+
+### Experience Sharing:
+- Position by experience stage: Background introduction - Process description - Reflection summary
+- Maintain the completeness and emotional impact of the story
+- Include important life reflections and inspiration
+- Ensure the complete transmission of experience value
+
+## Notes
+
+1. **Expression Completeness**: Ensure each segment contains complete expression logic and content structure
+2. **Emotional Coherence**: Important emotional expressions and atmosphere building must be fully included
+3. **Effect Preservation**: Punchlines, applause, audience reactions, and other live effects should be treated as important content
+4. **Interaction Value**: Exciting live interactions and audience participation should be fully preserved
+5. **Inspirational Value**: For speech content, ensure the complete transmission of inspiration and education
+6. **Entertainment Effect**: For talk show content, ensure the completeness of humor effects and entertainment value
+7. **Authentically Natural**: Maintain the authenticity and live feel of content; avoid over-editing

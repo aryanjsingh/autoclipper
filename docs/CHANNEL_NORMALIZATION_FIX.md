@@ -1,120 +1,97 @@
-# 频道规范化修复总结
-
-## 问题诊断
-
-通过分析日志，发现了频道名"二次加前缀"的严重问题：
-
-### 1. 频道名重复前缀
-```
-[Redis] SUB progress:progress:project_project_<id>   ← 重复了
+# Channel standardization repair summary
+## Problem diagnosis
+By analyzing the logs, we discovered a serious problem with the "twice prefixed" channel name:
+### 1. Duplicate prefix of channel name```
+[Redis] SUB progress:progress:project_project_<id> ← Duplicate
 ```
 
-**根本原因**：
-- 前端传入：`["project_5da0b6a9-..."]`
-- 网关处理：`f"progress:project_{pid}"` → `progress:project_project_5da0b6a9-...`
-- 最终结果：`progress:progress:project_project_5da0b6a9-...`
-
-### 2. 集合同步失效
-```
-批量取消订阅完成: 用户 homepage-user, 移除 3, 未订阅 0
-订阅集同步完成: 用户 homepage-user, 新增 0, 移除 3, 未变 5
+**root cause**:- Front-end input: `["project_5da0b6a9-..."]`- Gateway processing: `f"progress:project_{pid}"` → `progress:project_project_5da0b6a9-...`- Final result: `progress:progress:project_project_5da0b6a9-...`
+### 2. Collection synchronization failure```
+Batch unsubscribe complete: user homepage-user, removed 3, not subscribed 0
+Subscription set sync complete: user homepage-user, added 0, removed 3, unchanged 5
 ```
 
-**根本原因**：
-- 订阅时用的是：`progress:progress:project_project_<id>`
-- 取消订阅时用的是：`progress:project_<id>`
-- 两者不相等，导致永远无法正确取消订阅
-
-### 3. 日志风暴
-每10秒重复打印"移除3条"的日志，但Redis实际订阅集合根本没动。
-
-## 修复方案
-
-### 1. 频道规范化函数
-
+**root cause**:- When subscribing, use: `progress:progress:project_project_<id>`- When canceling a subscription, use: `progress:project_<id>`- The two are not equal, causing the subscription to never be unsubscribed correctly.
+### 3. log stormThe "Removed 3" log is printed repeatedly every 10 seconds, but the actual Redis subscription collection is not moved at all.
+## Fix
+### 1. Channel normalization function
 ```python
 @staticmethod
 def normalize_channel(raw: str) -> str:
     """
-    把任意传入形态统一成 progress:project_<uuid>
+    Normalize any incoming form to progress:project_<uuid>
     """
     s = (raw or "").strip()
     
-    # 循环去掉重复的 progress: 前缀
+    # Repeatedly strip duplicate progress: prefixes
     while s.startswith("progress:"):
         s = s[len("progress:"):]
     
-    # 循环去掉重复的 project_ 前缀
+    # Repeatedly strip duplicate project_ prefixes
     while s.startswith("project_"):
         s = s[len("project_"):]
     
-    # 此时 s 应该就是 <uuid>，统一格式化为 progress:project_<uuid>
+    # At this point s should be <uuid>; format as progress:project_<uuid>
     return f"progress:project_{s}"
 ```
 
-### 2. 幂等集合同步
-
+### 2. Idempotent collection synchronization
 ```python
 async def sync_user_subscriptions(self, user_id: str, channels: Set[str]) -> Dict[str, int]:
     async with self.lock:
-        # 1) 规范化所有频道名
+        # 1) Normalize all channel names
         desired = {self.normalize_channel(ch) for ch in channels}
         current = self.user_subscriptions.get(user_id, set())
         
-        # 2) 计算差集
+        # 2) Compute set difference
         to_add = desired - current
         to_remove = current - desired
         
-        # 3) 处理新增订阅
+        # 3) Handle new subscriptions
         for channel in to_add:
             try:
                 await self._subscribe_to_channel(channel)
-                current.add(channel)  # 本地集合立即更新
+                current.add(channel)  # Update local set immediately
                 await self._replay_snapshot(user_id, channel)
             except Exception as e:
-                logger.error(f"订阅频道失败 {channel}: {e}")
+                logger.error(f"Failed to subscribe to channel {channel}: {e}")
         
-        # 4) 处理移除订阅
+        # 4) Handle removed subscriptions
         for channel in to_remove:
             try:
                 await self._unsubscribe_from_channel(channel)
-                current.discard(channel)  # 本地集合立即删除
+                current.discard(channel)  # Remove from local set immediately
             except Exception as e:
-                logger.error(f"取消订阅频道失败 {channel}: {e}")
+                logger.error(f"Failed to unsubscribe from channel {channel}: {e}")
         
-        # 5) 更新用户订阅记录
+        # 5) Update user subscription record
         self.user_subscriptions[user_id] = current
         
-        # 6) 日志降噪：只有变化时才INFO
+        # 6) Reduce log noise: INFO only when there are changes
         added, removed, same = len(to_add), len(to_remove), len(current & desired)
         if added or removed:
-            logger.info(f"订阅集同步完成: 用户 {user_id}, 新增 {added}, 移除 {removed}, 未变 {same}")
+            logger.info(f"Subscription set sync complete: user {user_id}, added {added}, removed {removed}, unchanged {same}")
         else:
-            logger.debug(f"订阅集同步完成(无变更): 用户 {user_id}, 未变 {same}")
+            logger.debug(f"Subscription set sync complete (no change): user {user_id}, unchanged {same}")
 ```
 
-### 3. 统一频道名构造
-
-**修复前**：
-```python
-# 各处手写频道名，容易重复前缀
+### 3. Unified channel name structure
+**Before fix**:```python
+# Handwritten channel names everywhere, easy to repeat prefixes
 channel = f"progress:project_{self.project_id}"
 channels = {f"progress:project_{pid}" for pid in project_ids}
 ```
 
-**修复后**：
-```python
-# 统一使用规范化函数
+**After fix**:```python
+# Use normalization function consistently
 channel = WebSocketGatewayService.normalize_channel(self.project_id)
-channels = set(project_ids)  # 让网关内部规范化
+channels = set(project_ids)  # Let the gateway normalize internally
 ```
 
-## 测试验证
-
-### 1. 规范化函数测试
-
+## Test verification
+### 1. Normalized function testing
 ```python
-# 测试用例
+# Test cases
 test_cases = [
     ("5da0b6a9-...", "progress:project_5da0b6a9-..."),
     ("project_5da0b6a9-...", "progress:project_5da0b6a9-..."),
@@ -122,13 +99,12 @@ test_cases = [
     ("progress:progress:project_project_5da0b6a9-...", "progress:project_5da0b6a9-..."),
 ]
 
-# 结果：✅ 全部通过
+# Result: ✅ All passed
 ```
 
-### 2. 一致性测试
-
+### 2. Conformance testing
 ```python
-# 输入变体
+# Input variants
 variants = [
     "5da0b6a9-...",
     "project_5da0b6a9-...",
@@ -136,60 +112,23 @@ variants = [
     "progress:progress:project_project_5da0b6a9-..."
 ]
 
-# 输出结果：所有变体都规范化为同一个频道名
-# ✅ 一致性验证通过
+# Output: all variants normalize to the same channel name
+# ✅ Consistency verification passed
 ```
 
-## 修复效果
-
-### 1. 频道名统一
-- **修复前**：`progress:progress:project_project_<id>`
-- **修复后**：`progress:project_<id>`
-
-### 2. 集合同步正确
-- **修复前**：永远"移除3条"但实际没移除
-- **修复后**：正确计算差集，实际执行订阅/取消订阅
-
-### 3. 日志清洁
-- **修复前**：每10秒重复"移除3条"日志
-- **修复后**：只在真正变化时记录INFO日志
-
-### 4. 快照回放正确
-- **修复前**：快照key与订阅频道不一致
-- **修复后**：使用统一的规范化频道名
-
-## 核心原则
-
-### 1. 单一数据源
-系统的唯一合法频道格式：`progress:project_<uuid>`
-
-### 2. 入口规范化
-所有外部传入的频道名都在入口处统一规范化
-
-### 3. 内部一致性
-网关内部任何地方构造频道名都使用规范化函数
-
-### 4. 幂等操作
-集合同步操作是幂等的，多次调用相同参数结果一致
-
-## 部署检查清单
-
-- ✅ 频道规范化函数实现
-- ✅ 幂等集合同步逻辑
-- ✅ 统一频道名构造
-- ✅ 日志降噪处理
-- ✅ 快照回放修复
-- ✅ 测试用例验证
-- ✅ 模块导入正常
-
-## 预期效果
-
-修复后，系统应该：
-
-1. **不再出现重复前缀**：所有频道名都是 `progress:project_<uuid>` 格式
-2. **集合同步正确**：订阅和取消订阅操作正确执行
-3. **日志清洁**：不再有重复的"移除3条"日志
-4. **快照回放正常**：页面刷新后能正确显示当前进度
-5. **连接稳定**：WebSocket连接不再频繁断开重连
-
-这个修复解决了频道名管理的根本问题，为后续的进度条功能提供了稳定的基础。
+## Repair effect
+### 1. Unified channel names- **Before fix**: `progress:progress:project_project_<id>`- **After fix**: `progress:project_<id>`
+### 2. Collection synchronization is correct- **Before fix**: Always "removed 3 items" but not actually removed- **After fix**: Correct calculation of difference set, actual execution of subscription/unsubscription
+### 3. Log cleaning- **Before fix**: Repeat "Remove 3" logs every 10 seconds- **AFTER**: Only log INFO on real changes
+### 4. Snapshot playback is correct- **Before fix**: The snapshot key is inconsistent with the subscription channel- **After fix**: Use unified standardized channel name
+## core principles
+### 1. single source of dataThe only legal channel format for the system: `progress:project_<uuid>`
+### 2. Standardization of entranceAll externally incoming channel names are standardized at the entrance
+### 3. internal consistencyThe normalized function is used anywhere inside the gateway to construct the channel name.
+### 4. Idempotent operationsCollection synchronization operations are idempotent, and the results are consistent when calling the same parameters multiple times.
+## Deployment checklist
+- ✅ Implementation of channel normalization function- ✅ Idempotent collection synchronization logic- ✅ Unified channel name structure- ✅ Log noise reduction processing- ✅ Snapshot playback repair- ✅ Test case verification- ✅ Module import is normal
+## expected effect
+After repair, the system should:
+1. **No more duplicate prefixes**: all channel names are in `progress:project_<uuid>` format2. **Collection synchronization is correct**: Subscription and unsubscription operations are performed correctly3. **Log Cleaning**: No more duplicate "Remove 3" logs4. **Snapshot playback is normal**: The current progress can be displayed correctly after the page is refreshed.5. **Stable connection**: WebSocket connections are no longer frequently disconnected and reconnected.
+This fix solves the fundamental problem of channel name management and provides a stable foundation for subsequent progress bar functions.

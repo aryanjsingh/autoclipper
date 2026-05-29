@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-数据存储优化迁移脚本
-将双重存储模式迁移到优化存储模式（数据库存储元数据，文件系统存储实际文件）
+Data Storage Optimization Migration Script
+Migrates from dual storage mode to optimized storage mode (database stores metadata, file system stores actual files)
 """
 
 import sys
@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-# 添加项目根目录到Python路径
+# Add project root directory to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -21,7 +21,7 @@ from backend.models.project import Project
 from backend.models.clip import Clip
 from backend.models.collection import Collection
 
-# 配置日志
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -30,14 +30,14 @@ logger = logging.getLogger(__name__)
 
 
 def analyze_current_storage():
-    """分析当前存储状况"""
-    logger.info("🔍 分析当前存储状况...")
+    """Analyze current storage status"""
+    logger.info("Analyzing current storage status...")
     
     data_dir = project_root / "data"
     projects_dir = data_dir / "projects"
     
     if not projects_dir.exists():
-        logger.warning("项目目录不存在")
+        logger.warning("Project directory does not exist")
         return {"projects": [], "total_size": 0}
     
     projects_info = []
@@ -48,7 +48,7 @@ def analyze_current_storage():
             project_id = project_dir.name
             project_size = sum(f.stat().st_size for f in project_dir.rglob('*') if f.is_file())
             
-            # 检查是否有重复数据
+            # Check for duplicate data
             has_duplicate_data = False
             if (project_dir / "clips_metadata.json").exists():
                 has_duplicate_data = True
@@ -62,7 +62,7 @@ def analyze_current_storage():
             
             total_size += project_size
     
-    logger.info(f"📊 分析完成: {len(projects_info)} 个项目, 总大小: {round(total_size / (1024 * 1024), 2)} MB")
+    logger.info(f"Analysis complete: {len(projects_info)} projects, total size: {round(total_size / (1024 * 1024), 2)} MB")
     
     return {
         "projects": projects_info,
@@ -71,38 +71,38 @@ def analyze_current_storage():
 
 
 def migrate_project_to_optimized_storage(db, project_id: str, dry_run: bool = True):
-    """迁移单个项目到优化存储模式"""
-    logger.info(f"🔄 迁移项目: {project_id} (dry_run={dry_run})")
+    """Migrate a single project to optimized storage mode"""
+    logger.info(f"Migrating project: {project_id} (dry_run={dry_run})")
     
     try:
-        # 获取项目信息
+        # Get project info
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
-            logger.warning(f"项目 {project_id} 在数据库中不存在")
-            return {"success": False, "error": "项目不存在"}
+            logger.warning(f"Project {project_id} does not exist in database")
+            return {"success": False, "error": "Project does not exist"}
         
-        # 检查项目目录
+        # Check project directory
         data_dir = project_root / "data"
         old_project_dir = data_dir / "projects" / project_id
         
         if not old_project_dir.exists():
-            logger.warning(f"项目目录不存在: {old_project_dir}")
-            return {"success": False, "error": "项目目录不存在"}
+            logger.warning(f"Project directory does not exist: {old_project_dir}")
+            return {"success": False, "error": "Project directory does not exist"}
         
         if dry_run:
-            logger.info(f"🔍 模拟迁移项目 {project_id}")
-            return {"success": True, "dry_run": True, "message": "模拟迁移成功"}
+            logger.info(f"Simulating migration for project {project_id}")
+            return {"success": True, "dry_run": True, "message": "Migration simulation successful"}
         
-        # 创建优化存储服务
+        # Create optimized storage service
         storage_service = OptimizedStorageService(db, project_id)
         
-        # 执行迁移
+        # Execute migration
         migration_result = storage_service.migrate_from_old_storage(old_project_dir)
         
         if migration_result["success"]:
-            logger.info(f"✅ 项目 {project_id} 迁移成功")
+            logger.info(f"Project {project_id} migrated successfully")
             
-            # 清理旧的双重存储文件
+            # Clean up old duplicate storage files
             cleanup_old_duplicate_files(old_project_dir)
             
             return {
@@ -111,20 +111,20 @@ def migrate_project_to_optimized_storage(db, project_id: str, dry_run: bool = Tr
                 "migrated_metadata": migration_result["migrated_metadata"]
             }
         else:
-            logger.error(f"❌ 项目 {project_id} 迁移失败: {migration_result['error']}")
+            logger.error(f"Project {project_id} migration failed: {migration_result['error']}")
             return migration_result
             
     except Exception as e:
-        logger.error(f"❌ 迁移项目 {project_id} 时发生错误: {e}")
+        logger.error(f"Error migrating project {project_id}: {e}")
         return {"success": False, "error": str(e)}
 
 
 def cleanup_old_duplicate_files(project_dir: Path):
-    """清理旧的双重存储文件"""
+    """Clean up old duplicate storage files"""
     try:
-        logger.info(f"🧹 清理项目 {project_dir.name} 的重复文件...")
+        logger.info(f"Cleaning up duplicate files for project {project_dir.name}...")
         
-        # 删除重复的元数据文件
+        # Delete duplicate metadata files
         duplicate_files = [
             "clips_metadata.json",
             "collections_metadata.json",
@@ -139,67 +139,67 @@ def cleanup_old_duplicate_files(project_dir: Path):
         for file_name in duplicate_files:
             file_path = project_dir / file_name
             if file_path.exists():
-                # 备份文件
+                # Backup file
                 backup_path = project_dir / f"{file_name}.backup"
                 file_path.rename(backup_path)
                 cleaned_count += 1
-                logger.info(f"📦 备份重复文件: {file_name}")
+                logger.info(f"Backed up duplicate file: {file_name}")
         
-        logger.info(f"✅ 清理完成，备份了 {cleaned_count} 个重复文件")
+        logger.info(f"Cleanup complete, backed up {cleaned_count} duplicate files")
         
     except Exception as e:
-        logger.error(f"❌ 清理重复文件失败: {e}")
+        logger.error(f"Failed to clean up duplicate files: {e}")
 
 
 def main():
-    """主函数"""
-    logger.info("🚀 开始数据存储优化迁移...")
+    """Main function"""
+    logger.info("Starting data storage optimization migration...")
     
-    # 分析当前存储状况
+    # Analyze current storage status
     storage_info = analyze_current_storage()
     
     if not storage_info["projects"]:
-        logger.info("📭 没有找到需要迁移的项目")
+        logger.info("No projects found to migrate")
         return
     
-    # 显示分析结果
-    print("\n📊 当前存储状况分析:")
+    # Display analysis results
+    print("\nCurrent Storage Status Analysis:")
     print("=" * 60)
     for project in storage_info["projects"]:
-        status = "⚠️  有重复数据" if project["has_duplicate_data"] else "✅ 正常"
-        print(f"项目 {project['project_id'][:8]}... | {project['size_mb']:>8.2f} MB | {project['files_count']:>4} 文件 | {status}")
+        status = "Has duplicate data" if project["has_duplicate_data"] else "Normal"
+        print(f"Project {project['project_id'][:8]}... | {project['size_mb']:>8.2f} MB | {project['files_count']:>4} files | {status}")
     
-    print(f"\n总大小: {round(storage_info['total_size'] / (1024 * 1024), 2)} MB")
+    print(f"\nTotal size: {round(storage_info['total_size'] / (1024 * 1024), 2)} MB")
     
-    # 询问是否继续
+    # Ask whether to continue
     print("\n" + "=" * 60)
-    print("🔧 迁移选项:")
-    print("1. 模拟迁移 (dry run) - 查看迁移效果但不实际执行")
-    print("2. 执行迁移 - 实际迁移数据并清理重复文件")
-    print("3. 退出")
+    print("Migration Options:")
+    print("1. Dry run - Preview migration effects without executing")
+    print("2. Execute migration - Actually migrate data and clean up duplicate files")
+    print("3. Exit")
     
     while True:
-        choice = input("\n请选择操作 (1/2/3): ").strip()
+        choice = input("\nSelect operation (1/2/3): ").strip()
         if choice in ['1', '2', '3']:
             break
-        print("❌ 无效选择，请输入 1、2 或 3")
+        print("Invalid choice, please enter 1, 2, or 3")
     
     if choice == '3':
-        logger.info("👋 用户取消迁移")
+        logger.info("User cancelled migration")
         return
     
     dry_run = (choice == '1')
     
     if dry_run:
-        logger.info("🔍 开始模拟迁移...")
+        logger.info("Starting migration simulation...")
     else:
-        logger.info("🚀 开始实际迁移...")
-        # 创建备份
+        logger.info("Starting actual migration...")
+        # Create backup
         backup_dir = project_root / f"migration_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         backup_dir.mkdir(exist_ok=True)
-        logger.info(f"📦 创建备份目录: {backup_dir}")
+        logger.info(f"Created backup directory: {backup_dir}")
     
-    # 执行迁移
+    # Execute migration
     db = SessionLocal()
     try:
         success_count = 0
@@ -213,33 +213,33 @@ def main():
             if result["success"]:
                 success_count += 1
                 if dry_run:
-                    logger.info(f"✅ 模拟迁移成功: {project_id}")
+                    logger.info(f"Migration simulation successful: {project_id}")
                 else:
-                    logger.info(f"✅ 迁移成功: {project_id}")
+                    logger.info(f"Migration successful: {project_id}")
             else:
                 failed_count += 1
-                logger.error(f"❌ 迁移失败: {project_id} - {result.get('error', '未知错误')}")
+                logger.error(f"Migration failed: {project_id} - {result.get('error', 'Unknown error')}")
         
-        # 显示迁移结果
+        # Display migration results
         print("\n" + "=" * 60)
-        print("📊 迁移结果:")
-        print(f"✅ 成功: {success_count}")
-        print(f"❌ 失败: {failed_count}")
-        print(f"📊 总计: {success_count + failed_count}")
+        print("Migration Results:")
+        print(f"Succeeded: {success_count}")
+        print(f"Failed: {failed_count}")
+        print(f"Total: {success_count + failed_count}")
         
         if not dry_run and success_count > 0:
-            print(f"\n💾 备份位置: {backup_dir}")
-            print("🔧 建议:")
-            print("1. 测试系统功能是否正常")
-            print("2. 确认无误后可以删除备份文件")
-            print("3. 运行数据一致性检查")
+            print(f"\nBackup location: {backup_dir}")
+            print("Recommendations:")
+            print("1. Test system functionality")
+            print("2. Delete backup files after confirming everything works")
+            print("3. Run data consistency check")
         
     except Exception as e:
-        logger.error(f"❌ 迁移过程中发生错误: {e}")
+        logger.error(f"Error during migration: {e}")
     finally:
         db.close()
     
-    logger.info("🎉 迁移完成!")
+    logger.info("Migration complete!")
 
 
 if __name__ == "__main__":

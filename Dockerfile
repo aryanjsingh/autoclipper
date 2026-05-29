@@ -1,106 +1,62 @@
 # AutoClip Dockerfile
-# 多阶段构建，优化镜像大小
+# Build backend service image
 
-# 第一阶段：构建前端
-FROM node:18-slim AS frontend-builder
+FROM python:3.9-slim
 
-WORKDIR /app/frontend
-
-# 安装必要的系统依赖
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# 复制前端依赖文件
-COPY frontend/package*.json ./
-
-# 安装前端依赖（使用完整安装，包括devDependencies）
-RUN npm ci
-
-# 复制前端源代码
-COPY frontend/ ./
-
-# 构建前端
-RUN npm run build
-
-# 第二阶段：构建后端
-FROM python:3.9-slim AS backend-builder
-
-# 设置环境变量
+# Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PYTHONPATH=/app
 
 WORKDIR /app
 
-# 安装系统依赖
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制Python依赖文件
+# Copy Python dependency files
 COPY requirements.txt ./
 
-# 安装Python依赖
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 第三阶段：最终镜像
-FROM python:3.9-slim
-
-# 设置环境变量
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONPATH=/app
-
-# 创建非root用户
+# Create non-root user
 RUN groupadd -r autoclip && useradd -r -g autoclip autoclip
 
-# 安装运行时依赖
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# Remove build tools to reduce image size
+RUN apt-get remove -y build-essential && apt-get autoremove -y && apt-get clean
 
-# 设置工作目录
-WORKDIR /app
-
-# 从构建阶段复制文件
-COPY --from=backend-builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=backend-builder /usr/local/bin /usr/local/bin
-COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
-
-# 复制项目文件
+# Copy project files
 COPY backend/ ./backend/
 COPY scripts/ ./scripts/
 COPY *.sh ./
 COPY env.example .env
 COPY docker-entrypoint.sh ./
 
-# 创建必要的目录
+# Create necessary directories
 RUN mkdir -p data/projects data/uploads data/temp data/output logs
 
-# 设置权限
+# Set permissions
 RUN chown -R autoclip:autoclip /app
 RUN chmod +x *.sh
 RUN chmod +x docker-entrypoint.sh
 RUN chmod -R 755 data logs
 
-# 切换到非root用户
+# Switch to non-root user
 USER autoclip
 
-# 暴露端口
-EXPOSE 8000 3000
+# Expose port
+EXPOSE 8000
 
-# 健康检查
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/v1/health/ || exit 1
 
-# 启动命令
+# Startup command
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

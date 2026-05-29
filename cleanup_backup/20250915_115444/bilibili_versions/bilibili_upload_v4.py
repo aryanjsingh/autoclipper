@@ -1,7 +1,7 @@
 """
-B站投稿上传服务 v4.0
-基于 bilibili-api 项目的正确实现方式
-使用正确的分片上传格式
+Bilibili Upload Service v4.0
+Based on bilibili-api project's correct implementation approach
+Uses correct chunk upload format
 """
 
 import asyncio
@@ -25,7 +25,7 @@ import uuid
 logger = logging.getLogger(__name__)
 
 class BilibiliUploaderV4:
-    """B站投稿上传器 v4.0 - 基于bilibili-api的正确实现"""
+    """Bilibili Upload Uploader v4.0 - Based on bilibili-api correct implementation"""
     
     def __init__(self, cookies: str):
         self.cookies = cookies
@@ -35,31 +35,31 @@ class BilibiliUploaderV4:
         self.error_message = None
         
     async def upload_video(self, video_path: str, metadata: dict, max_retries: int = 3) -> bool:
-        """上传视频主流程 - 基于bilibili-api的正确实现"""
+        """Upload video main flow - Based on bilibili-api correct implementation"""
         try:
             async with aiohttp.ClientSession() as session:
                 self.session = session
                 
-                # 1. 验证登录状态
+                # 1. Verify login status
                 if not await self._check_login_status():
                     return False
                 
-                # 2. 获取预上传信息
+                # 2. Get pre-upload info
                 pre_upload_info = await self._get_pre_upload_info(video_path)
                 if not pre_upload_info:
                     return False
                 
-                # 3. 分片上传
+                # 3. Chunk upload
                 success = await self._chunk_upload_bilibili_api(video_path, pre_upload_info, max_retries)
                 if not success:
                     return False
                 
-                # 4. 合并分片
+                # 4. Merge chunks
                 success = await self._merge_chunks_bilibili_api(pre_upload_info)
                 if not success:
                     return False
                 
-                # 5. 提交投稿
+                # 5. Submit upload
                 success = await self._submit_video_bilibili_api(pre_upload_info, metadata)
                 if not success:
                     return False
@@ -68,11 +68,11 @@ class BilibiliUploaderV4:
                 
         except Exception as e:
             self.error_message = str(e)
-            logger.error(f"上传视频失败: {e}")
+            logger.error(f"Failed to upload video: {e}")
             return False
     
     async def _check_login_status(self) -> bool:
-        """检查登录状态"""
+        """Check login status"""
         try:
             headers = {
                 "Cookie": self.cookies,
@@ -89,29 +89,29 @@ class BilibiliUploaderV4:
                     data = await response.json()
                     if data.get("code") == 0 and data.get("data", {}).get("isLogin"):
                         user_info = data.get("data", {})
-                        logger.info(f"登录状态正常，用户: {user_info.get('uname', 'unknown')}")
+                        logger.info(f"Login status normal, user: {user_info.get('uname', 'unknown')}")
                         return True
                     else:
-                        self.error_message = "用户未登录或登录状态异常"
+                        self.error_message = "User not logged in or login status abnormal"
                         logger.error(self.error_message)
                         return False
                 else:
-                    self.error_message = f"检查登录状态失败，HTTP状态码: {response.status}"
+                    self.error_message = f"Failed to check login status, HTTP status code: {response.status}"
                     logger.error(self.error_message)
                     return False
                     
         except Exception as e:
-            self.error_message = f"检查登录状态异常: {str(e)}"
+            self.error_message = f"Exception checking login status: {str(e)}"
             logger.error(self.error_message)
             return False
     
     async def _get_pre_upload_info(self, video_path: str) -> Optional[dict]:
-        """获取预上传信息 - 基于bilibili-api的正确实现"""
+        """Get pre-upload info - Based on bilibili-api correct implementation"""
         try:
             file_size = os.path.getsize(video_path)
             file_name = os.path.basename(video_path)
             
-            # 解析Cookie获取CSRF token
+            # Parse Cookie to get CSRF token
             csrf_token = None
             for cookie in self.cookies.split(';'):
                 cookie = cookie.strip()
@@ -120,7 +120,7 @@ class BilibiliUploaderV4:
                     break
             
             if not csrf_token:
-                self.error_message = "Cookie中缺少bili_jct字段"
+                self.error_message = "Cookie missing bili_jct field"
                 logger.error(self.error_message)
                 return None
             
@@ -132,7 +132,7 @@ class BilibiliUploaderV4:
                 "X-CSRF-Token": csrf_token
             }
             
-            # 使用bilibili-api的正确参数
+            # Use bilibili-api correct parameters
             params = {
                 "name": file_name,
                 "size": str(file_size),
@@ -153,7 +153,7 @@ class BilibiliUploaderV4:
             ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    logger.info(f"预上传API响应: {result}")
+                    logger.info(f"Pre-upload API response: {result}")
                     if result.get("OK") == 1:
                         upload_info = {
                             "upload_id": result.get("biz_id"),
@@ -163,24 +163,24 @@ class BilibiliUploaderV4:
                             "upos_uri": result.get("upos_uri"),
                             "put_query": result.get("put_query")
                         }
-                        logger.info(f"预上传信息获取成功: {upload_info}")
+                        logger.info(f"Pre-upload info retrieved: {upload_info}")
                         return upload_info
                     else:
-                        self.error_message = f"预上传失败: {result.get('message', '未知错误')}"
+                        self.error_message = f"Pre-upload failed: {result.get('message', 'Unknown error')}"
                         logger.error(self.error_message)
                         return None
                 else:
-                    self.error_message = f"预上传请求失败，HTTP状态码: {response.status}"
+                    self.error_message = f"Pre-upload request failed, HTTP status code: {response.status}"
                     logger.error(self.error_message)
                     return None
                     
         except Exception as e:
-            self.error_message = f"获取预上传信息异常: {str(e)}"
+            self.error_message = f"Exception getting pre-upload info: {str(e)}"
             logger.error(self.error_message)
             return None
     
     async def _chunk_upload_bilibili_api(self, video_path: str, upload_info: dict, max_retries: int = 3) -> bool:
-        """分片上传 - 使用正确的multipart/form-data格式"""
+        """Chunk upload - Uses correct multipart/form-data format"""
         try:
             file_size = os.path.getsize(video_path)
             chunk_size = 2 * 1024 * 1024  # 2MB chunks
@@ -190,24 +190,24 @@ class BilibiliUploaderV4:
             auth = upload_info.get("auth", "")
             upos_uri = upload_info.get("upos_uri", "")
             
-            # 处理endpoint格式
+            # Handle endpoint format
             if "," in endpoint:
                 endpoint = endpoint.split(",")[0]
             if not endpoint.endswith('.bilivideo.com'):
                 endpoint = endpoint.replace('//upos-cs-upcdnbda2', '//upos-cs-upcdnbda2.bilivideo.com')
             
-            # 处理upos_uri格式
+            # Handle upos_uri format
             if upos_uri.startswith("upos://"):
                 upos_path = upos_uri[7:]
             else:
                 upos_path = upos_uri
             
-            # 构建上传URL
+            # Build upload URL
             upload_url = f"https:{endpoint}/{upos_path}"
             if auth:
                 upload_url += f"?{auth}"
             
-            logger.info(f"构建的上传URL: {upload_url}")
+            logger.info(f"Built upload URL: {upload_url}")
             
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -217,20 +217,20 @@ class BilibiliUploaderV4:
             
             with open(video_path, 'rb') as f:
                 for chunk_index in range(total_chunks):
-                    # 读取分片数据
+                    # Read chunk data
                     chunk_data = f.read(chunk_size)
                     if not chunk_data:
                         break
                     
-                    # 重试逻辑
+                    # Retry logic
                     for attempt in range(max_retries):
                         try:
-                            # 构建分片上传URL
+                            # Build chunk upload URL
                             chunk_url = f"{upload_url}&partNumber={chunk_index + 1}"
                             
-                            logger.debug(f"分片 {chunk_index + 1} 上传URL: {chunk_url}")
+                            logger.debug(f"Chunk {chunk_index + 1} upload URL: {chunk_url}")
                             
-                            # 使用multipart/form-data格式上传
+                            # Upload using multipart/form-data format
                             form_data = aiohttp.FormData()
                             form_data.add_field('version', '2.10.4.0')
                             form_data.add_field('filesize', str(file_size))
@@ -239,7 +239,7 @@ class BilibiliUploaderV4:
                             form_data.add_field('total', str(file_size))
                             form_data.add_field('file', chunk_data, filename='blob', content_type='application/octet-stream')
                             
-                            # 使用POST方法上传分片
+                            # Upload chunk using POST method
                             async with self.session.post(
                                 chunk_url,
                                 headers=headers,
@@ -247,38 +247,38 @@ class BilibiliUploaderV4:
                                 timeout=aiohttp.ClientTimeout(total=60)
                             ) as response:
                                 if response.status in [200, 201, 204]:
-                                    logger.debug(f"分片 {chunk_index + 1}/{total_chunks} 上传成功")
+                                    logger.debug(f"Chunk {chunk_index + 1}/{total_chunks} uploaded successfully")
                                     break
                                 else:
                                     if attempt < max_retries - 1:
-                                        logger.warning(f"分片 {chunk_index + 1} 上传失败，重试 {attempt + 1}/{max_retries}: HTTP {response.status}")
-                                        await asyncio.sleep(2 ** attempt)  # 指数退避
+                                        logger.warning(f"Chunk {chunk_index + 1} upload failed, retry {attempt + 1}/{max_retries}: HTTP {response.status}")
+                                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
                                     else:
-                                        logger.error(f"分片 {chunk_index + 1} 上传失败: HTTP {response.status}")
+                                        logger.error(f"Chunk {chunk_index + 1} upload failed: HTTP {response.status}")
                                         response_text = await response.text()
-                                        logger.error(f"响应内容: {response_text}")
+                                        logger.error(f"Response content: {response_text}")
                                         return False
                                         
                         except Exception as e:
                             if attempt < max_retries - 1:
-                                logger.warning(f"分片 {chunk_index + 1} 上传异常，重试 {attempt + 1}/{max_retries}: {str(e)}")
+                                logger.warning(f"Chunk {chunk_index + 1} upload exception, retry {attempt + 1}/{max_retries}: {str(e)}")
                                 await asyncio.sleep(2 ** attempt)
                             else:
-                                logger.error(f"分片 {chunk_index + 1} 上传异常: {str(e)}")
+                                logger.error(f"Chunk {chunk_index + 1} upload exception: {str(e)}")
                                 return False
             
-            logger.info("所有分片上传完成")
+            logger.info("All chunks uploaded successfully")
             return True
             
         except Exception as e:
-            self.error_message = f"分片上传异常: {str(e)}"
+            self.error_message = f"Chunk upload exception: {str(e)}"
             logger.error(self.error_message)
             return False
     
     async def _merge_chunks_bilibili_api(self, upload_info: dict) -> bool:
-        """合并分片 - 基于bilibili-api的正确实现"""
+        """Merge chunks - Based on bilibili-api correct implementation"""
         try:
-            # 解析Cookie获取CSRF token
+            # Parse Cookie to get CSRF token
             csrf_token = None
             for cookie in self.cookies.split(';'):
                 cookie = cookie.strip()
@@ -287,7 +287,7 @@ class BilibiliUploaderV4:
                     break
             
             if not csrf_token:
-                self.error_message = "Cookie中缺少bili_jct字段"
+                self.error_message = "Cookie missing bili_jct field"
                 logger.error(self.error_message)
                 return False
             
@@ -313,28 +313,28 @@ class BilibiliUploaderV4:
             ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    logger.info(f"合并分片响应: {result}")
+                    logger.info(f"Merge chunks response: {result}")
                     if result.get("code") == 0:
-                        logger.info("分片合并成功")
+                        logger.info("Chunks merged successfully")
                         return True
                     else:
-                        self.error_message = f"合并分片失败: {result.get('message', '未知错误')}"
+                        self.error_message = f"Merge chunks failed: {result.get('message', 'Unknown error')}"
                         logger.error(self.error_message)
                         return False
                 else:
-                    self.error_message = f"合并分片请求失败，HTTP状态码: {response.status}"
+                    self.error_message = f"Merge chunks request failed, HTTP status code: {response.status}"
                     logger.error(self.error_message)
                     return False
                     
         except Exception as e:
-            self.error_message = f"合并分片异常: {str(e)}"
+            self.error_message = f"Merge chunks exception: {str(e)}"
             logger.error(self.error_message)
             return False
     
     async def _submit_video_bilibili_api(self, upload_info: dict, metadata: dict) -> bool:
-        """提交投稿 - 基于bilibili-api的正确实现"""
+        """Submit upload - Based on bilibili-api correct implementation"""
         try:
-            # 解析Cookie获取CSRF token
+            # Parse Cookie to get CSRF token
             csrf_token = None
             for cookie in self.cookies.split(';'):
                 cookie = cookie.strip()
@@ -343,7 +343,7 @@ class BilibiliUploaderV4:
                     break
             
             if not csrf_token:
-                self.error_message = "Cookie中缺少bili_jct字段"
+                self.error_message = "Cookie missing bili_jct field"
                 logger.error(self.error_message)
                 return False
             
@@ -356,12 +356,12 @@ class BilibiliUploaderV4:
                 "Content-Type": "application/x-www-form-urlencoded"
             }
             
-            # 构建投稿数据
+            # Build upload data
             upos_uri = upload_info.get("upos_uri", "")
             filename = upos_uri.split("/")[-1] if "/" in upos_uri else upos_uri
             
             data = {
-                "copyright": "1",  # 原创
+                "copyright": "1",  # Original
                 "videos": json.dumps([{
                     "filename": filename,
                     "title": metadata.get("title", ""),
@@ -391,55 +391,55 @@ class BilibiliUploaderV4:
             ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    logger.info(f"提交投稿响应: {result}")
+                    logger.info(f"Submit upload response: {result}")
                     if result.get("code") == 0:
                         self.bv_id = result.get("data", {}).get("bvid")
-                        logger.info(f"投稿提交成功，BV号: {self.bv_id}")
+                        logger.info(f"Upload submitted successfully, BV ID: {self.bv_id}")
                         return True
                     else:
-                        self.error_message = f"投稿提交失败: {result.get('message', '未知错误')}"
+                        self.error_message = f"Upload submission failed: {result.get('message', 'Unknown error')}"
                         logger.error(self.error_message)
                         return False
                 else:
-                    self.error_message = f"投稿提交请求失败，HTTP状态码: {response.status}"
+                    self.error_message = f"Upload submission request failed, HTTP status code: {response.status}"
                     logger.error(self.error_message)
                     return False
                     
         except Exception as e:
-            self.error_message = f"投稿提交异常: {str(e)}"
+            self.error_message = f"Upload submission exception: {str(e)}"
             logger.error(self.error_message)
             return False
 
 
 class BilibiliUploadServiceV4:
-    """B站投稿服务 v4.0"""
+    """Bilibili Upload Service v4.0"""
     
     def __init__(self, db):
         self.db = db
     
     async def upload_clip(self, record_id: int, video_path: str, max_retries: int = 3) -> bool:
-        """上传单个切片"""
+        """Upload a single clip"""
         try:
-            # 获取投稿记录
+            # Get upload record
             record = self.db.query(BilibiliUploadRecord).filter(BilibiliUploadRecord.id == record_id).first()
             if not record:
-                logger.error(f"投稿记录不存在: {record_id}")
+                logger.error(f"Upload record does not exist: {record_id}")
                 return False
             
-            # 获取账号信息
+            # Get account info
             account = self.db.query(BilibiliAccount).filter(BilibiliAccount.id == record.account_id).first()
             if not account:
-                logger.error(f"账号不存在: {record.account_id}")
+                logger.error(f"Account does not exist: {record.account_id}")
                 return False
             
-            # 解密Cookie
+            # Decrypt Cookie
             try:
                 cookies = decrypt_data(account.cookies)
             except Exception as e:
-                logger.error(f"解密Cookie失败: {e}")
+                logger.error(f"Failed to decrypt Cookie: {e}")
                 return False
             
-            # 构建投稿元数据
+            # Build upload metadata
             metadata = {
                 "title": record.title,
                 "description": record.description or "",
@@ -447,27 +447,27 @@ class BilibiliUploadServiceV4:
                 "partition_id": record.partition_id
             }
             
-            # 使用v4.0上传器
+            # Use v4.0 uploader
             uploader = BilibiliUploaderV4(cookies)
             success = await uploader.upload_video(video_path, metadata, max_retries)
             
             if success:
-                # 更新记录状态
+                # Update record status
                 record.status = "success"
                 record.bv_id = uploader.bv_id
                 record.updated_at = datetime.utcnow()
                 self.db.commit()
-                logger.info(f"切片上传成功: {record_id}, BV号: {uploader.bv_id}")
+                logger.info(f"Clip uploaded successfully: {record_id}, BV ID: {uploader.bv_id}")
                 return True
             else:
-                # 更新记录状态
+                # Update record status
                 record.status = "failed"
                 record.error_message = uploader.error_message
                 record.updated_at = datetime.utcnow()
                 self.db.commit()
-                logger.error(f"切片上传失败: {record_id}, 错误: {uploader.error_message}")
+                logger.error(f"Clip upload failed: {record_id}, error: {uploader.error_message}")
                 return False
                 
         except Exception as e:
-            logger.error(f"上传切片异常: {e}")
+            logger.error(f"Clip upload exception: {e}")
             return False

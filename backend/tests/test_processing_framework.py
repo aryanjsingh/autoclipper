@@ -1,6 +1,6 @@
 """
-处理框架测试
-使用pytest标准结构
+Processing framework tests
+Uses pytest standard structure
 """
 
 import pytest
@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, MagicMock
 import sys
 import os
 
-# 添加项目根目录到Python路径
+# Add project root directory to Python path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
@@ -24,37 +24,37 @@ from backend.services.exceptions import ServiceError, ConfigurationError, FileOp
 
 
 class TestProjectConfigManager:
-    """项目配置管理器测试"""
+    """Project configuration manager tests"""
     
     @pytest.fixture
     def temp_project_dir(self, tmp_path):
-        """创建临时项目目录"""
+        """Create temporary project directory"""
         project_dir = tmp_path / "test_project"
         project_dir.mkdir()
         return project_dir
     
     @pytest.fixture
     def config_manager(self, temp_project_dir):
-        """创建配置管理器实例"""
+        """Create configuration manager instance"""
         return ProjectConfigManager(str(temp_project_dir))
     
     def test_config_manager_initialization(self, config_manager):
-        """测试配置管理器初始化"""
+        """Test configuration manager initialization"""
         assert config_manager.project_id is not None
         assert config_manager.config_path.parent.exists()
     
     def test_load_default_config(self, config_manager):
-        """测试加载默认配置"""
-        # 设置测试环境变量
+        """Test loading default configuration"""
+        # Set test environment variables
         import os
         os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
         
         config = config_manager.config
-        # 新项目配置为空，这是正常的
+        # New project configuration is empty, this is normal
         assert isinstance(config, dict)
     
     def test_update_processing_params(self, config_manager):
-        """测试更新处理参数"""
+        """Test updating processing parameters"""
         new_params = {
             "max_clips": 50,
             "min_duration": 10.0,
@@ -68,8 +68,8 @@ class TestProjectConfigManager:
             assert config["processing_params"][key] == value
     
     def test_update_llm_config(self, config_manager):
-        """测试更新LLM配置"""
-        # 设置测试环境变量
+        """Test updating LLM configuration"""
+        # Set test environment variables
         import os
         os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
         
@@ -83,74 +83,74 @@ class TestProjectConfigManager:
         config_manager.update_llm_config(**llm_config)
         config = config_manager.config
         
-        # 检查配置是否已更新
+        # Check if configuration has been updated
         assert "llm" in config
     
     def test_export_config(self, config_manager):
-        """测试导出配置"""
-        # 设置测试环境变量
+        """Test exporting configuration"""
+        # Set test environment variables
         import os
         os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
         
         exported = config_manager.export_config()
-        # 检查导出的配置包含必要字段
+        # Check if exported configuration contains necessary fields
         assert isinstance(exported, dict)
     
     def test_config_validation(self, config_manager):
-        """测试配置验证"""
-        # 设置测试环境变量
+        """Test configuration validation"""
+        # Set test environment variables
         import os
         os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
         
-        # 测试配置验证
+        # Test configuration validation
         validation_result = config_manager.validate_config()
         assert isinstance(validation_result, dict)
 
 
 class TestPipelineAdapter:
-    """流水线适配器测试"""
+    """Pipeline adapter tests"""
     
     @pytest.fixture
     def temp_project_dir(self, tmp_path):
-        """创建临时项目目录"""
+        """Create temporary project directory"""
         project_dir = tmp_path / "test_project"
         project_dir.mkdir()
         return project_dir
     
     @pytest.fixture
     def mock_srt_file(self, tmp_path):
-        """创建模拟SRT文件"""
+        """Create mock SRT file"""
         srt_file = tmp_path / "test.srt"
         srt_content = """1
 00:00:01,000 --> 00:00:05,000
-这是第一段字幕
+This is the first subtitle
 
 2
 00:00:05,000 --> 00:00:10,000
-这是第二段字幕
+This is the second subtitle
 """
         srt_file.write_text(srt_content, encoding='utf-8')
         return srt_file
     
     @pytest.fixture
     def adapter(self, temp_project_dir):
-        """创建适配器实例"""
+        """Create adapter instance"""
         return PipelineAdapter(str(temp_project_dir))
     
     def test_adapter_initialization(self, adapter):
-        """测试适配器初始化"""
+        """Test adapter initialization"""
         assert adapter.project_id is not None
     
     def test_validate_pipeline_prerequisites_success(self, adapter, mock_srt_file):
-        """测试流水线前置条件验证成功"""
-        # 设置测试环境变量
+        """Test pipeline prerequisites validation success"""
+        # Set test environment variables
         import os
         os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
         
-        # 确保目录结构存在
+        # Ensure directory structure exists
         adapter.path_manager.ensure_directories()
         
-        # 复制SRT文件到正确位置
+        # Copy SRT file to correct location
         srt_target_path = adapter.path_manager.get_srt_path()
         srt_target_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(mock_srt_file, srt_target_path)
@@ -159,83 +159,83 @@ class TestPipelineAdapter:
         assert len(errors) == 0
     
     def test_validate_pipeline_prerequisites_missing_srt(self, adapter):
-        """测试流水线前置条件验证失败 - 缺少SRT文件"""
-        # 确保目录结构存在但不创建SRT文件
+        """Test pipeline prerequisites validation failure - missing SRT file"""
+        # Ensure directory structure exists but don't create SRT file
         adapter.path_manager.ensure_directories()
         
         errors = adapter.validate_pipeline_prerequisites()
         assert len(errors) > 0
-        assert any("SRT文件" in error for error in errors)
+        assert any("SRT file" in error for error in errors)
     
     def test_validate_pipeline_prerequisites_invalid_srt(self, adapter, tmp_path):
-        """测试流水线前置条件验证 - SRT文件存在但格式无效"""
-        # 设置测试环境变量
+        """Test pipeline prerequisites validation - SRT file exists but format is invalid"""
+        # Set test environment variables
         import os
         os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
         
-        # 确保目录结构存在
+        # Ensure directory structure exists
         adapter.path_manager.ensure_directories()
         
-        # 创建无效的SRT文件（但文件存在）
+        # Create invalid SRT file (but file exists)
         srt_target_path = adapter.path_manager.get_srt_path()
-        srt_target_path.write_text("这不是有效的SRT格式")
+        srt_target_path.write_text("This is not a valid SRT format")
         
-        # validate_pipeline_prerequisites只检查文件是否存在，不验证格式
-        # 所以这个测试应该通过（没有错误）
+        # validate_pipeline_prerequisites only checks if file exists, not format
+        # So this test should pass (no errors)
         errors = adapter.validate_pipeline_prerequisites()
-        assert len(errors) == 0  # 文件存在，所以没有错误
+        assert len(errors) == 0  # File exists, so no errors
     
     def test_execute_step_success(self, adapter, mock_srt_file):
-        """测试步骤执行成功"""
-        # 测试adapt_step方法
+        """Test step execution success"""
+        # Test adapt_step method
         result = adapter.adapt_step("step1_outline", srt_path=mock_srt_file)
         assert isinstance(result, dict)
         assert "srt_path" in result or "input_srt" in result
     
     def test_execute_step_failure(self, adapter, mock_srt_file):
-        """测试步骤执行失败"""
-        # 测试无效步骤名称
+        """Test step execution failure"""
+        # Test invalid step name
         with pytest.raises(ValueError):
             adapter.adapt_step("invalid_step", srt_path=mock_srt_file)
 
 
 class TestProcessingOrchestrator:
-    """处理编排器测试"""
+    """Processing orchestrator tests"""
     
     @pytest.fixture
     def temp_project_dir(self, tmp_path):
-        """创建临时项目目录"""
+        """Create temporary project directory"""
         project_dir = tmp_path / "test_project"
         project_dir.mkdir()
         return project_dir
     
     @pytest.fixture
     def mock_db_session(self):
-        """创建模拟数据库会话"""
+        """Create mock database session"""
         return Mock()
     
     @pytest.fixture
     def orchestrator(self, temp_project_dir, mock_db_session):
-        """创建编排器实例"""
+        """Create orchestrator instance"""
         return ProcessingOrchestrator(str(temp_project_dir), "test_task", mock_db_session)
     
     def test_orchestrator_initialization(self, orchestrator):
-        """测试编排器初始化"""
+        """Test orchestrator initialization"""
         assert orchestrator.project_id is not None
         assert orchestrator.task_id == "test_task"
     
     def test_get_pipeline_status(self, orchestrator):
-        """测试获取流水线状态"""
+        """Test getting pipeline status"""
         status = orchestrator.get_pipeline_status()
         assert "project_id" in status
         assert "task_id" in status
         assert "pipeline_status" in status
     
     def test_execute_step_success(self, orchestrator, tmp_path):
-        """测试执行步骤成功"""
-        # 创建模拟SRT文件
+        """Test step execution success"""
+        # Create mock SRT file
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\n测试字幕")
+        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\nTest subtitle")
         
         with patch('backend.services.processing_orchestrator.PipelineAdapter') as mock_adapter_class:
             mock_adapter = Mock()
@@ -246,29 +246,29 @@ class TestProcessingOrchestrator:
             assert result["status"] == "completed"
     
     def test_execute_step_failure(self, orchestrator, tmp_path):
-        """测试执行步骤失败"""
+        """Test step execution failure"""
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\n测试字幕")
+        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\nTest subtitle")
         
-        # 模拟步骤函数抛出异常
+        # Mock step function throwing exception
         with patch.object(orchestrator, 'step_functions') as mock_step_functions:
-            mock_step_functions.__getitem__.return_value = Mock(side_effect=Exception("执行失败"))
+            mock_step_functions.__getitem__.return_value = Mock(side_effect=Exception("Execution failed"))
             
             with pytest.raises(Exception):
                 orchestrator.execute_step(ProcessingStep.STEP1_OUTLINE, srt_path=srt_file)
 
 
 class TestProcessingService:
-    """处理服务测试"""
+    """Processing service tests"""
     
     @pytest.fixture
     def mock_db_session(self):
-        """创建模拟数据库会话"""
+        """Create mock database session"""
         return Mock()
     
     @pytest.fixture
     def mock_task_repository(self):
-        """创建模拟任务仓库"""
+        """Create mock task repository"""
         mock_repo = Mock()
         mock_task = Mock()
         mock_task.id = "test_task_001"
@@ -277,20 +277,20 @@ class TestProcessingService:
     
     @pytest.fixture
     def service(self, mock_db_session, mock_task_repository):
-        """创建服务实例"""
+        """Create service instance"""
         service = ProcessingService(mock_db_session)
         service.task_repo = mock_task_repository
         return service
     
     def test_service_initialization(self, service):
-        """测试服务初始化"""
+        """Test service initialization"""
         assert service.db is not None
         assert service.task_repo is not None
     
     def test_start_processing_success(self, service, tmp_path):
-        """测试开始处理成功"""
+        """Test start processing success"""
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\n测试字幕")
+        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\nTest subtitle")
         
         with patch('backend.services.processing_service.ProcessingOrchestrator') as mock_orchestrator_class:
             mock_orchestrator = Mock()
@@ -302,22 +302,22 @@ class TestProcessingService:
             assert "task_id" in result
     
     def test_start_processing_failure(self, service, tmp_path):
-        """测试开始处理失败"""
+        """Test start processing failure"""
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\n测试字幕")
+        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\nTest subtitle")
         
         with patch('backend.services.processing_service.ProcessingOrchestrator') as mock_orchestrator_class:
             mock_orchestrator = Mock()
-            mock_orchestrator.execute_pipeline.side_effect = ServiceError("处理失败")
+            mock_orchestrator.execute_pipeline.side_effect = ServiceError("Processing failed")
             mock_orchestrator_class.return_value = mock_orchestrator
             
             with pytest.raises(ServiceError):
                 service.start_processing("test_project", srt_file)
     
     def test_execute_single_step_success(self, service, tmp_path):
-        """测试执行单个步骤成功"""
+        """Test single step execution success"""
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\n测试字幕")
+        srt_file.write_text("1\n00:00:01,000 --> 00:00:05,000\nTest subtitle")
         
         with patch('backend.services.processing_service.ProcessingOrchestrator') as mock_orchestrator_class:
             mock_orchestrator = Mock()
@@ -329,7 +329,7 @@ class TestProcessingService:
             assert "step" in result
     
     def test_get_processing_status(self, service):
-        """测试获取处理状态"""
+        """Test getting processing status"""
         with patch('backend.services.processing_service.ProcessingOrchestrator') as mock_orchestrator_class:
             mock_orchestrator = Mock()
             mock_orchestrator.get_pipeline_status.return_value = {"pipeline_status": {"step1_outline": {"completed": True}}}
@@ -340,80 +340,80 @@ class TestProcessingService:
 
 
 class TestProcessingContext:
-    """处理上下文测试"""
+    """Processing context tests"""
     
     @pytest.fixture
     def mock_db_session(self):
-        """创建模拟数据库会话"""
+        """Create mock database session"""
         return Mock()
     
     @pytest.fixture
     def context(self, mock_db_session):
-        """创建上下文实例"""
+        """Create context instance"""
         return ProcessingContext("test_project", "test_task", mock_db_session)
     
     def test_context_initialization(self, context):
-        """测试上下文初始化"""
+        """Test context initialization"""
         assert context.project_id == "test_project"
         assert context.task_id == "test_task"
         assert context.is_initialized is False
         assert context.is_completed is False
     
     def test_context_validation(self, context):
-        """测试上下文验证"""
-        # 测试有效上下文
-        assert context.is_valid_for_execution() is False  # 未初始化
+        """Test context validation"""
+        # Test valid context
+        assert context.is_valid_for_execution() is False  # Not initialized
         
         context.mark_initialized()
         assert context.is_valid_for_execution() is True
     
     def test_context_with_invalid_project_id(self, mock_db_session):
-        """测试无效项目ID"""
+        """Test invalid project ID"""
         with pytest.raises(ValueError):
             ProcessingContext("", "test_task", mock_db_session)
     
     def test_context_with_invalid_task_id(self, mock_db_session):
-        """测试无效任务ID"""
+        """Test invalid task ID"""
         with pytest.raises(ValueError):
             ProcessingContext("test_project", "", mock_db_session)
     
     def test_set_srt_path(self, context, tmp_path):
-        """测试设置SRT路径"""
+        """Test setting SRT path"""
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("测试内容")
+        srt_file.write_text("Test content")
         
         context.set_srt_path(srt_file)
         assert context.srt_path == srt_file
     
     def test_set_srt_path_nonexistent(self, context):
-        """测试设置不存在的SRT路径"""
+        """Test setting nonexistent SRT path"""
         with pytest.raises(FileNotFoundError):
             context.set_srt_path(Path("nonexistent.srt"))
     
     def test_context_state_management(self, context):
-        """测试上下文状态管理"""
-        # 初始状态
+        """Test context state management"""
+        # Initial state
         assert context.is_initialized is False
         assert context.is_completed is False
         assert context.error_message is None
         
-        # 初始化
+        # Initialize
         context.mark_initialized()
         assert context.is_initialized is True
         assert context.is_valid_for_execution() is True
         
-        # 设置错误
-        context.set_error("测试错误")
-        assert context.error_message == "测试错误"
+        # Set error
+        context.set_error("Test error")
+        assert context.error_message == "Test error"
         assert context.is_valid_for_execution() is False
         
-        # 完成
+        # Complete
         context.mark_completed()
         assert context.is_completed is True
         assert context.is_valid_for_execution() is False
     
     def test_context_summary(self, context):
-        """测试上下文摘要"""
+        """Test context summary"""
         context.mark_initialized()
         context.set_debug_mode(True)
         
@@ -424,9 +424,9 @@ class TestProcessingContext:
         assert "is_initialized" in summary
     
     def test_context_clone(self, context, tmp_path):
-        """测试上下文克隆"""
+        """Test context cloning"""
         srt_file = tmp_path / "test.srt"
-        srt_file.write_text("测试内容")
+        srt_file.write_text("Test content")
         context.set_srt_path(srt_file)
         context.set_debug_mode(True)
         context.mark_initialized()
@@ -440,29 +440,29 @@ class TestProcessingContext:
 
 
 class TestErrorScenarios:
-    """错误场景测试"""
+    """Error scenario tests"""
     
     def test_configuration_error(self):
-        """测试配置错误"""
-        error = ConfigurationError("配置无效", details={"field": "api_key"})
+        """Test configuration error"""
+        error = ConfigurationError("Invalid configuration", details={"field": "api_key"})
         assert error.error_code.value == "CONFIG_INVALID"
         assert "api_key" in error.details["field"]
     
     def test_file_operation_error(self):
-        """测试文件操作错误"""
-        error = FileOperationError("文件不存在", file_path="/invalid/path")
+        """Test file operation error"""
+        error = FileOperationError("File does not exist", file_path="/invalid/path")
         assert error.error_code.value == "FILE_NOT_FOUND"
         assert error.details["file_path"] == "/invalid/path"
     
     def test_processing_error(self):
-        """测试处理错误"""
-        error = ProcessingError("步骤执行失败", step_name="step1_outline")
+        """Test processing error"""
+        error = ProcessingError("Step execution failed", step_name="step1_outline")
         assert error.error_code.value == "PROCESSING_FAILED"
         assert error.details["step_name"] == "step1_outline"
     
     def test_error_to_dict(self):
-        """测试错误转字典"""
-        error = ServiceError("测试错误", details={"key": "value"})
+        """Test error to dictionary"""
+        error = ServiceError("Test error", details={"key": "value"})
         error_dict = error.to_dict()
         assert "error_code" in error_dict
         assert "message" in error_dict
@@ -471,70 +471,70 @@ class TestErrorScenarios:
 
 @pytest.fixture(scope="session")
 def test_data_dir(tmp_path_factory):
-    """创建测试数据目录"""
+    """Create test data directory"""
     return tmp_path_factory.mktemp("test_data")
 
 
 @pytest.fixture
 def sample_srt_file(test_data_dir):
-    """创建示例SRT文件"""
+    """Create sample SRT file"""
     srt_file = test_data_dir / "sample.srt"
     srt_content = """1
 00:00:01,000 --> 00:00:05,000
-这是第一段字幕内容
+This is the first subtitle content
 
 2
 00:00:05,000 --> 00:00:10,000
-这是第二段字幕内容
+This is the second subtitle content
 
 3
 00:00:10,000 --> 00:00:15,000
-这是第三段字幕内容
+This is the third subtitle content
 """
     srt_file.write_text(srt_content, encoding='utf-8')
     return srt_file
 
 
 def test_integration_basic_flow(test_data_dir, sample_srt_file):
-    """测试基本流程集成"""
-    # 设置测试环境变量
+    """Test basic flow integration"""
+    # Set test environment variables
     import os
     os.environ['DASHSCOPE_API_KEY'] = 'test_api_key'
     
-    # 创建项目目录
+    # Create project directory
     project_dir = test_data_dir / "integration_project"
     project_dir.mkdir()
     
-    # 测试配置管理器
+    # Test configuration manager
     config_manager = ProjectConfigManager(str(project_dir))
     config = config_manager.config
     assert isinstance(config, dict)
     
-    # 测试流水线适配器
+    # Test pipeline adapter
     adapter = PipelineAdapter(str(project_dir))
-    # 复制SRT文件到项目目录
+    # Copy SRT file to project directory
     project_raw_dir = project_dir / "raw"
     project_raw_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(sample_srt_file, project_raw_dir / "transcript.srt")
     
-    # 验证前置条件
+    # Verify prerequisites
     errors = adapter.validate_pipeline_prerequisites()
     assert len(errors) == 0
 
 
 def test_error_handling_scenarios():
-    """测试错误处理场景"""
-    # 测试配置错误
+    """Test error handling scenarios"""
+    # Test configuration error
     with pytest.raises(ConfigurationError):
-        raise ConfigurationError("配置错误")
+        raise ConfigurationError("Configuration error")
     
-    # 测试文件操作错误
+    # Test file operation error
     with pytest.raises(FileOperationError):
-        raise FileOperationError("文件不存在", file_path="/invalid/path")
+        raise FileOperationError("File does not exist", file_path="/invalid/path")
     
-    # 测试处理错误
+    # Test processing error
     with pytest.raises(ProcessingError):
-        raise ProcessingError("处理失败", step_name="step1")
+        raise ProcessingError("Processing failed", step_name="step1")
 
 
 if __name__ == "__main__":

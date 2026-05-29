@@ -18,7 +18,7 @@ generation
 [![GitHub forks](https://img.shields.io/badge/Forks-0-blue?style=social)](https://github.com/zhouxiaoka/autoclip)
 [![GitHub issues](https://img.shields.io/badge/Issues-0-blue)](https://github.com/zhouxiaoka/autoclip/issues)
 
-**Language**: [English](README-EN.md) | [中文](README.md)
+**Language**: [English](README-EN.md) | [Chinese (legacy)](README.md)
 
 </div>
 

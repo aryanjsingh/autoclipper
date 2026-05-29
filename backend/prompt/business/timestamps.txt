@@ -1,0 +1,79 @@
+# Business & Finance Video Timestamp Positioning Prompt
+
+## Core Principles: Precision, Completeness, Clear Business Logic
+
+1.  **Precise positioning**: Timestamps must strictly correspond to core discussion content related to business topics.
+2.  **Completeness**: The time range must fully cover all key argumentation points of a business topic, ensuring business logic integrity.
+3.  **Natural boundaries**: Prioritize positioning time points at business viewpoint transitions, case switches, or logical paragraph boundaries.
+
+---
+
+## Key Instructions: How to Determine `start_time` and `end_time`
+
+### Determining `start_time`:
+-   Should be positioned at the start time of the **first core viewpoint** discussing the business topic.
+-   Ignore irrelevant small talk, disclaimers, or transitional phrases before that viewpoint.
+-   **Preferred choice**: Start at a business logic boundary to ensure natural topic introduction with clear logic.
+-   **Special consideration for business content**: If there is important background setup or data citations, the start time should be moved slightly earlier.
+
+### Determining `end_time` (Most Important):
+-   **Must be** the end timestamp of the **last sentence** covering the topic's core business discussion.
+-   **Business logic completeness**: Ensure core content such as business analysis, investment advice, and risk warnings is complete with no logical gaps.
+-   **Natural ending**: Prioritize ending at summarizing statements, investment advice conclusions, or topic transitions.
+-   **Risk warning inclusion**: If there are important risk warnings or disclaimers at the end of the topic, they should be included.
+-   If the business topic discussion continues until the end of the provided SRT text block, then `end_time` should be the end timestamp of the last relevant subtitle.
+-   **Incorrect approach**: Mindlessly setting `end_time` to the end of the entire text block. This must be absolutely avoided.
+
+### Business Content Duration Control Principles:
+-   **Target duration**: Each business topic segment should be between 3-8 minutes
+-   **Complex analysis duration**: Complex business topics involving multi-dimensional analysis can be extended up to 10 minutes
+-   **Quick news content**: Market briefings, policy interpretations, etc. can be compressed to 2-3 minutes
+-   **In-depth analysis**: Deep content such as industry research and company analysis can be extended up to 12 minutes
+
+### Special Handling for Business Content:
+-   **Data-intensive paragraphs**: Paragraphs containing large amounts of financial data and market data should be fully preserved
+-   **Case analyses**: Complete business case analyses should be kept as a whole and not split
+-   **Investment advice**: Investment strategies and risk warnings should appear together and not be separated
+-   **Policy interpretation**: Policy content and impact analysis should maintain completeness
+
+---
+
+## Input Format
+You will receive a JSON object containing:
+-   `outline`: A JSON array containing **multiple** business topics to process.
+-   `srt_text`: A **single** SRT text block related to this batch of topics, formatted as `sequence_number\nstart --> end\ntext\n\n`.
+
+## Output Format
+-   Strictly follow the structure of the input outline, adding `start_time` and `end_time` fields to **each** topic object.
+-   **Key**: In the output, rename the input `title` field to `outline`, and rename the `subtopics` field to `content`.
+-   Output a JSON array containing **all** processed topics.
+-   Ensure the time format is `HH:MM:SS,mmm`.
+
+**Strict JSON output requirements:**
+1. Output must start with `[` and end with `]`; do not add any explanatory text, titles, or Markdown code block markers
+2. Use standard English double quotes `"`; never use Chinese quotes "" or single quotes
+3. Ensure all brackets and square brackets match correctly, objects are separated by commas, and no trailing comma after the last object
+4. Quotes within strings must be escaped as \"
+5. Must not contain any comments, extra text, or control characters
+6. Ensure the JSON is fully valid and can be parsed by a standard JSON parser
+
+## Business Content Time Positioning Examples
+
+### Correct time positioning:
+- **Investment strategy discussion**: From "I think the current market..." to "That's my investment advice"
+- **Company analysis**: From "Let's look at this company..." to "Comprehensive evaluation results"
+- **Industry trends**: From "The development trend of this industry..." to "Future outlook"
+
+### Errors to avoid:
+- Breaking in the middle of financial data explanation
+- Separating investment advice from risk warnings
+- Cutting at critical argumentation points in case analysis
+- Ignoring important market background information
+
+## Notes
+
+1. **Business logic completeness**: Ensure each segment contains complete business analysis logic
+2. **Data accuracy**: Important financial data and market data must be fully included
+3. **Risk balance**: Investment advice and risk warnings should appear together
+4. **Timeliness consideration**: Market briefing content should be handled concisely; in-depth analysis can be extended
+5. **Audience adaptation**: Consider the understanding needs of audiences with different investment experience

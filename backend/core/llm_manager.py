@@ -1,5 +1,5 @@
 """
-LLM管理器 - 统一管理多个模型提供商
+LLM Manager - Unified management of multiple model providers
 """
 import json
 import logging
@@ -19,7 +19,7 @@ from .kiro_gateway import (
 logger = logging.getLogger(__name__)
 
 class LLMManager:
-    """LLM管理器"""
+    """LLM Manager"""
     
     def __init__(self, settings_file: Optional[Path] = None):
         self.settings_file = settings_file or self._get_default_settings_file()
@@ -28,13 +28,13 @@ class LLMManager:
         self._initialize_provider()
     
     def _get_default_settings_file(self) -> Path:
-        """获取默认设置文件路径"""
+        """Get default settings file path"""
         current_file = Path(__file__)
         project_root = current_file.parent.parent.parent  # backend/core -> backend -> project_root
         return project_root / "data" / "settings.json"
     
     def _load_settings(self) -> Dict[str, Any]:
-        """加载设置"""
+        """Load settings"""
         default_settings = {
             "llm_provider": "kiro",
             "dashscope_api_key": "",
@@ -55,7 +55,7 @@ class LLMManager:
                     saved_settings = json.load(f)
                     default_settings.update(saved_settings)
             except Exception as e:
-                logger.warning(f"加载设置文件失败: {e}")
+                logger.warning(f"Failed to load settings file: {e}")
 
         if (
             default_settings.get("llm_provider") == ProviderType.KIRO.value
@@ -66,22 +66,22 @@ class LLMManager:
         return default_settings
     
     def _save_settings(self):
-        """保存设置"""
+        """Save settings"""
         self.settings_file.parent.mkdir(parents=True, exist_ok=True)
         try:
             with open(self.settings_file, 'w', encoding='utf-8') as f:
                 json.dump(self.settings, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            logger.error(f"保存设置失败: {e}")
+            logger.error(f"Failed to save settings: {e}")
             raise
     
     def _initialize_provider(self):
-        """初始化当前提供商"""
+        """Initialize current provider"""
         try:
             provider_type = ProviderType(self.settings.get("llm_provider", "dashscope"))
             model_name = self.settings.get("model_name", "qwen-plus")
             
-            # 获取对应提供商的API密钥
+            # Get API key for the corresponding provider
             api_key = self._get_api_key_for_provider(provider_type)
             
             if api_key or provider_type == ProviderType.KIRO:
@@ -92,16 +92,16 @@ class LLMManager:
                 self.current_provider = LLMProviderFactory.create_provider(
                     provider_type, api_key, model_name, **provider_kwargs
                 )
-                logger.info(f"已初始化{provider_type.value}提供商，模型: {model_name}")
+                logger.info(f"Initialized {provider_type.value} provider, model: {model_name}")
             else:
-                logger.warning(f"未找到{provider_type.value}的API密钥")
+                logger.warning(f"API key not found for {provider_type.value}")
                 
         except Exception as e:
-            logger.error(f"初始化提供商失败: {e}")
+            logger.error(f"Failed to initialize provider: {e}")
             self.current_provider = None
     
     def _get_api_key_for_provider(self, provider_type: ProviderType) -> Optional[str]:
-        """获取指定提供商的API密钥"""
+        """Get API key for specified provider"""
         key_mapping = {
             ProviderType.DASHSCOPE: "dashscope_api_key",
             ProviderType.OPENAI: "openai_api_key",
@@ -118,21 +118,21 @@ class LLMManager:
         return None
     
     def update_settings(self, new_settings: Dict[str, Any]):
-        """更新设置"""
+        """Update settings"""
         self.settings.update(new_settings)
         self._save_settings()
         self._initialize_provider()
     
     def set_provider(self, provider_type: ProviderType, api_key: str, model_name: str):
-        """设置提供商"""
+        """Set provider"""
         try:
-            # 更新设置
+            # Update settings
             provider_settings = {
                 "llm_provider": provider_type.value,
                 "model_name": model_name
             }
             
-            # 更新对应提供商的API密钥
+            # Update API key for the corresponding provider
             key_mapping = {
                 ProviderType.DASHSCOPE: "dashscope_api_key",
                 ProviderType.OPENAI: "openai_api_key",
@@ -147,7 +147,7 @@ class LLMManager:
             
             self.update_settings(provider_settings)
             
-            # 创建新的提供商实例
+            # Create new provider instance
             provider_kwargs = {}
             if provider_type == ProviderType.KIRO:
                 provider_kwargs["base_url"] = self.settings.get("kiro_base_url", "")
@@ -156,51 +156,51 @@ class LLMManager:
                 provider_type, api_key, model_name, **provider_kwargs
             )
             
-            logger.info(f"已切换到{provider_type.value}提供商，模型: {model_name}")
+            logger.info(f"Switched to {provider_type.value} provider, model: {model_name}")
             
         except Exception as e:
-            logger.error(f"设置提供商失败: {e}")
+            logger.error(f"Failed to set provider: {e}")
             raise
     
     def call(self, prompt: str, input_data: Any = None, **kwargs) -> str:
-        """调用LLM"""
+        """Call LLM"""
         if not self.current_provider:
-            raise ValueError("未配置LLM提供商，请在设置页面配置API密钥")
+            raise ValueError("LLM provider not configured. Please configure API key in the settings page.")
         
         try:
             response = self.current_provider.call(prompt, input_data, **kwargs)
             return response.content
         except Exception as e:
-            logger.error(f"LLM调用失败: {e}")
+            logger.error(f"LLM call failed: {e}")
             raise
     
     def call_with_retry(self, prompt: str, input_data: Any = None, max_retries: int = 3, **kwargs) -> str:
-        """带重试机制的LLM调用"""
+        """LLM call with retry mechanism"""
         for attempt in range(max_retries):
             try:
                 return self.call(prompt, input_data, **kwargs)
-            except ValueError:  # 如果是API Key或参数错误，不重试
+            except ValueError:  # If API key or parameter error, do not retry
                 raise
             except Exception as e:
                 if attempt == max_retries - 1:
-                    logger.error(f"LLM调用在{max_retries}次重试后彻底失败。")
+                    logger.error(f"LLM call failed completely after {max_retries} retries.")
                     raise
-                logger.warning(f"第{attempt + 1}次调用失败，准备重试: {str(e)}")
+                logger.warning(f"Attempt {attempt + 1} failed, preparing to retry: {str(e)}")
                 import time
-                time.sleep(2 ** attempt)  # 指数退避
+                time.sleep(2 ** attempt)  # Exponential backoff
         return ""
     
     def test_provider_connection(self, provider_type: ProviderType, api_key: str, model_name: str) -> bool:
-        """测试提供商连接"""
+        """Test provider connection"""
         try:
             provider = LLMProviderFactory.create_provider(provider_type, api_key, model_name)
             return provider.test_connection()
         except Exception as e:
-            logger.error(f"测试{provider_type.value}连接失败: {e}")
+            logger.error(f"Failed to test {provider_type.value} connection: {e}")
             return False
     
     def get_current_provider_info(self) -> Dict[str, Any]:
-        """获取当前提供商信息"""
+        """Get current provider information"""
         if not self.current_provider:
             return {"provider": None, "model": None, "available": False}
         
@@ -215,18 +215,18 @@ class LLMManager:
         }
     
     def _get_provider_display_name(self, provider_type: ProviderType) -> str:
-        """获取提供商显示名称"""
+        """Get provider display name"""
         display_names = {
-            ProviderType.DASHSCOPE: "阿里通义千问",
+            ProviderType.DASHSCOPE: "Alibaba Tongyi Qianwen",
             ProviderType.OPENAI: "OpenAI",
             ProviderType.GEMINI: "Google Gemini",
-            ProviderType.SILICONFLOW: "硅基流动",
+            ProviderType.SILICONFLOW: "SiliconFlow",
             ProviderType.KIRO: "Kiro Gateway"
         }
         return display_names.get(provider_type, provider_type.value)
     
     def get_all_available_models(self) -> Dict[str, List[Dict[str, Any]]]:
-        """获取所有可用模型"""
+        """Get all available models"""
         all_models = LLMProviderFactory.get_all_available_models()
         result = {}
         
@@ -245,28 +245,28 @@ class LLMManager:
         return result
     
     def parse_json_response(self, response: str) -> Any:
-        """解析JSON响应（保持与原LLMClient的兼容性）"""
+        """Parse JSON response (maintains compatibility with original LLMClient)"""
         if not self.current_provider:
-            raise ValueError("未配置LLM提供商")
+            raise ValueError("LLM provider not configured")
         
-        # 这里可以复用原LLMClient的JSON解析逻辑
-        # 为了保持兼容性，我们创建一个临时的LLMClient实例
+        # This can reuse the original LLMClient's JSON parsing logic
+        # For compatibility, we create a temporary LLMClient instance
         from ..utils.llm_client import LLMClient
         temp_client = LLMClient()
         return temp_client.parse_json_response(response)
 
-# 全局LLM管理器实例
+# Global LLM manager instance
 _llm_manager: Optional[LLMManager] = None
 
 def get_llm_manager() -> LLMManager:
-    """获取全局LLM管理器实例"""
+    """Get global LLM manager instance"""
     global _llm_manager
     if _llm_manager is None:
         _llm_manager = LLMManager()
     return _llm_manager
 
 def initialize_llm_manager(settings_file: Optional[Path] = None) -> LLMManager:
-    """初始化LLM管理器"""
+    """Initialize LLM manager"""
     global _llm_manager
     _llm_manager = LLMManager(settings_file)
     return _llm_manager

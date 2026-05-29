@@ -1,5 +1,5 @@
 """
-大模型客户端 - 兼容性包装器，使用新的LLM管理器
+LLM client - Compatibility wrapper using new LLM manager
 """
 import json
 import logging
@@ -8,11 +8,11 @@ import re
 from typing import Dict, Any, List
 from collections.abc import Generator
 
-# 修复导入问题
+# Fix import issues
 try:
     from ..core.shared_config import MODEL_NAME
 except ImportError:
-    # 如果相对导入失败，尝试绝对导入
+    # If relative import fails, try absolute import
     import sys
     from pathlib import Path
     backend_path = Path(__file__).parent.parent
@@ -20,11 +20,11 @@ except ImportError:
         sys.path.insert(0, str(backend_path))
     from core.shared_config import MODEL_NAME
 
-# 导入新的LLM管理器
+# Import new LLM manager
 try:
     from ..core.llm_manager import get_llm_manager
 except ImportError:
-    # 如果相对导入失败，尝试绝对导入
+    # If relative import fails, try absolute import
     import sys
     from pathlib import Path
     backend_path = Path(__file__).parent.parent
@@ -35,7 +35,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class LLMClient:
-    """LLM客户端 - 兼容性包装器"""
+    """LLM client - Compatibility wrapper"""
     
     def __init__(self):
         self.model = MODEL_NAME
@@ -43,44 +43,44 @@ class LLMClient:
     
     def call(self, prompt: str, input_data: Any = None) -> str:
         """
-        调用大模型API - 使用新的LLM管理器
+        Call LLM API - Uses new LLM manager
         
         Args:
-            prompt: 提示词
-            input_data: 输入数据
+            prompt: Prompt
+            input_data: Input data
             
         Returns:
-            模型响应文本
+            Model response text
         """
         try:
             return self.llm_manager.call(prompt, input_data)
         except Exception as e:
-            logger.error(f"LLM调用失败: {str(e)}")
+            logger.error(f"LLM call failed: {str(e)}")
             raise
     
     def call_with_retry(self, prompt: str, input_data: Any = None, max_retries: int = 3) -> str:
         """
-        带重试机制的API调用
+        API call with retry mechanism
         
         Args:
-            prompt: 提示词
-            input_data: 输入数据
-            max_retries: 最大重试次数
+            prompt: Prompt
+            input_data: Input data
+            max_retries: Maximum retry count
             
         Returns:
-            模型响应文本
+            Model response text
         """
         try:
             return self.llm_manager.call_with_retry(prompt, input_data, max_retries)
         except Exception as e:
-            logger.error(f"LLM重试调用失败: {str(e)}")
+            logger.error(f"LLM retry call failed: {str(e)}")
             raise
     
     def _preprocess_llm_response(self, response: str) -> str:
         """
-        预处理LLM响应，移除常见的非JSON内容
+        Preprocess LLM response, remove common non-JSON content
         """
-        # 移除开头的标题和说明文字
+        # Remove leading titles and explanatory text
         lines = response.split('\n')
         json_start = -1
         
@@ -93,9 +93,9 @@ class LLMClient:
         if json_start >= 0:
             response = '\n'.join(lines[json_start:])
         
-        # 移除末尾的非JSON内容
+        # Remove trailing non-JSON content
         if '```' in response:
-            # 如果有多个```，取第一个之前的内容
+            # If there are multiple ```, take content before the first one
             parts = response.split('```')
             if len(parts) > 1:
                 response = parts[0]
@@ -104,168 +104,168 @@ class LLMClient:
     
     def _auto_fix_response(self, response: str) -> str:
         """
-        自动修复常见的响应问题
+        Automatically fix common response issues
         """
-        # 移除BOM和特殊字符
+        # Remove BOM and special characters
         response = response.lstrip('\ufeff')
         response = response.strip()
         
-        # 修复中文引号
+        # Fix Chinese quotes
         response = response.replace('"', '\"').replace('"', '\"')
         
         return response
     
     def _validate_json_structure(self, parsed_data: Any) -> bool:
         """
-        验证JSON结构的有效性
+        Validate JSON structure
         """
         try:
             if not isinstance(parsed_data, list):
-                logger.error(f"响应不是数组格式，实际类型: {type(parsed_data)}")
+                logger.error(f"Response is not an array format, actual type: {type(parsed_data)}")
                 return False
             
             for i, item in enumerate(parsed_data):
                 if not isinstance(item, dict):
-                    logger.error(f"第{i}个元素不是对象格式，实际类型: {type(item)}")
+                    logger.error(f"Element {i} is not an object format, actual type: {type(item)}")
                     return False
                     
-                # 检查基本字段（可根据具体需求调整）
+                # Check basic fields (can be adjusted based on specific requirements)
                 if 'outline' in item or 'start_time' in item or 'end_time' in item:
                     required_fields = ['outline', 'start_time', 'end_time']
                     for field in required_fields:
                         if field not in item:
-                            logger.error(f"第{i}个元素缺少必需字段: {field}")
+                            logger.error(f"Element {i} is missing required field: {field}")
                             return False
         except Exception as e:
-            logger.error(f"验证JSON结构时出错: {e}")
+            logger.error(f"Error validating JSON structure: {e}")
             return False
         
         return True
     
     def parse_json_response(self, response: str) -> Any:
         """
-        从可能包含Markdown格式的文本中解析JSON对象。
-        该函数具有多层容错机制：
-        1. 预处理响应，移除非JSON内容
-        2. 优先从Markdown代码块提取。
-        3. 如果失败，则尝试直接解析整个响应（在净化后）。
-        4. 如果再次失败，则使用通用正则表达式寻找并解析JSON。
-        5. 最后尝试修复常见JSON错误后再解析。
+        Parse JSON objects from text that may contain Markdown formatting.
+        This function has multi-layer error tolerance:
+        1. Preprocess response, remove non-JSON content
+        2. Prioritize extracting from Markdown code blocks.
+        3. If failed, try parsing the entire response directly (after sanitization).
+        4. If failed again, use generic regex to find and parse JSON.
+        5. Finally try fixing common JSON errors before parsing.
         """
         
         def sanitize_string(s: str) -> str:
-            """增强的净化函数，移除可能导致JSON解析失败的字符"""
-            # 移除BOM标记
+            """Enhanced sanitization function, remove characters that may cause JSON parsing failure"""
+            # Remove BOM marker
             s = s.lstrip('\ufeff')
-            # 移除前后空白符
+            # Remove leading and trailing whitespace
             s = s.strip()
-            # 移除可能的控制字符（保留必要的换行和制表符）
+            # Remove possible control characters (keep necessary newlines and tabs)
             s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', s)
             return s
         
         def fix_common_json_errors(json_str: str) -> str:
-            """修复常见的JSON格式错误"""
-            # 记录原始字符串用于调试
+            """Fix common JSON format errors"""
+            # Record original string for debugging
             original_str = json_str
             
-            # 1. 修复缺少逗号的问题
+            # 1. Fix missing commas
             json_str = re.sub(r'}\s*{', '},{', json_str)
             json_str = re.sub(r']\s*\[', '],[', json_str)
             
-            # 2. 修复对象之间缺少逗号的问题（更精确的模式）
+            # 2. Fix missing commas between objects (more precise pattern)
             json_str = re.sub(r'}\s*\n\s*{', '},\n{', json_str)
             
-            # 3. 修复多余的逗号
+            # 3. Fix trailing commas
             json_str = re.sub(r',\s*}', '}', json_str)
             json_str = re.sub(r',\s*]', ']', json_str)
             
-            # 4. 修复单引号为双引号
+            # 4. Fix single quotes to double quotes
             json_str = re.sub(r"'([^']*?)'\s*:", r'"\1":', json_str)
             json_str = re.sub(r":\s*'([^']*?)'", r': "\1"', json_str)
             
-            # 5. 修复字段名没有引号的问题
+            # 5. Fix field names without quotes
             json_str = re.sub(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'"\1":', json_str)
             
-            # 6. 修复可能的换行符问题
+            # 6. Fix possible newline issues
             json_str = re.sub(r'\n\s*\n', '\n', json_str)
             
-            # 7. 确保数组和对象的正确闭合
-            # 统计括号和方括号的数量
+            # 7. Ensure proper closing of arrays and objects
+            # Count braces and brackets
             open_braces = json_str.count('{')
             close_braces = json_str.count('}')
             open_brackets = json_str.count('[')
             close_brackets = json_str.count(']')
             
-            # 如果括号不匹配，尝试修复
+            # If braces don't match, try to fix
             if open_braces > close_braces:
                 json_str += '}' * (open_braces - close_braces)
             if open_brackets > close_brackets:
                 json_str += ']' * (open_brackets - close_brackets)
             
-            # 记录修复过程
+            # Log fix process
             if json_str != original_str:
-                logger.debug(f"JSON修复前: {original_str[:100]}...")
-                logger.debug(f"JSON修复后: {json_str[:100]}...")
+                logger.debug(f"JSON before fix: {original_str[:100]}...")
+                logger.debug(f"JSON after fix: {json_str[:100]}...")
             
             return json_str
 
         response = response.strip()
         
-        # 0. 预处理响应，移除非JSON内容
+        # 0. Preprocess response, remove non-JSON content
         response = self._preprocess_llm_response(response)
-        logger.debug(f"预处理后的响应: {response[:200]}...")
+        logger.debug(f"Preprocessed response: {response[:200]}...")
         
-        # 1. 优先尝试从Markdown代码块中提取
+        # 1. Prioritize extracting from Markdown code blocks
         match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', response, re.DOTALL)
         if match:
             json_str = sanitize_string(match.group(1))
             try:
                 return json.loads(json_str)
             except json.JSONDecodeError as e:
-                # 记录具体的错误位置和上下文
+                # Log specific error location and context
                 error_pos = e.pos if hasattr(e, 'pos') else 0
                 context_start = max(0, error_pos - 50)
                 context_end = min(len(json_str), error_pos + 50)
                 context = json_str[context_start:context_end]
-                logger.error(f"JSON解析失败在位置{error_pos}，上下文: ...{context}...")
-                logger.warning(f"从Markdown提取的内容解析失败: {e}。将尝试修复后解析。")
+                logger.error(f"JSON parsing failed at position {error_pos}, context: ...{context}...")
+                logger.warning(f"Content extracted from Markdown failed to parse: {e}. Will try to fix and parse.")
                 
-                # 尝试修复常见错误后再解析
+                # Try to fix common errors and parse again
                 try:
                     fixed_json = fix_common_json_errors(json_str)
                     return json.loads(fixed_json)
                 except json.JSONDecodeError:
-                    logger.warning("修复后仍然解析失败，将尝试解析整个响应。")
+                    logger.warning("Still failed to parse after fix, will try parsing the entire response.")
         
-        # 2. 如果没有Markdown，或Markdown解析失败，尝试整个响应
+        # 2. If no Markdown or Markdown parsing failed, try the entire response
         try:
             sanitized_response = sanitize_string(response)
             return json.loads(sanitized_response)
         except json.JSONDecodeError:
-            # 3. 如果整个响应直接解析也失败，做最后一次尝试，用通用正则寻找
-            logger.warning("直接解析响应失败，尝试使用通用正则寻找JSON...")
+            # 3. If direct parsing of entire response also failed, make one last attempt with generic regex
+            logger.warning("Direct response parsing failed, trying generic regex to find JSON...")
             json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', response, re.DOTALL)
             if json_match:
                 json_str = sanitize_string(json_match.group())
                 try:
                     return json.loads(json_str)
                 except json.JSONDecodeError as e:
-                    # 4. 最后尝试修复常见错误
+                    # 4. Final attempt to fix common errors
                     try:
                         fixed_json = fix_common_json_errors(json_str)
                         return json.loads(fixed_json)
                     except json.JSONDecodeError as final_e:
-                        logger.error(f"最终尝试解析失败: {final_e}")
-                        # 保存原始响应以便调试
+                        logger.error(f"Final parsing attempt failed: {final_e}")
+                        # Save original response for debugging
                         import tempfile
                         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
                             f.write(response)
-                            logger.error(f"原始响应已保存到 {f.name} 以便调试")
-                        raise ValueError(f"无法从响应中解析出有效的JSON: {response[:200]}...") from final_e
+                            logger.error(f"Original response saved to {f.name} for debugging")
+                        raise ValueError(f"Unable to parse valid JSON from response: {response[:200]}...") from final_e
             
-            # 如果连通用正则都找不到，就彻底失败
-            raise ValueError(f"无法从响应中解析出有效的JSON: {response[:200]}...")
+            # If even generic regex can't find anything, complete failure
+            raise ValueError(f"Unable to parse valid JSON from response: {response[:200]}...")
     
     def get_current_provider_info(self) -> Dict[str, Any]:
-        """获取当前提供商信息"""
+        """Get current provider information"""
         return self.llm_manager.get_current_provider_info()

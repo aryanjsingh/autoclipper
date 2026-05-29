@@ -1,6 +1,6 @@
 """
-配置文件 - 管理API密钥、文件路径等配置信息
-支持新的配置管理系统和向后兼容
+Configuration File - Manage API keys, file paths, and other configuration
+Supports new configuration management system and backward compatibility
 """
 import os
 import json
@@ -17,7 +17,7 @@ from .kiro_gateway import (
 )
 from .output_language import OUTPUT_LANGUAGE, is_english, speech_recognition_language
 
-# 视频分类枚举
+# Video category enumeration
 class VideoCategory(str, Enum):
     DEFAULT = "default"
     KNOWLEDGE = "knowledge"
@@ -28,113 +28,113 @@ class VideoCategory(str, Enum):
     CONTENT_REVIEW = "content_review"
     ENTERTAINMENT = "entertainment"
 
-# 视频分类配置 (English when AUTOCLIP_OUTPUT_LANGUAGE=en)
+# Video category configuration (English when AUTOCLIP_OUTPUT_LANGUAGE=en)
 VIDEO_CATEGORIES_CONFIG = {
     VideoCategory.DEFAULT: {
-        "name": "General" if is_english() else "默认",
-        "description": "General video content for most use cases" if is_english() else "通用视频内容，适用于大部分场景",
+        "name": "General",
+        "description": "General video content for most use cases",
         "icon": "🎬",
         "color": "#4facfe"
     },
     VideoCategory.KNOWLEDGE: {
-        "name": "Knowledge" if is_english() else "知识科普",
-        "description": "Education, science, and technical explainers" if is_english() else "教育、科普、技术分享等知识性内容",
+        "name": "Knowledge",
+        "description": "Education, science, and technical explainers",
         "icon": "📚",
         "color": "#52c41a"
     },
     VideoCategory.BUSINESS: {
-        "name": "Business" if is_english() else "商业财经",
-        "description": "Business analysis, finance, and investing" if is_english() else "商业分析、财经资讯、投资理财等",
+        "name": "Business",
+        "description": "Business analysis, finance, and investing",
         "icon": "💼",
         "color": "#faad14"
     },
     VideoCategory.OPINION: {
-        "name": "Opinion" if is_english() else "观点评论",
-        "description": "Opinion pieces, commentary, and debate" if is_english() else "观点表达、评论分析、思辨讨论等",
+        "name": "Opinion",
+        "description": "Opinion pieces, commentary, and debate",
         "icon": "💭",
         "color": "#722ed1"
     },
     VideoCategory.EXPERIENCE: {
-        "name": "Experience" if is_english() else "经验分享",
-        "description": "Life lessons, skills, and practical tips" if is_english() else "生活经验、技能分享、实用技巧等",
+        "name": "Experience",
+        "description": "Life lessons, skills, and practical tips",
         "icon": "🌟",
         "color": "#13c2c2"
     },
     VideoCategory.SPEECH: {
-        "name": "Speech & Talk" if is_english() else "演讲脱口秀",
-        "description": "Talks, podcasts, stand-up, and interviews" if is_english() else "演讲、脱口秀、访谈等口语表达内容",
+        "name": "Speech & Talk",
+        "description": "Talks, podcasts, stand-up, and interviews",
         "icon": "🎤",
         "color": "#eb2f96"
     },
     VideoCategory.CONTENT_REVIEW: {
-        "name": "Reviews" if is_english() else "内容解说",
-        "description": "Film, game, and media commentary" if is_english() else "影视解说、游戏解说、作品分析等",
+        "name": "Reviews",
+        "description": "Film, game, and media commentary",
         "icon": "🎭",
         "color": "#f5222d"
     },
     VideoCategory.ENTERTAINMENT: {
-        "name": "Entertainment" if is_english() else "娱乐内容",
-        "description": "Shows, variety, and light entertainment" if is_english() else "娱乐节目、综艺、表演等轻松内容",
+        "name": "Entertainment",
+        "description": "Shows, variety, and light entertainment",
         "icon": "🎪",
         "color": "#fa8c16"
     }
 }
 
-# 项目根目录
+# Project root directory
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
-# 输入文件路径
+# Input file paths
 INPUT_DIR = PROJECT_ROOT / "input"
 INPUT_VIDEO = INPUT_DIR / "input.mp4"
 INPUT_SRT = INPUT_DIR / "input.srt"
 INPUT_TXT = INPUT_DIR / "input.txt"
 
-# 输出目录
+# Output directories
 OUTPUT_DIR = PROJECT_ROOT / "data" / "output"
 CLIPS_DIR = OUTPUT_DIR / "clips"
 COLLECTIONS_DIR = OUTPUT_DIR / "collections"
 METADATA_DIR = OUTPUT_DIR / "metadata"
 
-# Prompt文件路径
+# Prompt file paths
 PROMPT_DIR = Path(__file__).parent.parent / "prompt"
 PROMPT_FILES = {
-    "outline": PROMPT_DIR / "大纲.txt",
-    "timeline": PROMPT_DIR / "时间点.txt", 
-    "recommendation": PROMPT_DIR / "推荐理由.txt",
-    "title": PROMPT_DIR / "标题生成.txt",
-    "clustering": PROMPT_DIR / "主题聚类.txt",
+    "outline": PROMPT_DIR / "outline.txt",
+    "timeline": PROMPT_DIR / "timestamps.txt", 
+    "recommendation": PROMPT_DIR / "recommendation.txt",
+    "title": PROMPT_DIR / "title_generation.txt",
+    "clustering": PROMPT_DIR / "topic_clustering.txt",
     "collection_title": PROMPT_DIR / "collection_title.txt"
 }
 
-# API配置
+# API configuration
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
 MODEL_NAME = os.getenv("API_MODEL_NAME") or os.getenv("KIRO_GATEWAY_MODEL") or DEFAULT_KIRO_MODEL
 
-# 语音识别配置
+# Speech recognition configuration
 SPEECH_RECOGNITION_METHOD = os.getenv("SPEECH_RECOGNITION_METHOD", "whisper_local")
 SPEECH_RECOGNITION_LANGUAGE = speech_recognition_language()
 SPEECH_RECOGNITION_MODEL = os.getenv("SPEECH_RECOGNITION_MODEL", "base")
 SPEECH_RECOGNITION_TIMEOUT = int(os.getenv("SPEECH_RECOGNITION_TIMEOUT", "1000"))
 
-# 处理参数
-CHUNK_SIZE = 5000  # 文本分块大小
-MIN_SCORE_THRESHOLD = 0.7  # 最低评分阈值
-MAX_CLIPS_PER_COLLECTION = 5  # 每个合集最大切片数
+# Processing parameters
+CHUNK_SIZE = 5000  # Text chunk size
+MIN_SCORE_THRESHOLD = 0.7  # Minimum score threshold
+MAX_CLIPS_PER_COLLECTION = 5  # Maximum clips per collection
 
-# 新增：话题提取控制参数
-MIN_TOPIC_DURATION_MINUTES = 2  # 话题最小时长（分钟）
-MAX_TOPIC_DURATION_MINUTES = 12  # 话题最大时长（分钟）
-TARGET_TOPIC_DURATION_MINUTES = 5  # 话题目标时长（分钟）
-MIN_TOPICS_PER_CHUNK = 3  # 每个文本块最少话题数
-MAX_TOPICS_PER_CHUNK = 8  # 每个文本块最多话题数
+# Topic extraction control parameters
+MIN_TOPIC_DURATION_MINUTES = 2  # Minimum topic duration (minutes)
+MAX_TOPIC_DURATION_MINUTES = 12  # Maximum topic duration (minutes)
+TARGET_TOPIC_DURATION_MINUTES = 5  # Target topic duration (minutes)
+MIN_TOPICS_PER_CHUNK = 3  # Minimum topics per text chunk
+MAX_TOPICS_PER_CHUNK = 8  # Maximum topics per text chunk
 
-# 确保输出目录存在
+# Ensure output directories exist
 for dir_path in [CLIPS_DIR, COLLECTIONS_DIR, METADATA_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
-# 新的配置管理系统
+# New configuration management system
 class Settings(BaseModel):
-    """系统设置"""
+    """System settings"""
     llm_provider: str = "kiro"
     dashscope_api_key: Optional[str] = ""
     kiro_api_key: Optional[str] = ""
@@ -145,20 +145,20 @@ class Settings(BaseModel):
     max_clips_per_collection: int = 5
     max_retries: int = 3
     timeout_seconds: int = 30
-    # 新增话题提取控制参数
+    # Topic extraction control parameters
     min_topic_duration_minutes: int = 2
     max_topic_duration_minutes: int = 12
     target_topic_duration_minutes: int = 5
     min_topics_per_chunk: int = 3
     max_topics_per_chunk: int = 8
-    # 语音识别配置
+    # Speech recognition configuration
     speech_recognition_method: str = "whisper_local"
     speech_recognition_language: str = "auto"
     speech_recognition_model: str = "base"
     speech_recognition_timeout: int = 1000
-    # B站上传配置 (已移除 bilitool 相关功能)
+    # Bilibili upload configuration (bilitool-related features removed)
     # bilibili_auto_upload: bool = False
-    # bilibili_default_tid: int = 21  # 默认分区：日常
+    # bilibili_default_tid: int = 21  # Default partition: daily
     # bilibili_max_concurrent_uploads: int = 3
     # bilibili_upload_timeout_minutes: int = 30
     # bilibili_auto_generate_tags: bool = True
@@ -167,18 +167,18 @@ class Settings(BaseModel):
     @validator('min_score_threshold')
     def validate_score_threshold(cls, v):
         if not 0 <= v <= 1:
-            raise ValueError('评分阈值必须在0-1之间')
+            raise ValueError('Score threshold must be between 0 and 1')
         return v
     
     @validator('chunk_size')
     def validate_chunk_size(cls, v):
         if v <= 0:
-            raise ValueError('分块大小必须大于0')
+            raise ValueError('Chunk size must be greater than 0')
         return v
 
 @dataclass
 class APIConfig:
-    """API配置"""
+    """API configuration"""
     provider: str = "kiro"
     model_name: str = DEFAULT_KIRO_MODEL
     api_key: Optional[str] = None
@@ -187,7 +187,7 @@ class APIConfig:
 
 @dataclass
 class ProcessingConfig:
-    """处理配置"""
+    """Processing configuration"""
     chunk_size: int = 5000
     min_score_threshold: float = 0.7
     max_clips_per_collection: int = 5
@@ -196,9 +196,9 @@ class ProcessingConfig:
 
 # @dataclass
 # class BilibiliConfig:
-#     """B站上传配置 (已移除 bilitool 相关功能)"""
+#     """Bilibili upload configuration (bilitool-related features removed)"""
 #     auto_upload: bool = False
-#     default_tid: int = 21  # 默认分区：日常
+#     default_tid: int = 21  # Default partition: daily
 #     max_concurrent_uploads: int = 3
 #     upload_timeout_minutes: int = 30
 #     auto_generate_tags: bool = True
@@ -206,7 +206,7 @@ class ProcessingConfig:
 
 @dataclass
 class PathConfig:
-    """路径配置"""
+    """Path configuration"""
     project_root: Path = field(default_factory=lambda: PROJECT_ROOT)
     data_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "data")
     uploads_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "uploads")
@@ -215,7 +215,7 @@ class PathConfig:
     temp_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "temp")
 
 class ConfigManager:
-    """配置管理器"""
+    """Configuration manager"""
     
     def __init__(self):
         self.settings = Settings()
@@ -223,12 +223,12 @@ class ConfigManager:
         self._setup_prompt_files()
     
     def _load_settings(self):
-        """加载设置"""
-        # 从环境变量加载
+        """Load settings"""
+        # Load from environment variables
         if os.getenv("DASHSCOPE_API_KEY"):
             self.settings.dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
         
-        # 从配置文件加载
+        # Load from configuration file
         config_file = PROJECT_ROOT / "data" / "settings.json"
         if config_file.exists():
             try:
@@ -238,22 +238,22 @@ class ConfigManager:
                         if hasattr(self.settings, key):
                             setattr(self.settings, key, value)
             except Exception as e:
-                print(f"加载配置文件失败: {e}")
+                print(f"Failed to load configuration file: {e}")
     
     def _setup_prompt_files(self):
-        """设置提示词文件"""
+        """Set up prompt files"""
         self.prompt_files = PROMPT_FILES.copy()
         
-        # 确保提示词目录存在
+        # Ensure prompt directory exists
         PROMPT_DIR.mkdir(exist_ok=True)
         
-        # 创建默认提示词文件
+        # Create default prompt files
         default_prompts = {
-            "大纲.txt": "请分析以下视频内容，提取主要话题和结构：\n\n{content}",
-            "时间点.txt": "请为以下话题定位具体的时间区间：\n\n{content}",
-            "推荐理由.txt": "请评估以下内容的质量和推荐度：\n\n{content}",
-            "标题生成.txt": "请为以下内容生成吸引人的标题：\n\n{content}",
-            "主题聚类.txt": "请将以下话题按主题进行聚合：\n\n{content}"
+            "outline.txt": "Please analyze the following video content and extract main topics and structure:\n\n{content}",
+            "timestamps.txt": "Please locate specific time intervals for the following topics:\n\n{content}",
+            "recommendation.txt": "Please evaluate the quality and recommendability of the following content:\n\n{content}",
+            "title_generation.txt": "Please generate an attractive title for the following content:\n\n{content}",
+            "topic_clustering.txt": "Please cluster the following topics by theme:\n\n{content}"
         }
         
         for filename, content in default_prompts.items():
@@ -263,10 +263,10 @@ class ConfigManager:
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(content)
                 except Exception as e:
-                    print(f"创建提示词文件失败 {filename}: {e}")
+                    print(f"Failed to create prompt file {filename}: {e}")
     
     def get_api_config(self) -> APIConfig:
-        """获取API配置"""
+        """Get API configuration"""
         if self.settings.llm_provider == "kiro":
             return APIConfig(
                 provider="kiro",
@@ -282,7 +282,7 @@ class ConfigManager:
         )
     
     def get_processing_config(self) -> ProcessingConfig:
-        """获取处理配置"""
+        """Get processing configuration"""
         return ProcessingConfig(
             chunk_size=self.settings.chunk_size,
             min_score_threshold=self.settings.min_score_threshold,
@@ -292,11 +292,11 @@ class ConfigManager:
         )
     
     def get_path_config(self) -> PathConfig:
-        """获取路径配置"""
+        """Get path configuration"""
         return PathConfig()
     
     # def get_bilibili_config(self) -> BilibiliConfig:
-    #     """获取B站上传配置 (已移除 bilitool 相关功能)"""
+    #     """Get Bilibili upload configuration (bilitool-related features removed)"""
     #     return BilibiliConfig(
     #         auto_upload=self.settings.bilibili_auto_upload,
     #         default_tid=self.settings.bilibili_default_tid,
@@ -307,7 +307,7 @@ class ConfigManager:
     #     )
     
     def ensure_project_directories(self, project_id: str):
-        """确保项目目录结构存在"""
+        """Ensure project directory structure exists"""
         paths = self.get_project_paths(project_id)
         
         for path in paths.values():
@@ -315,14 +315,14 @@ class ConfigManager:
                 path.mkdir(parents=True, exist_ok=True)
     
     def get_project_paths(self, project_id: str) -> Dict[str, Path]:
-        """获取项目路径配置"""
+        """Get project path configuration"""
         data_dir = self.get_path_config().data_dir
         projects_dir = data_dir / "projects"
         project_base = projects_dir / project_id
         
         return {
             "project_base": project_base,
-            "input_dir": project_base / "raw",  # 修改为raw目录
+            "input_dir": project_base / "raw",  # Changed to raw directory
             "output_dir": project_base / "output",
             "clips_dir": project_base / "output" / "clips",
             "collections_dir": project_base / "output" / "collections",
@@ -332,15 +332,15 @@ class ConfigManager:
         }
     
     def update_api_key(self, api_key: str):
-        """更新API密钥"""
+        """Update API key"""
         self.settings.dashscope_api_key = api_key
         os.environ["DASHSCOPE_API_KEY"] = api_key
         
-        # 保存到配置文件
+        # Save to configuration file
         self._save_settings()
     
     def update_settings(self, **kwargs):
-        """更新设置"""
+        """Update settings"""
         for key, value in kwargs.items():
             if hasattr(self.settings, key):
                 setattr(self.settings, key, value)
@@ -348,7 +348,7 @@ class ConfigManager:
         self._save_settings()
     
     def _save_settings(self):
-        """保存设置到文件"""
+        """Save settings to file"""
         config_file = PROJECT_ROOT / "data" / "settings.json"
         config_file.parent.mkdir(exist_ok=True)
         
@@ -356,10 +356,10 @@ class ConfigManager:
             with open(config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.settings.dict(), f, ensure_ascii=False, indent=2)
         except Exception as e:
-            print(f"保存配置文件失败: {e}")
+            print(f"Failed to save configuration file: {e}")
     
     def export_config(self) -> Dict[str, Any]:
-        """导出配置"""
+        """Export configuration"""
         return {
             "api_config": {
                 "model_name": self.settings.model_name,
@@ -379,7 +379,7 @@ class ConfigManager:
             #     "upload_timeout_minutes": self.settings.bilibili_upload_timeout_minutes,
             #     "auto_generate_tags": self.settings.bilibili_auto_generate_tags,
             #     "tag_limit": self.settings.bilibili_tag_limit
-            # },  # 已移除 bilitool 相关功能
+            # },  # bilitool-related features removed
             "paths": {
                 "project_root": str(self.get_path_config().project_root),
                 "data_dir": str(self.get_path_config().data_dir),
@@ -390,11 +390,11 @@ class ConfigManager:
         }
 
 PROMPT_KEY_FILENAMES_ZH = {
-    "outline": "大纲.txt",
-    "timeline": "时间点.txt",
-    "recommendation": "推荐理由.txt",
-    "title": "标题生成.txt",
-    "clustering": "主题聚类.txt",
+    "outline": "outline.txt",
+    "timeline": "timestamps.txt",
+    "recommendation": "recommendation.txt",
+    "title": "title_generation.txt",
+    "clustering": "topic_clustering.txt",
     "collection_title": "collection_title.txt",
 }
 
@@ -447,11 +447,11 @@ def get_prompt_files(video_category: str = VideoCategory.DEFAULT) -> Dict[str, P
 
     return resolved
 
-# 创建全局配置管理器实例
+# Create global configuration manager instance
 config_manager = ConfigManager()
 
 def get_legacy_config() -> Dict[str, Any]:
-    """获取向后兼容的配置"""
+    """Get backward-compatible configuration"""
     return {
         'PROJECT_ROOT': PROJECT_ROOT,
         'INPUT_DIR': INPUT_DIR,

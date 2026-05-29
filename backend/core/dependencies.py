@@ -1,6 +1,6 @@
 """
-依赖注入配置
-提供FastAPI的依赖注入服务
+Dependency injection configuration
+Provides FastAPI dependency injection services
 """
 
 from typing import Generator
@@ -30,4 +30,4 @@ def get_collection_service(db: Session) -> CollectionService:
 
 def get_task_service(db: Session) -> TaskService:
     """Get task service with database dependency."""
-    return TaskService(db) 
+    return TaskService(db)

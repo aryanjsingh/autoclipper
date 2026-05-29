@@ -1,47 +1,47 @@
-# 存储架构优化报告
+# Storage architecture optimization report
 
-## 当前状态分析
+## Current status analysis
 
-### 数据库统计
-- 项目数量: 0
-- 切片数量: 0
-- 合集数量: 0
+### Database statistics
+- Number of items: 0
+- Number of slices: 0
+- Number of collections: 0
 
-### 文件系统统计
-- 项目目录数量: 0
-- 总文件大小: 0.00 MB
+### File system statistics
+- Number of project directories: 0
+- Total file size: 0.00 MB
 
-## 优化建议
+## Optimization suggestions
 
-### 1. 存储空间优化
-- 移除数据库中的冗余数据
-- 只保留文件路径引用
-- 预计节省空间: 0.00 MB
+### 1. Storage space optimization
+- Remove redundant data from database
+- Keep only file path references
+- Estimated space savings: 0.00 MB
 
-### 2. 性能优化
-- 减少数据同步开销
-- 优化文件访问路径
-- 添加缓存机制
+### 2. Performance optimization
+- Reduce data synchronization overhead
+- Optimize file access paths
+- Add caching mechanism
 
-### 3. 维护性优化
-- 简化数据管理逻辑
-- 统一存储接口
-- 改进错误处理
+### 3. Maintenance optimization
+- Simplify data management logic
+- Unified storage interface
+- Improve error handling
 
-## 实施步骤
+## Implementation steps
 
-1. ✅ 分析当前存储使用情况
-2. ✅ 创建优化的文件结构
-3. ✅ 优化数据库模式
-4. ✅ 创建统一存储服务
-5. ✅ 创建数据迁移脚本
-6. ⏳ 执行数据迁移
-7. ⏳ 测试新架构
-8. ⏳ 清理旧数据
+1. ✅ Analyze current storage usage
+2. ✅ Create optimized file structure
+3. ✅ Optimize database schema
+4. ✅ Create a unified storage service
+5. ✅ Create data migration script
+6. ⏳ Perform data migration
+7. ⏳ Test new architecture
+8. ⏳ Clean old data
 
-## 注意事项
+## Things to note
 
-- 迁移前请备份所有数据
-- 测试新架构的完整性
-- 验证文件路径的正确性
-- 确保API接口的兼容性
+- Please back up all data before migrating
+- Test the integrity of the new architecture
+- Verify the correctness of the file path
+- Ensure API interface compatibility

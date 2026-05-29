@@ -1,93 +1,55 @@
-# 可选SRT文件上传功能指南
-
-## 概述
-
-AutoClip现在支持两种上传方式：
-1. **视频 + 字幕文件**：用户同时上传视频和SRT字幕文件
-2. **仅视频文件**：用户只上传视频文件，系统自动使用语音识别生成字幕
-
-## 功能特性
-
-### ✅ 智能上传模式
-- **用户优先**：如果用户提供了字幕文件，优先使用用户的字幕
-- **AI辅助**：如果用户只上传视频，自动调用语音识别生成字幕
-- **错误处理**：语音识别失败时，清晰地向用户报告错误信息
-
-### ✅ 多语言支持
-- 支持15种语言的语音识别
-- 根据视频分类智能选择识别语言：
-  - 商业/知识类：优先使用中文识别
-  - 娱乐类：自动检测语言
-  - 其他：自动检测语言
-
-### ✅ 多种语音识别方式
-- 本地Whisper（推荐）
-- OpenAI API
+# Optional SRT file upload feature guide
+## Overview
+AutoClip now supports two upload methods:1. **Video + Subtitle File**: User uploads video and SRT subtitle file at the same time2. **Video files only**: Users only upload video files, and the system automatically uses speech recognition to generate subtitles.
+## Features
+### ✅ Smart upload mode- **User priority**: If the user provides subtitle files, the user's subtitles will be used first- **AI Assisted**: If the user only uploads videos, speech recognition is automatically called to generate subtitles.- **Error handling**: When speech recognition fails, clearly report error information to the user
+### ✅Multi-language support- Supports speech recognition in 15 languages- Intelligent selection of recognition language based on video classification:  - Business/Knowledge Category: Priority is given to Chinese recognition  - Entertainment: Automatically detect language  - Others: Automatically detect language
+### ✅ Multiple voice recognition methods- Local Whisper (recommended)- OpenAI API
 - Azure Speech Services
 - Google Speech-to-Text
-- 阿里云语音识别
-
-## 使用方法
-
-### 前端界面变化
-
-1. **上传提示更新**
-   - 原文：必须同时导入字幕文件(.srt)
-   - 新文：可选择导入字幕文件(.srt)或使用AI自动生成
-
-2. **智能提示**
-   - 上传视频+字幕：显示两个文件
-   - 仅上传视频：显示"将使用AI语音识别自动生成字幕文件"
-
-3. **上传按钮逻辑**
-   - 原来：需要视频+字幕+项目名称
-   - 现在：只需要视频+项目名称
-
-### API接口变化
-
-#### 上传接口 `POST /api/v1/projects/upload`
-
-**参数变化：**
-```python
-# 之前：srt_file是必需的
+- Alibaba Cloud Speech Recognition
+## How to use
+### Front-end interface changes
+1. **Upload Tips Update**   - Original text: Subtitle files (.srt) must be imported at the same time   - New text: You can choose to import subtitle files (.srt) or use AI to automatically generate them
+2. **Smart Tips**   - Upload video + subtitles: display two files   - Only upload videos: Display "Subtitle files will be automatically generated using AI speech recognition"
+3. **Upload button logic**   - Original: Need video + subtitles + project name   - Now: Just need video + project name
+### API interface changes
+#### Upload interface `POST /api/v1/projects/upload`
+**Parameter changes:**```python
+# Before: srt_file was required
 srt_file: UploadFile = File(...)
 
-# 现在：srt_file是可选的
+# Now: srt_file is optional
 srt_file: Optional[UploadFile] = File(None)
 ```
 
-**请求示例：**
-
-1. **同时上传视频和字幕**
-```python
+**Request Example:**
+1. **Upload video and subtitles at the same time**```python
 files = {
     'video_file': ('video.mp4', video_content, 'video/mp4'),
     'srt_file': ('subtitle.srt', srt_content, 'application/x-subrip')
 }
 data = {
-    'project_name': '我的项目',
+    'project_name': 'My Project',
     'video_category': 'knowledge'
 }
 ```
 
-2. **仅上传视频**
-```python
+2. **Only upload videos**```python
 files = {
     'video_file': ('video.mp4', video_content, 'video/mp4')
 }
 data = {
-    'project_name': '我的项目',
+    'project_name': 'My project',
     'video_category': 'knowledge'
 }
 ```
 
-**响应示例：**
-
-成功响应保持不变，但项目描述会反映处理方式：
-```json
+**Response example:**
+The successful response remains the same, but the item description reflects the handling:```json
 {
     "id": "project-id",
-    "name": "我的项目",
+    "name": "My Project",
     "description": "Video: video.mp4 (Will generate subtitle using speech recognition)",
     "settings": {
         "auto_generate_subtitle": true,
@@ -96,94 +58,79 @@ data = {
 }
 ```
 
-**错误处理：**
-
-语音识别失败时返回400错误：
-```json
+**Error handling:**
+A 400 error is returned when speech recognition fails:```json
 {
-    "detail": "语音识别失败: 没有可用的语音识别服务，请安装whisper或配置API密钥。请手动上传字幕文件或检查语音识别服务配置。"
+    "detail": "Speech recognition failed: No speech recognition service is available, please install whisper or configure API key. Please upload subtitle files manually or check the speech recognition service configuration."
 }
 ```
 
-## 技术实现
-
-### 后端实现
-
-1. **参数验证**
-   ```python
-   # 视频文件验证（必需）
+## Technical implementation
+### Backend implementation
+1. **Parameter verification**   ```python
+   # Video file validation (required)
    if not video_file.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
        raise HTTPException(status_code=400, detail="Invalid video file format")
    
-   # 字幕文件验证（可选）
+   # Subtitle file validation (optional)
    if srt_file and not srt_file.filename.lower().endswith('.srt'):
        raise HTTPException(status_code=400, detail="Invalid subtitle file format")
    ```
 
-2. **字幕处理逻辑**
-   ```python
+2. **Subtitle processing logic**   ```python
    if srt_file:
-       # 保存用户提供的字幕文件
+       # Save user-supplied subtitles file
        srt_path = save_user_subtitle(srt_file)
    else:
-       # 使用语音识别生成字幕
+       # Generate subtitles using speech recognition
        srt_path = generate_subtitle_with_speech_recognition(video_path, language, model)
    ```
 
-3. **语言选择策略**
-   ```python
-   # 根据视频分类确定语言
-   language = "auto"  # 默认自动检测
+3. **Language Selection Strategy**   ```python
+   # Determine language based on video category
+   language = "auto"  # Default: auto-detect
    if video_category in ["business", "knowledge"]:
-       language = "zh"  # 中文内容
+       language = "zh"  # Chinese content
    elif video_category == "entertainment":
-       language = "auto"  # 娱乐内容可能是多语言
+       language = "auto"  # Entertainment content may be multilingual
    ```
 
-### 前端实现
-
-1. **上传逻辑修改**
-   ```typescript
-   // 移除字幕文件必需验证
+### Front-end implementation
+1. **Upload logic modification**   ```typescript
+   // Removing subtitle files requires verification
    if (!files.video) {
-       message.error('请选择视频文件')
+       message.error('Please select a video file')
        return
    }
-   // if (!files.srt) {  // 移除这个检查
-   //     message.error('请同时导入字幕文件(.srt)')
+   // if (!files.srt) { // Remove this check
+   // message.error('Please import the subtitle file (.srt) at the same time')
    //     return
    // }
    ```
 
-2. **UI提示更新**
-   ```typescript
-   // 智能提示
+2. **UI prompt update**   ```typescript
+   // Smart prompt
    {files.video && !files.srt && (
-       <div>将使用AI语音识别自动生成字幕文件</div>
+       <div>Subtitle files will be automatically generated using AI speech recognition</div>
    )}
    ```
 
-3. **API调用修改**
-   ```typescript
+3. **API call modification**   ```typescript
    const formData = new FormData()
    formData.append('video_file', data.video_file)
-   if (data.srt_file) {  // 只在有字幕文件时才添加
+   if (data.srt_file) { // Only add if there is a subtitle file
        formData.append('srt_file', data.srt_file)
    }
    ```
 
-## 配置要求
-
-### 语音识别服务配置
-
-为了使用自动语音识别功能，需要配置至少一种语音识别服务：
-
-#### 1. 本地Whisper（推荐）
-```bash
-# 安装Whisper
+## Configuration requirements
+### Speech recognition service configuration
+In order to use automatic speech recognition, at least one speech recognition service needs to be configured:
+#### 1. Local Whisper (recommended)```bash
+# Install Whisper
 pip install openai-whisper
 
-# 安装FFmpeg
+# Install FFmpeg
 # macOS
 brew install ffmpeg
 # Ubuntu/Debian
@@ -206,22 +153,19 @@ export AZURE_SPEECH_REGION="your-region"
 export GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"
 ```
 
-#### 5. 阿里云语音识别
-```bash
+#### 5. Alibaba Cloud Speech Recognition```bash
 export ALIYUN_ACCESS_KEY_ID="your-access-key"
 export ALIYUN_ACCESS_KEY_SECRET="your-secret-key"
 export ALIYUN_SPEECH_APP_KEY="your-app-key"
 ```
 
-### 检查配置状态
-
-可以通过新的API端点检查语音识别服务状态：
-
+### Check configuration status
+Speech recognition service status can be checked via the new API endpoint:
 ```bash
-# 检查可用的语音识别方法
+# Check available speech recognition methods
 GET /api/v1/speech-recognition/status
 
-# 响应示例
+# Response example
 {
     "available_methods": {
         "whisper_local": true,
@@ -241,74 +185,34 @@ GET /api/v1/speech-recognition/status
 }
 ```
 
-## 最佳实践
-
-### 1. 用户体验优化
-- **清晰提示**：明确告知用户字幕文件是可选的
-- **处理时间**：告知用户语音识别可能需要较长时间
-- **错误恢复**：提供手动上传字幕的替代方案
-
-### 2. 性能考虑
-- **模型选择**：默认使用`base`模型平衡速度和准确性
-- **语言优化**：根据内容类型选择合适的识别语言
-- **超时设置**：合理设置语音识别超时时间（默认5分钟）
-
-### 3. 错误处理
-- **服务检查**：启动时检查语音识别服务可用性
-- **降级策略**：优先级顺序尝试不同的语音识别服务
-- **用户友好**：提供清晰的错误信息和解决建议
-
-## 故障排除
-
-### 常见问题
-
-1. **"没有可用的语音识别服务"**
-   - 检查是否安装了Whisper：`which whisper`
-   - 检查是否配置了API密钥
-   - 查看服务状态：`GET /api/v1/speech-recognition/status`
-
-2. **"语音识别超时"**
-   - 检查视频文件大小（建议<100MB）
-   - 增加超时设置
-   - 尝试使用更快的模型（tiny/base）
-
-3. **"字幕文件不存在"**
-   - 检查Whisper是否正确安装
-   - 查看后端日志了解详细错误
-   - 尝试手动运行Whisper命令测试
-
-### 调试步骤
-
-1. **检查服务状态**
-   ```bash
+## best practices
+### 1. User experience optimization- **Clear Notice**: Clearly inform users that subtitle files are optional- **Processing Time**: Inform users that speech recognition may take a long time- **Error Recovery**: Provides an alternative to manually uploading subtitles
+### 2. Performance considerations
+- **Model Selection**: Use the `base` model by default to balance speed and accuracy- **Language Optimization**: Choose the appropriate recognition language according to the content type- **Timeout Setting**: Set the voice recognition timeout reasonably (default 5 minutes)
+### 3. Error handling- **Service Check**: Checks speech recognition service availability on startup- **Downgrade Strategy**: Try different speech recognition services in order of priority- **User Friendly**: Provides clear error messages and solution suggestions
+## troubleshooting
+### FAQ
+1. **"No speech recognition service available"**   - Check if Whisper is installed: `which whisper`   - Check if API key is configured   - View service status: `GET /api/v1/speech-recognition/status`
+2. **"Speech recognition timeout"**   - Check video file size (<100MB recommended)   - Increase timeout settings   - Try using a faster model (tiny/base)
+3. **"Subtitle file does not exist"**   - Check whether Whisper is installed correctly   - Check the backend logs for detailed errors   - Try running the Whisper command test manually
+### Debugging steps
+1. **Check service status**   ```bash
    curl http://localhost:8000/api/v1/speech-recognition/status
    ```
 
-2. **查看后端日志**
-   ```bash
+2. **View backend logs**   ```bash
    tail -f backend/backend.log
    ```
 
-3. **测试Whisper安装**
-   ```bash
+3. **Test Whisper installation**   ```bash
    whisper --help
    ffmpeg -version
    ```
 
-## 更新日志
-
+## Change log
 ### v1.0.0
-- ✅ 支持可选SRT文件上传
-- ✅ 集成多种语音识别服务
-- ✅ 智能语言选择
-- ✅ 完善的错误处理
-- ✅ 用户友好的界面提示
-
+- ✅Supports optional SRT file upload- ✅ Integrate multiple speech recognition services- ✅ Smart language selection- ✅ Perfect error handling- ✅ User-friendly interface tips
 ---
 
-## 相关文档
-
-- [语音识别重新设计文档](./SPEECH_RECOGNITION_REDESIGN.md)
-- [语音识别设置指南](./SPEECH_RECOGNITION_SETUP.md)
-- [后端架构文档](./BACKEND_ARCHITECTURE.md)
-
+## Related documents
+- [Speech Recognition Redesign Document](./SPEECH_RECOGNITION_REDESIGN.md)- [Speech Recognition Setup Guide](./SPEECH_RECOGNITION_SETUP.md)- [Backend Architecture Document](./BACKEND_ARCHITECTURE.md)

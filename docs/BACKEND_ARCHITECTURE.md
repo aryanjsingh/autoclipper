@@ -1,165 +1,165 @@
-# 🏗️ 后端架构设计文档
+# 🏗️ Backend architecture design document
 
-## 📋 概述
+## 📋 Overview
 
-自动切片工具后端采用模块化设计，支持多项目并行处理，具备完善的错误处理、配置管理和安全机制。
+The backend of the automatic clipping tool uses a modular design, supports parallel processing of multiple projects, and includes complete error handling, configuration management, and security mechanisms.
 
-## 🏛️ 架构层次
+## 🏛️ Architecture layers
 
-### 1. 配置管理层 (Configuration Layer)
+### 1. Configuration layer
 
 ```
 src/config.py
-├── ConfigManager          # 统一配置管理器
-├── Settings              # 应用设置类
-├── APIConfig             # API配置
-├── ProcessingConfig      # 处理参数配置
-└── PathConfig           # 路径配置
+├── ConfigManager          # Unified configuration manager
+├── Settings               # Application settings class
+├── APIConfig              # API configuration
+├── ProcessingConfig       # Processing parameter configuration
+└── PathConfig             # Path configuration
 ```
 
-**功能特性:**
-- 环境变量支持
-- 配置验证
-- 向后兼容
-- 多项目配置
+**Features:**
+- Environment variable support
+- Configuration validation
+- Backwards compatibility
+- Multi-project configuration
 
-### 2. 错误处理层 (Error Handling Layer)
+### 2. Error handling layer
 
 ```
 src/utils/error_handler.py
-├── AutoClipsException    # 基础异常类
-├── 特定异常类            # APIError, NetworkError等
-├── ErrorHandler         # 错误处理器
-├── CircuitBreaker       # 熔断器
-└── RetryConfig          # 重试配置
+├── AutoClipsException     # Base exception class
+├── Specific exceptions    # APIError, NetworkError, etc.
+├── ErrorHandler           # Error handler
+├── CircuitBreaker         # Circuit breaker
+└── RetryConfig            # Retry configuration
 ```
 
-**功能特性:**
-- 分层错误处理
-- 自动重试机制
-- 熔断器模式
-- 错误上下文管理
+**Features:**
+- Layered error handling
+- Automatic retry mechanism
+- Circuit breaker pattern
+- Error context management
 
-### 3. 安全管理层 (Security Layer)
+### 3. Security layer
 
 ```
 src/utils/api_key_manager.py
-├── APIKeyManager        # API密钥管理器
-├── 加密存储             # Fernet加密
-├── 密钥轮换             # 密钥更新
-└── 使用统计             # 使用情况监控
+├── APIKeyManager          # API key manager
+├── Encrypted storage      # Fernet encryption
+├── Key rotation           # Key updates
+└── Usage statistics       # Usage monitoring
 ```
 
-**功能特性:**
-- 加密存储API密钥
-- 密钥格式验证
-- 自动过期管理
-- 使用统计跟踪
+**Features:**
+- Encrypted storage of API keys
+- Key format validation
+- Automatic expiration management
+- Usage statistics tracking
 
-### 4. 处理流水线层 (Pipeline Layer)
+### 4. Processing pipeline layer
 
 ```
 src/pipeline/
-├── step1_outline.py     # 大纲提取
-├── step2_timeline.py    # 时间定位
-├── step3_scoring.py     # 内容评分
-├── step4_title.py       # 标题生成
-├── step5_clustering.py  # 主题聚类
-└── step6_cutting.py     # 视频切割
+├── step1_outline.py       # Outline extraction
+├── step2_timeline.py      # Timeline localization
+├── step3_scoring.py       # Content scoring
+├── step4_title.py         # Title generation
+├── step5_clustering.py    # Topic clustering
+└── step6_cutting.py       # Video cutting
 ```
 
-**功能特性:**
-- 模块化设计
-- 独立处理步骤
-- 中间结果缓存
-- 错误恢复机制
+**Features:**
+- Modular design
+- Independent processing steps
+- Intermediate result caching
+- Error recovery mechanism
 
-### 5. 工具层 (Utilities Layer)
+### 5. Utilities layer
 
 ```
 src/utils/
-├── llm_client.py        # LLM客户端
-├── text_processor.py    # 文本处理
-├── video_processor.py   # 视频处理
-└── file_manager.py      # 文件管理
+├── llm_client.py          # LLM client
+├── text_processor.py      # Text processing
+├── video_processor.py     # Video processing
+└── file_manager.py        # File management
 ```
 
-**功能特性:**
-- 统一的LLM调用接口
-- 文本分块和合并
-- 视频处理封装
-- 文件操作抽象
+**Features:**
+- Unified LLM calling interface
+- Text chunking and merging
+- Video processing wrapper
+- File operation abstraction
 
-## 🔄 数据流
+## 🔄 Data flow
 
-### 处理流程
-
-```
-输入文件 → 配置验证 → 分块处理 → LLM调用 → 结果解析 → 文件生成 → 输出
-    ↓         ↓         ↓         ↓         ↓         ↓         ↓
-  验证器    配置管理   文本处理   API管理   错误处理   文件管理   元数据
-```
-
-### 错误处理流程
+### Processing flow
 
 ```
-异常发生 → 异常分类 → 错误处理 → 重试/熔断 → 日志记录 → 用户反馈
-    ↓         ↓         ↓         ↓         ↓         ↓
-  捕获器    分类器    处理器    恢复器    记录器    反馈器
+Input file → Config validation → Chunking → LLM call → Result parse → File write → Output
+     ↓            ↓                 ↓           ↓            ↓            ↓          ↓
+ Validator    Config mgr        Text proc    API mgr     Error handler  File mgr   Metadata
 ```
 
-## 🛡️ 安全设计
+### Error handling flow
 
-### 1. API密钥管理
+```
+Exception → Classification → Handling → Retry/circuit break → Logging → User feedback
+    ↓            ↓              ↓              ↓                 ↓            ↓
+ Capturer    Classifier      Handler        Recovery          Logger       Feedback
+```
 
-- **加密存储**: 使用Fernet对称加密
-- **密钥轮换**: 支持密钥更新和轮换
-- **访问控制**: 基于角色的密钥访问
-- **使用监控**: 密钥使用统计和审计
+## 🛡️ Security design
 
-### 2. 输入验证
+### 1. API key management
 
-- **文件类型验证**: 限制上传文件类型
-- **大小限制**: 防止大文件攻击
-- **内容验证**: 验证文件内容完整性
-- **路径安全**: 防止路径遍历攻击
+- **Encrypted storage**: Fernet symmetric encryption
+- **Key rotation**: Supports key update and rotation
+- **Access control**: Role-based key access
+- **Usage monitoring**: Key usage statistics and auditing
 
-### 3. 错误信息处理
+### 2. Input validation
 
-- **敏感信息过滤**: 不暴露内部错误详情
-- **错误分类**: 区分用户错误和系统错误
-- **日志脱敏**: 日志中不记录敏感信息
+- **File type validation**: Restrict uploaded file types
+- **Size limits**: Prevent large-file attacks
+- **Content verification**: Verify file content integrity
+- **Path security**: Prevent path traversal attacks
 
-## 📊 性能优化
+### 3. Error message handling
 
-### 1. 并发处理
+- **Sensitive information filtering**: Do not expose internal error details
+- **Error classification**: Distinguish user errors from system errors
+- **Log desensitization**: Do not record sensitive information in logs
 
-- **异步处理**: 使用asyncio支持并发
-- **任务队列**: 支持后台任务处理
-- **资源池**: 连接池和线程池管理
+## 📊 Performance optimization
 
-### 2. 缓存机制
+### 1. Concurrent processing
 
-- **结果缓存**: 缓存LLM调用结果
-- **配置缓存**: 缓存配置信息
-- **文件缓存**: 缓存处理中间结果
+- **Asynchronous processing**: Use asyncio for concurrency
+- **Task queue**: Background task processing
+- **Resource pools**: Connection pool and thread pool management
 
-### 3. 资源管理
+### 2. Caching
 
-- **内存优化**: 流式处理大文件
-- **磁盘优化**: 临时文件清理
-- **网络优化**: 连接复用和超时控制
+- **Result cache**: Cache LLM call results
+- **Configuration cache**: Cache configuration data
+- **File cache**: Cache intermediate processing results
 
-## 🔧 配置管理
+### 3. Resource management
 
-### 环境变量
+- **Memory optimization**: Stream large files
+- **Disk optimization**: Clean up temporary files
+- **Network optimization**: Connection reuse and timeout control
+
+## 🔧 Configuration management
+
+### Environment variables
 
 ```bash
-# 必需配置
+# Required
 DASHSCOPE_API_KEY=your_api_key_here
 AUTO_CLIPS_MASTER_PASSWORD=your_master_password
 
-# 可选配置
+# Optional
 MODEL_NAME=qwen-plus
 CHUNK_SIZE=5000
 MIN_SCORE_THRESHOLD=0.7
@@ -167,7 +167,7 @@ MAX_CLIPS_PER_COLLECTION=5
 LOG_LEVEL=INFO
 ```
 
-### 配置文件
+### Configuration file
 
 ```json
 {
@@ -189,33 +189,33 @@ LOG_LEVEL=INFO
 }
 ```
 
-## 🧪 测试策略
+## 🧪 Testing strategy
 
-### 1. 单元测试
+### 1. Unit testing
 
-- **配置测试**: 测试配置加载和验证
-- **错误处理测试**: 测试异常处理和重试
-- **API测试**: 测试LLM客户端
-- **工具测试**: 测试各种工具函数
+- **Configuration tests**: Loading and validation
+- **Error handling tests**: Exceptions and retries
+- **API tests**: LLM client
+- **Utility tests**: Helper functions
 
-### 2. 集成测试
+### 2. Integration testing
 
-- **流水线测试**: 测试完整处理流程
-- **文件处理测试**: 测试文件上传和下载
-- **API集成测试**: 测试与外部API的集成
+- **Pipeline tests**: End-to-end processing flow
+- **File processing tests**: Upload and download
+- **API integration tests**: External API integration
 
-### 3. 性能测试
+### 3. Performance testing
 
-- **负载测试**: 测试并发处理能力
-- **内存测试**: 测试内存使用情况
-- **网络测试**: 测试网络请求性能
+- **Load tests**: Concurrent processing
+- **Memory tests**: Memory usage
+- **Network tests**: Request performance
 
-## 📈 监控和日志
+## 📈 Monitoring and logging
 
-### 1. 日志系统
+### 1. Logging system
 
 ```python
-# 日志配置
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -226,83 +226,83 @@ logging.basicConfig(
 )
 ```
 
-### 2. 性能监控
+### 2. Performance monitoring
 
-- **处理时间**: 记录各步骤处理时间
-- **资源使用**: 监控CPU、内存、磁盘使用
-- **错误率**: 统计错误发生频率
-- **成功率**: 统计处理成功率
+- **Processing time**: Per-step duration
+- **Resource usage**: CPU, memory, disk
+- **Error rate**: Error frequency
+- **Success rate**: Processing success rate
 
-### 3. 健康检查
+### 3. Health checks
 
-- **服务状态**: 检查各服务是否正常
-- **依赖检查**: 检查外部依赖是否可用
-- **资源检查**: 检查系统资源是否充足
+- **Service status**: Whether each service is healthy
+- **Dependency checks**: External dependencies available
+- **Resource checks**: Sufficient system resources
 
-## 🚀 部署架构
+## 🚀 Deployment architecture
 
-### 开发环境
+### Development environment
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Streamlit     │    │   React Dev     │    │   FastAPI Dev   │
-│   (原型界面)     │    │   (开发前端)     │    │   (开发后端)     │
+│   (prototype)   │    │   (dev frontend)│    │   (dev backend) │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### 生产环境
+### Production environment
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Nginx         │    │   React Build   │    │   FastAPI       │
-│   (反向代理)     │    │   (生产前端)     │    │   (生产后端)     │
+│   (reverse proxy)│   │   (prod frontend)│   │   (prod backend)│
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
                                  │
                     ┌─────────────────┐
                     │   Redis Cache   │
-                    │   (缓存层)       │
+                    │   (cache layer) │
                     └─────────────────┘
 ```
 
-## 🔄 版本控制
+## 🔄 Version control
 
-### 语义化版本
+### Semantic versioning
 
-- **主版本号**: 不兼容的API修改
-- **次版本号**: 向下兼容的功能性新增
-- **修订号**: 向下兼容的问题修正
+- **Major**: Incompatible API changes
+- **Minor**: Backwards-compatible feature additions
+- **Patch**: Backwards-compatible bug fixes
 
-### 迁移策略
+### Migration strategy
 
-- **向后兼容**: 新版本保持对旧版本的兼容
-- **渐进迁移**: 支持渐进式功能迁移
-- **回滚机制**: 支持快速回滚到旧版本
+- **Backwards compatibility**: New versions remain compatible with older versions
+- **Progressive migration**: Gradual feature migration
+- **Rollback mechanism**: Quick rollback to older versions
 
-## 📚 最佳实践
+## 📚 Best practices
 
-### 1. 代码规范
+### 1. Code standards
 
-- **PEP 8**: 遵循Python代码规范
-- **类型注解**: 使用类型提示
-- **文档字符串**: 完整的函数和类文档
-- **错误处理**: 统一的错误处理方式
+- **PEP 8**: Follow Python coding standards
+- **Type annotations**: Use type hints
+- **Docstrings**: Complete function and class documentation
+- **Error handling**: Unified error handling approach
 
-### 2. 安全实践
+### 2. Security practices
 
-- **最小权限**: 使用最小必要权限
-- **输入验证**: 严格验证所有输入
-- **加密传输**: 敏感数据加密传输
-- **定期更新**: 定期更新依赖包
+- **Least privilege**: Use minimum necessary permissions
+- **Input validation**: Strictly validate all input
+- **Encrypted transport**: Encrypt sensitive data in transit
+- **Regular updates**: Keep dependency packages up to date
 
-### 3. 性能实践
+### 3. Performance practices
 
-- **异步处理**: 使用异步处理提高性能
-- **缓存策略**: 合理使用缓存
-- **资源清理**: 及时清理临时资源
-- **监控告警**: 设置性能监控和告警
+- **Asynchronous processing**: Improve performance with async I/O
+- **Caching strategy**: Use cache wisely
+- **Resource cleanup**: Clean up temporary resources promptly
+- **Monitoring and alerts**: Set up performance monitoring and alerts
 
 ---
 
-**注意**: 本文档会随着项目发展持续更新，请关注最新版本。
+**Note**: This document is updated as the project evolves; refer to the latest version.

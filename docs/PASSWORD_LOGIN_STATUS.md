@@ -1,67 +1,69 @@
-# 账号密码登录状态说明
+# Account and Password Login Status
 
-## 问题描述
+## Problem Description
 
-用户反馈账号密码登录失败，出现"Request failed with status code 400"错误。
+Users reported that account and password login failed with the error "Request failed with status code 400".
 
-## 问题分析
+## Problem Analysis
 
-经过排查，发现以下情况：
+After investigation, we found the following:
 
-### 1. 原始问题
-- **错误原因**：账号密码登录需要处理验证码，建议使用Cookie导入方式
-- **状态码**：400（预期行为）
-- **说明**：这是设计上的限制，不是bug
+### 1. Original Issue
+- **Cause of error**: Account and password login requires verification code handling; cookie import is recommended
+- **Status code**: 400 (expected behavior)
+- **Note**: This is a design limitation, not a bug
 
-### 2. 技术实现
-- **开发环境**：模拟登录成功，返回测试Cookie
-- **生产环境**：尝试真实B站登录，需要处理验证码
+### 2. Technical Implementation
+- **Development environment**: Simulates successful login and returns test cookies
+- **Production environment**: Attempts real Bilibili login; verification code handling required
 
-### 3. 环境变量控制
+### 3. Environment Variable Control
+
 ```bash
-# 开发环境（模拟登录成功）
+# Development environment (simulated login success)
 export ENVIRONMENT=development
 export SKIP_COOKIE_VALIDATION=true
 
-# 生产环境（真实验证）
+# Production environment (real verification)
 export ENVIRONMENT=production
 export SKIP_COOKIE_VALIDATION=false
 ```
 
-## 当前状态
+## Current Status
 
-### ✅ 已解决的问题
-1. **数据格式不匹配**：修复了API与服务的Cookie数据格式不一致问题
-2. **错误处理**：增强了异常处理和错误信息
-3. **开发支持**：提供了开发环境下的模拟登录功能
+### ✅ Resolved Issues
+1. **Data format mismatch**: Fixed inconsistent cookie data format between API and service
+2. **Error handling**: Enhanced exception handling and error messages
+3. **Development support**: Provides simulated login in development environment
 
-### ⚠️ 设计限制
-1. **验证码处理**：B站账号密码登录需要处理验证码
-2. **风控风险**：频繁的账号密码登录可能触发B站风控
-3. **复杂度**：完整的验证码流程实现复杂
+### ⚠️ Design Limitations
+1. **Verification code handling**: Bilibili account and password login requires verification code processing
+2. **Risk control risk**: Frequent account and password logins may trigger Bilibili risk control
+3. **Complexity**: Full verification code flow is complex to implement
 
-## 解决方案
+## Solutions
 
-### 方案1：使用Cookie导入（推荐）
-- **优点**：安全、稳定、不会触发风控
-- **缺点**：需要手动获取Cookie
-- **适用场景**：日常使用、批量账号管理
+### Option 1: Cookie Import (Recommended)
+- **Advantages**: Safe, stable, will not trigger risk control
+- **Disadvantages**: Requires manual cookie acquisition
+- **Applicable scenarios**: Daily use, batch account management
 
-### 方案2：完善账号密码登录
-- **优点**：用户体验好、操作直观
-- **缺点**：需要处理验证码、有风控风险
-- **适用场景**：新用户首次登录、无法获取Cookie的情况
+### Option 2: Improve Account and Password Login
+- **Advantages**: Good user experience, intuitive operation
+- **Disadvantages**: Requires verification code handling, risk control
+- **Applicable scenario**: New user first login when cookies cannot be obtained
 
-### 方案3：混合策略
-- **开发环境**：模拟登录成功，便于测试
-- **生产环境**：引导用户使用Cookie导入
+### Option 3: Hybrid Strategy
+- **Development environment**: Simulate successful login for easy testing
+- **Production environment**: Guide users to use cookie import
 
-## 技术实现
+## Technical Implementation
 
-### 开发环境行为
+### Development Environment Behavior
+
 ```python
 if is_development:
-    # 模拟登录成功，返回测试Cookie
+    # Simulate successful login, return test cookies
     mock_cookies = {
         "SESSDATA": f"mock_sessdata_{username}",
         "bili_jct": f"mock_jct_{username}",
@@ -71,82 +73,85 @@ if is_development:
     return {"success": True, "cookies": mock_cookies}
 ```
 
-### 生产环境行为
+### Production Environment Behavior
+
 ```python
 else:
-    # 尝试真实B站登录，需要处理验证码
-    # 由于验证码处理复杂，建议用户使用Cookie导入
+    # Try real Bilibili login; verification code handling required
+    # Due to verification code complexity, recommend cookie import
     return {
         "success": False,
-        "message": "账号密码登录需要处理验证码，建议使用Cookie导入方式"
+        "message": "Account and password login requires verification code handling. Cookie import is recommended."
     }
 ```
 
-## 测试结果
+## Test Results
 
-### 开发环境测试
-```
-✅ 登录成功 (200)
-用户ID: xxx
-用户名: dev_user
-昵称: 开发用户
-```
+### Development Environment Testing
 
-### 生产环境测试
 ```
-❌ 登录失败 (400)
-错误信息: 账号密码登录需要处理验证码，建议使用Cookie导入方式
+✅ Login successful (200)
+User ID: xxx
+Username: dev_user
+Nickname: Development User
 ```
 
-## 用户建议
+### Production Environment Testing
 
-### 日常使用
-1. **首选**：Cookie导入方式
-   - 最安全稳定
-   - 不会触发风控
-   - 操作简单
+```
+❌ Login failed (400)
+Error message: Account and password login requires verification code handling. Cookie import is recommended.
+```
 
-2. **备选**：账号密码登录
-   - 当Cookie失效时使用
-   - 注意验证码处理
-   - 避免频繁使用
+## User Suggestions
 
-### 获取Cookie步骤
-1. 在浏览器中登录B站
-2. 按F12打开开发者工具
-3. 切换到Network标签页
-4. 刷新页面，找到任意请求
-5. 在请求头中复制Cookie字段的值
+### Daily Use
+1. **Preferred**: Cookie import method
+   - Safest and most stable
+   - Will not trigger risk control
+   - Easy to operate
 
-## 后续优化
+2. **Alternative**: Account and password login
+   - Use when cookies expire
+   - Pay attention to verification code handling
+   - Avoid frequent use
 
-### 短期计划
-1. **验证码处理**：实现基本的验证码识别和处理
-2. **用户引导**：优化错误提示，提供更清晰的操作指导
-3. **环境检测**：改进环境变量的检测和应用
+### Steps to Get Cookies
+1. Log in to Bilibili in the browser
+2. Press F12 to open developer tools
+3. Switch to the Network tab
+4. Refresh the page and find any request
+5. Copy the value of the Cookie field in the request header
 
-### 长期计划
-1. **智能验证**：根据用户行为智能选择登录方式
-2. **风控规避**：实现更智能的登录策略
-3. **用户体验**：提供多种登录方式的统一界面
+## Follow-up Optimization
 
-## 总结
+### Short-term Plan
+1. **Verification code handling**: Implement basic verification code recognition and processing
+2. **User guidance**: Optimize error prompts and provide clearer operation guidance
+3. **Environment detection**: Improve detection and application of environment variables
 
-账号密码登录功能目前工作正常，但有以下特点：
+### Long-term Plan
+1. **Smart verification**: Intelligently select login methods based on user behavior
+2. **Risk control avoidance**: Implement smarter login strategies
+3. **User experience**: Provide a unified interface with multiple login methods
 
-### ✅ 功能状态
-- **开发环境**：模拟登录成功，便于开发和测试
-- **生产环境**：返回400错误，引导用户使用Cookie导入
-- **错误处理**：提供清晰的错误信息和解决建议
+## Summary
 
-### 🔧 技术特点
-- **环境感知**：根据环境变量自动调整行为
-- **数据兼容**：修复了Cookie数据格式问题
-- **错误友好**：提供详细的错误信息和操作指导
+The account and password login feature currently works as designed, with the following characteristics:
 
-### 💡 使用建议
-- **开发测试**：使用开发环境，享受模拟登录功能
-- **生产使用**：推荐使用Cookie导入方式
-- **问题排查**：检查环境变量设置和错误日志
+### ✅ Functional Status
+- **Development environment**: Simulates successful login for development and testing
+- **Production environment**: Returns 400 error and guides user to use cookie import
+- **Error handling**: Provides clear error messages and solution suggestions
 
-这个实现既满足了开发测试的需求，又为生产环境提供了安全的登录方式选择。
+### 🔧 Technical Features
+- **Environment awareness**: Automatically adjusts behavior based on environment variables
+- **Data compatibility**: Fixed cookie data format issue
+- **User-friendly errors**: Provides detailed error information and operation guidance
+
+### 💡 Usage Suggestions
+- **Development testing**: Use development environment and simulated login
+- **Production use**: Recommended to use cookie import method
+- **Troubleshooting**: Check environment variable settings and error logs
+
+This implementation meets development and testing needs while providing a secure login method choice for production.

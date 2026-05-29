@@ -1,128 +1,137 @@
-# 🎬 AI自动切片工具 - 技术架构改造规划
+# 🎬 AI automatic clipping tool — technical evolution roadmap
 
-## 📋 项目现状分析
+## 📋 Current state analysis
 
-### 当前架构特点
-1. **双前端架构**: Streamlit原型 + React生产界面
-2. **多后端服务**: FastAPI主服务 + 多个API文件
-3. **6步流水线**: 从大纲提取到视频切割的完整流程
-4. **多项目支持**: 独立的数据目录和配置管理
+### Architecture today
 
-### 现存关键问题
+1. **Dual frontend**: Streamlit prototype + React production UI
+2. **Multiple backend services**: FastAPI main service + several API modules
+3. **6-step pipeline**: Outline extraction through video cutting
+4. **Multi-project support**: Separate data directories and configuration per project
 
-#### 1. **架构冗余与混乱**
-- 存在多个重复的API服务文件 (`backend_server.py`, `src/api.py`, `simple_api.py`)
-- Streamlit和React双前端造成维护负担
-- 缺乏统一的服务入口和路由管理
+### Key problems
 
-#### 2. **技术债严重**
-- 依赖管理分散 (`requirements.txt`, `backend_requirements.txt`)
-- 缺乏完整的错误处理和监控机制
-- 文件结构不够清晰，模块间耦合度高
+#### 1. **Redundant and fragmented architecture**
 
-#### 3. **性能与可扩展性问题**
-- 缺乏缓存机制和数据库支持
-- 文件存储方式简单，不支持大文件处理
-- 并发处理能力有限
+- Duplicate API entry points (`backend_server.py`, `src/api.py`, `simple_api.py`)
+- Streamlit and React dual frontend increases maintenance cost
+- No unified service entry or routing
 
-#### 4. **用户体验问题**
-- 缺乏进度反馈和错误恢复机制
-- 配置管理不够友好
-- 缺乏完整的日志和监控
+#### 2. **Technical debt**
 
-## 🚀 阶段性技术演进规划
+- Split dependency management (`requirements.txt`, `backend_requirements.txt`)
+- Incomplete error handling and monitoring
+- Unclear module boundaries and high coupling
 
-### 第一阶段：架构清理与基础重构 (2-3周)
+#### 3. **Performance and scalability**
 
-#### 目标
-清理冗余代码，建立清晰的技术架构，为后续演进打下基础。
+- No caching or database layer
+- Simple file storage; limited large-file support
+- Limited concurrency
 
-#### 具体任务
+#### 4. **User experience**
 
-**1. 后端架构重构**
+- Weak progress feedback and error recovery
+- Configuration UX needs improvement
+- Incomplete logging and observability
+
+## 🚀 Phased technical evolution
+
+### Phase 1: Architecture cleanup and foundation (2–3 weeks)
+
+#### Goals
+
+Remove redundancy, establish a clear architecture, and prepare for later phases.
+
+#### Tasks
+
+**1. Backend refactor**
+
 ```
 backend/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # FastAPI应用入口
-│   ├── config.py            # 统一配置管理
-│   ├── dependencies.py      # 依赖注入
-│   └── middleware.py        # 中间件
+│   ├── main.py              # FastAPI application entry
+│   ├── config.py            # Unified configuration
+│   ├── dependencies.py      # Dependency injection
+│   └── middleware.py        # Middleware
 ├── api/
 │   ├── __init__.py
 │   ├── v1/
 │   │   ├── __init__.py
-│   │   ├── projects.py      # 项目相关API
-│   │   ├── processing.py    # 处理相关API
-│   │   ├── files.py         # 文件上传API
-│   │   └── settings.py      # 设置相关API
-│   └── deps.py              # API依赖
+│   │   ├── projects.py      # Project APIs
+│   │   ├── processing.py    # Processing APIs
+│   │   ├── files.py         # File upload APIs
+│   │   └── settings.py      # Settings APIs
+│   └── deps.py              # API dependencies
 ├── core/
 │   ├── __init__.py
-│   ├── config.py            # 核心配置
-│   ├── security.py          # 安全相关
-│   └── exceptions.py        # 异常处理
+│   ├── config.py            # Core configuration
+│   ├── security.py          # Security
+│   └── exceptions.py        # Exception handling
 ├── models/
 │   ├── __init__.py
-│   ├── project.py           # 项目模型
-│   ├── clip.py              # 切片模型
-│   └── collection.py        # 合集模型
+│   ├── project.py           # Project model
+│   ├── clip.py              # Clip model
+│   └── collection.py        # Collection model
 ├── services/
 │   ├── __init__.py
-│   ├── project_service.py   # 项目服务
-│   ├── processing_service.py # 处理服务
-│   ├── file_service.py      # 文件服务
-│   └── llm_service.py       # LLM服务
+│   ├── project_service.py   # Project service
+│   ├── processing_service.py # Processing service
+│   ├── file_service.py      # File service
+│   └── llm_service.py       # LLM service
 ├── pipeline/
 │   ├── __init__.py
-│   ├── base.py              # 流水线基类
-│   ├── steps/               # 处理步骤
-│   └── orchestrator.py      # 流水线编排
+│   ├── base.py              # Pipeline base class
+│   ├── steps/               # Processing steps
+│   └── orchestrator.py      # Pipeline orchestration
 └── utils/
     ├── __init__.py
-    ├── file_utils.py        # 文件工具
-    ├── video_utils.py       # 视频工具
-    └── text_utils.py        # 文本工具
+    ├── file_utils.py        # File utilities
+    ├── video_utils.py       # Video utilities
+    └── text_utils.py        # Text utilities
 ```
 
-**2. 前端架构优化**
+**2. Frontend optimization**
+
 ```
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── common/          # 通用组件
-│   │   ├── forms/           # 表单组件
-│   │   ├── layout/          # 布局组件
-│   │   └── features/        # 功能组件
+│   │   ├── common/          # Shared components
+│   │   ├── forms/           # Form components
+│   │   ├── layout/          # Layout components
+│   │   └── features/        # Feature components
 │   ├── hooks/
-│   │   ├── useApi.ts        # API调用钩子
-│   │   ├── useProject.ts    # 项目管理钩子
-│   │   └── useProcessing.ts # 处理状态钩子
+│   │   ├── useApi.ts        # API hook
+│   │   ├── useProject.ts    # Project hook
+│   │   └── useProcessing.ts # Processing status hook
 │   ├── services/
-│   │   ├── api.ts           # API客户端
-│   │   ├── project.ts       # 项目服务
-│   │   └── processing.ts    # 处理服务
+│   │   ├── api.ts           # API client
+│   │   ├── project.ts       # Project service
+│   │   └── processing.ts    # Processing service
 │   ├── store/
-│   │   ├── index.ts         # 状态管理入口
-│   │   ├── project.ts       # 项目状态
-│   │   └── settings.ts      # 设置状态
+│   │   ├── index.ts         # Store entry
+│   │   ├── project.ts       # Project state
+│   │   └── settings.ts      # Settings state
 │   ├── types/
-│   │   ├── api.ts           # API类型定义
-│   │   ├── project.ts       # 项目类型
-│   │   └── common.ts        # 通用类型
+│   │   ├── api.ts           # API types
+│   │   ├── project.ts       # Project types
+│   │   └── common.ts        # Shared types
 │   └── utils/
-│       ├── constants.ts     # 常量定义
-│       ├── helpers.ts       # 工具函数
-│       └── validation.ts    # 验证函数
+│       ├── constants.ts     # Constants
+│       ├── helpers.ts       # Helpers
+│       └── validation.ts    # Validation
 ```
 
-**3. 依赖管理统一**
+**3. Unified dependency management**
+
 ```toml
-# pyproject.toml - 统一Python依赖管理
+# pyproject.toml — unified Python dependencies
 [tool.poetry]
 name = "auto-clip"
 version = "1.0.0"
-description = "AI自动切片工具"
+description = "AI automatic clipping tool"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -146,16 +155,18 @@ isort = "^5.13.2"
 mypy = "^1.8.0"
 ```
 
-### 第二阶段：核心功能增强 (3-4周)
+### Phase 2: Core capability enhancements (3–4 weeks)
 
-#### 目标
-增强核心处理能力，提升用户体验和系统稳定性。
+#### Goals
 
-#### 具体任务
+Strengthen processing, improve UX, and increase stability.
 
-**1. 数据库集成**
+#### Tasks
+
+**1. Database integration**
+
 ```python
-# 使用SQLAlchemy + PostgreSQL
+# SQLAlchemy + PostgreSQL
 from sqlalchemy import create_engine, Column, String, DateTime, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -174,9 +185,10 @@ class Project(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 ```
 
-**2. 缓存系统**
+**2. Caching**
+
 ```python
-# Redis缓存集成
+# Redis cache integration
 import redis
 from functools import wraps
 
@@ -199,9 +211,10 @@ def cache_result(expire_time=3600):
     return decorator
 ```
 
-**3. 异步任务队列**
+**3. Async task queue**
+
 ```python
-# Celery任务队列
+# Celery task queue
 from celery import Celery
 from celery.utils.log import get_task_logger
 
@@ -209,11 +222,11 @@ celery_app = Celery('auto_clips', broker='redis://localhost:6379/1')
 
 @celery_app.task(bind=True)
 def process_video_pipeline(self, project_id: str, start_step: int = 1):
-    """异步处理视频流水线"""
+    """Process video pipeline asynchronously"""
     try:
         processor = AutoClipsProcessor(project_id)
         
-        # 更新任务状态
+        # Update task state
         self.update_state(
             state='PROGRESS',
             meta={'current_step': start_step, 'total_steps': 6}
@@ -229,9 +242,10 @@ def process_video_pipeline(self, project_id: str, start_step: int = 1):
         return {'status': 'FAILURE', 'error': str(e)}
 ```
 
-**4. 文件存储优化**
+**4. File storage optimization**
+
 ```python
-# 支持多种存储后端
+# Multiple storage backends
 from abc import ABC, abstractmethod
 import boto3
 from pathlib import Path
@@ -247,7 +261,7 @@ class StorageBackend(ABC):
 
 class LocalStorageBackend(StorageBackend):
     async def upload_file(self, file_path: Path, destination: str) -> str:
-        # 本地文件存储逻辑
+        # Local storage logic
         pass
 
 class S3StorageBackend(StorageBackend):
@@ -256,29 +270,29 @@ class S3StorageBackend(StorageBackend):
         self.bucket_name = bucket_name
     
     async def upload_file(self, file_path: Path, destination: str) -> str:
-        # S3上传逻辑
+        # S3 upload logic
         pass
 ```
 
-### 第三阶段：性能优化与监控 (2-3周)
+### Phase 3: Performance and observability (2–3 weeks)
 
-#### 目标
-提升系统性能，建立完善的监控和日志体系。
+#### Goals
 
-#### 具体任务
+Improve performance and establish monitoring and logging.
 
-**1. 性能监控**
+#### Tasks
+
+**1. Performance monitoring**
+
 ```python
-# Prometheus + Grafana监控
+# Prometheus + Grafana
 from prometheus_client import Counter, Histogram, Gauge
 import time
 
-# 定义监控指标
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint'])
 REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request duration')
 ACTIVE_PROCESSING = Gauge('active_processing_tasks', 'Number of active processing tasks')
 
-# 监控中间件
 @app.middleware("http")
 async def monitor_requests(request: Request, call_next):
     start_time = time.time()
@@ -292,9 +306,10 @@ async def monitor_requests(request: Request, call_next):
     return response
 ```
 
-**2. 日志系统**
+**2. Logging**
+
 ```python
-# 结构化日志
+# Structured logging
 import structlog
 from structlog.stdlib import LoggerFactory
 
@@ -319,9 +334,10 @@ structlog.configure(
 logger = structlog.get_logger()
 ```
 
-**3. 错误处理增强**
+**3. Enhanced error handling**
+
 ```python
-# 全局错误处理
+# Global error handling
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -344,16 +360,18 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 ```
 
-### 第四阶段：用户体验优化 (2-3周)
+### Phase 4: User experience (2–3 weeks)
 
-#### 目标
-优化用户界面和交互体验，提供更直观的操作流程。
+#### Goals
 
-#### 具体任务
+Improve UI/UX and streamline workflows.
 
-**1. 实时进度反馈**
+#### Tasks
+
+**1. Real-time progress**
+
 ```typescript
-// WebSocket实时通信
+// WebSocket real-time updates
 import { io, Socket } from 'socket.io-client';
 
 class ProcessingSocket {
@@ -374,14 +392,15 @@ class ProcessingSocket {
   }
   
   private updateProgress(data: ProcessingProgress) {
-    // 更新进度UI
+    // Update progress UI
   }
 }
 ```
 
-**2. 拖拽上传优化**
+**2. Drag-and-drop upload**
+
 ```typescript
-// 增强的文件上传组件
+// Enhanced file upload
 import { useDropzone } from 'react-dropzone';
 
 const FileUploadZone = () => {
@@ -398,33 +417,34 @@ const FileUploadZone = () => {
     <div {...getRootProps()} className={isDragActive ? 'drag-active' : ''}>
       <input {...getInputProps()} />
       {isDragActive ? (
-        <p>将文件拖拽到这里...</p>
+        <p>Drop files here...</p>
       ) : (
-        <p>点击或拖拽文件到此处上传</p>
+        <p>Click or drag files here to upload</p>
       )}
     </div>
   );
 };
 ```
 
-**3. 智能配置助手**
+**3. Configuration wizard**
+
 ```typescript
-// 配置向导组件
+// Configuration wizard
 const ConfigurationWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [config, setConfig] = useState({});
   
   const steps = [
     {
-      title: 'API配置',
+      title: 'API configuration',
       component: <ApiConfigStep config={config} onChange={setConfig} />
     },
     {
-      title: '处理参数',
+      title: 'Processing parameters',
       component: <ProcessingConfigStep config={config} onChange={setConfig} />
     },
     {
-      title: '存储设置',
+      title: 'Storage settings',
       component: <StorageConfigStep config={config} onChange={setConfig} />
     }
   ];
@@ -438,140 +458,157 @@ const ConfigurationWizard = () => {
 };
 ```
 
-## 🛠️ 关键技术栈选择
+## 🛠️ Technology stack
 
-### 后端技术栈
+### Backend
 
-**核心框架**
-- **FastAPI**: 高性能异步Web框架，自动API文档生成
-- **SQLAlchemy**: ORM框架，支持多种数据库
-- **Pydantic**: 数据验证和序列化
-- **Celery**: 分布式任务队列
+**Core**
 
-**数据存储**
-- **PostgreSQL**: 主数据库，支持JSON字段和复杂查询
-- **Redis**: 缓存和会话存储
-- **MinIO/S3**: 对象存储，支持大文件
+- **FastAPI**: High-performance async web framework with OpenAPI docs
+- **SQLAlchemy**: ORM for multiple databases
+- **Pydantic**: Validation and serialization
+- **Celery**: Distributed task queue
 
-**监控和日志**
-- **Prometheus**: 指标收集
-- **Grafana**: 监控面板
-- **ELK Stack**: 日志分析
+**Storage**
 
-### 前端技术栈
+- **PostgreSQL**: Primary database with JSON support
+- **Redis**: Cache and sessions
+- **MinIO/S3**: Object storage for large files
 
-**核心框架**
-- **React 18**: 用户界面框架
-- **TypeScript**: 类型安全
-- **Vite**: 构建工具
+**Observability**
 
-**状态管理**
-- **Zustand**: 轻量级状态管理
-- **React Query**: 服务端状态管理
+- **Prometheus**: Metrics
+- **Grafana**: Dashboards
+- **ELK Stack**: Log analysis
 
-**UI组件**
-- **Ant Design**: 企业级UI组件库
-- **Tailwind CSS**: 原子化CSS框架
+### Frontend
 
-**实时通信**
-- **Socket.IO**: WebSocket通信
-- **Server-Sent Events**: 单向实时数据流
+**Core**
 
-### 部署和运维
+- **React 18**: UI framework
+- **TypeScript**: Type safety
+- **Vite**: Build tool
 
-**容器化**
-- **Docker**: 应用容器化
-- **Docker Compose**: 多服务编排
+**State**
+
+- **Zustand**: Lightweight client state
+- **React Query**: Server state
+
+**UI**
+
+- **Ant Design**: Component library
+- **Tailwind CSS**: Utility-first CSS
+
+**Real-time**
+
+- **Socket.IO**: WebSocket client/server
+- **Server-Sent Events**: One-way streams
+
+### Deployment and operations
+
+**Containers**
+
+- **Docker**: Application containers
+- **Docker Compose**: Multi-service orchestration
 
 **CI/CD**
-- **GitHub Actions**: 自动化部署
-- **ArgoCD**: GitOps部署
 
-**监控**
-- **Prometheus**: 指标监控
-- **Grafana**: 可视化面板
-- **Jaeger**: 分布式追踪
+- **GitHub Actions**: Automation
+- **ArgoCD**: GitOps deployments
 
-## 📅 实施时间线
+**Monitoring**
+
+- **Prometheus**: Metrics
+- **Grafana**: Visualization
+- **Jaeger**: Distributed tracing
+
+## 📅 Timeline
 
 ```
-第1-2周: 架构清理
-├── 后端代码重构
-├── 前端代码优化
-└── 依赖管理统一
+Weeks 1–2: Architecture cleanup
+├── Backend refactor
+├── Frontend optimization
+└── Unified dependencies
 
-第3-5周: 核心功能增强
-├── 数据库集成
-├── 缓存系统
-├── 异步任务队列
-└── 文件存储优化
+Weeks 3–5: Core enhancements
+├── Database integration
+├── Caching
+├── Async task queue
+└── File storage optimization
 
-第6-7周: 性能优化与监控
-├── 性能监控
-├── 日志系统
-└── 错误处理增强
+Weeks 6–7: Performance and observability
+├── Performance monitoring
+├── Logging
+└── Error handling
 
-第8-9周: 用户体验优化
-├── 实时进度反馈
-├── 拖拽上传优化
-└── 智能配置助手
+Weeks 8–9: User experience
+├── Real-time progress
+├── Drag-and-drop upload
+└── Configuration wizard
 
-第10周: 测试与部署
-├── 集成测试
-├── 性能测试
-└── 生产部署
+Week 10: Test and deploy
+├── Integration tests
+├── Performance tests
+└── Production deployment
 ```
 
-## 🎯 预期收益
+## 🎯 Expected outcomes
 
-### 技术收益
-1. **架构清晰**: 模块化设计，易于维护和扩展
-2. **性能提升**: 缓存和异步处理提升响应速度
-3. **稳定性增强**: 完善的错误处理和监控机制
-4. **可扩展性**: 支持水平扩展和微服务架构
+### Technical
 
-### 用户体验收益
-1. **操作简化**: 直观的界面和智能配置
-2. **实时反馈**: 处理进度实时更新
-3. **错误恢复**: 智能错误处理和恢复机制
-4. **性能感知**: 快速响应和流畅交互
+1. **Clear architecture**: Modular, maintainable, extensible
+2. **Better performance**: Caching and async processing
+3. **Higher stability**: Error handling and monitoring
+4. **Scalability**: Horizontal scaling and microservices path
 
-## 📋 风险评估与应对
+### User experience
 
-### 技术风险
-1. **迁移风险**: 现有功能在重构过程中可能受到影响
-   - **应对**: 采用渐进式重构，保持向后兼容
-   
-2. **性能风险**: 新架构可能引入性能瓶颈
-   - **应对**: 建立性能基准，持续监控和优化
+1. **Simpler workflows**: Intuitive UI and guided configuration
+2. **Real-time feedback**: Live processing progress
+3. **Error recovery**: Smarter failure handling
+4. **Responsive UI**: Fast, smooth interactions
 
-3. **依赖风险**: 新依赖可能带来兼容性问题
-   - **应对**: 充分测试，制定回滚方案
+## 📋 Risk assessment
 
-### 项目风险
-1. **时间风险**: 开发周期可能超出预期
-   - **应对**: 设置里程碑检查点，及时调整计划
+### Technical risks
 
-2. **资源风险**: 开发资源可能不足
-   - **应对**: 优先实现核心功能，分阶段交付
+1. **Migration risk**: Refactor may affect existing behavior
+   - **Mitigation**: Progressive refactor; maintain backwards compatibility
 
-## 🔄 持续改进计划
+2. **Performance risk**: New architecture may introduce bottlenecks
+   - **Mitigation**: Baselines, continuous monitoring, optimization
 
-### 短期改进 (1-3个月)
-- 用户反馈收集和分析
-- 性能优化和bug修复
-- 功能完善和用户体验提升
+3. **Dependency risk**: New packages may cause compatibility issues
+   - **Mitigation**: Thorough testing; rollback plan
 
-### 中期改进 (3-6个月)
-- 新功能开发和集成
-- 架构进一步优化
-- 扩展性和稳定性提升
+### Project risks
 
-### 长期规划 (6-12个月)
-- 微服务架构迁移
-- AI能力增强
-- 商业化功能开发
+1. **Schedule risk**: Timeline may slip
+   - **Mitigation**: Milestone reviews; adjust scope
+
+2. **Resource risk**: Insufficient development capacity
+   - **Mitigation**: Prioritize core features; phased delivery
+
+## 🔄 Continuous improvement
+
+### Short term (1–3 months)
+
+- Collect and analyze user feedback
+- Performance tuning and bug fixes
+- Feature polish and UX improvements
+
+### Medium term (3–6 months)
+
+- New features and integrations
+- Further architecture optimization
+- Scalability and reliability improvements
+
+### Long term (6–12 months)
+
+- Microservices migration
+- Enhanced AI capabilities
+- Commercial feature development
 
 ---
 
-*本文档将作为项目技术演进的主要指导文件，需要根据实际开发进度和用户反馈进行定期更新和调整。* 
+*This document guides technical evolution. Update it regularly based on progress and user feedback.*

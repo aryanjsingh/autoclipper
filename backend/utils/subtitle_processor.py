@@ -9,24 +9,24 @@ from pysrt import SubRipItem, SubRipTime
 logger = logging.getLogger(__name__)
 
 class SubtitleProcessor:
-    """字幕处理器 - 支持字粒度的字幕解析和处理"""
+    """Subtitle processor - Supports word-level subtitle parsing and processing"""
     
     def __init__(self):
-        # 修复正则表达式中的无效转义序列，使用原始字符串
+        # Fix invalid escape sequences in regex, use raw string
         self.word_separators = r'[，。！？；：""''（）【】、\s]+'
     
     def parse_srt_to_word_level(self, srt_path: Path) -> List[Dict]:
         """
-        将SRT字幕解析为字粒度的数据结构
+        Parse SRT subtitles into word-level data structure
         
         Args:
-            srt_path: SRT文件路径
+            srt_path: SRT file path
             
         Returns:
-            字粒度字幕数据列表
+            List of word-level subtitle data
         """
         if not srt_path.exists():
-            logger.error(f"SRT文件不存在: {srt_path}")
+            logger.error(f"SRT file does not exist: {srt_path}")
             return []
         
         try:
@@ -37,28 +37,28 @@ class SubtitleProcessor:
                 segment_data = self._process_subtitle_segment(sub)
                 word_level_data.append(segment_data)
             
-            logger.info(f"成功解析SRT文件，共 {len(word_level_data)} 个字幕段")
+            logger.info(f"Successfully parsed SRT file, total {len(word_level_data)} subtitle segments")
             return word_level_data
             
         except Exception as e:
-            logger.error(f"解析SRT文件失败: {e}")
+            logger.error(f"Failed to parse SRT file: {e}")
             return []
     
     def _process_subtitle_segment(self, sub: SubRipItem) -> Dict:
         """
-        处理单个字幕段，将其分解为字粒度数据
+        Process a single subtitle segment, decompose it into word-level data
         
         Args:
-            sub: pysrt字幕项
+            sub: pysrt subtitle item
             
         Returns:
-            字粒度字幕数据
+            Word-level subtitle data
         """
-        # 转换时间格式
+        # Convert time format
         start_seconds = self._srt_time_to_seconds(sub.start)
         end_seconds = self._srt_time_to_seconds(sub.end)
         
-        # 分解文本为单词
+        # Split text into words
         words = self._split_text_to_words(sub.text, start_seconds, end_seconds)
         
         return {
@@ -72,33 +72,33 @@ class SubtitleProcessor:
     
     def _split_text_to_words(self, text: str, start_time: float, end_time: float) -> List[Dict]:
         """
-        将文本分解为单词，并分配时间戳
+        Split text into words and assign timestamps
         
         Args:
-            text: 字幕文本
-            start_time: 开始时间（秒）
-            end_time: 结束时间（秒）
+            text: Subtitle text
+            start_time: Start time (seconds)
+            end_time: End time (seconds)
             
         Returns:
-            单词列表，每个单词包含时间戳
+            List of words, each containing timestamps
         """
-        # 清理文本
+        # Clean text
         clean_text = text.strip()
         if not clean_text:
             return []
         
-        # 按标点符号和空格分割
+        # Split by punctuation and spaces
         word_parts = re.split(self.word_separators, clean_text)
         word_parts = [part.strip() for part in word_parts if part.strip()]
         
         if not word_parts:
             return []
         
-        # 计算每个单词的时间分配
+        # Calculate time allocation for each word
         total_duration = end_time - start_time
         words_count = len(word_parts)
         
-        # 简单的时间分配策略：平均分配
+        # Simple time allocation strategy: evenly distribute
         word_duration = total_duration / words_count
         
         words = []
@@ -117,40 +117,40 @@ class SubtitleProcessor:
     
     def _srt_time_to_seconds(self, srt_time: SubRipTime) -> float:
         """
-        将SRT时间格式转换为秒数
+        Convert SRT time format to seconds
         
         Args:
-            srt_time: pysrt时间对象
+            srt_time: pysrt time object
             
         Returns:
-            秒数
+            Seconds
         """
         return srt_time.hours * 3600 + srt_time.minutes * 60 + srt_time.seconds + srt_time.milliseconds / 1000
     
     def _seconds_to_srt_time_object(self, time_str: str) -> SubRipTime:
         """
-        将时间字符串转换为pysrt时间对象
+        Convert time string to pysrt time object
         
         Args:
-            time_str: 时间字符串 (如 "00:01:25,140")
+            time_str: Time string (e.g., "00:01:25,140")
             
         Returns:
-            pysrt时间对象
+            pysrt time object
         """
-        # 处理逗号和点的格式
+        # Handle comma and dot formats
         time_str = time_str.replace(',', '.')
         
-        # 解析时间
+        # Parse time
         time_parts = time_str.split(':')
         hours = int(time_parts[0])
         minutes = int(time_parts[1])
         
-        # 处理秒和毫秒
+        # Handle seconds and milliseconds
         seconds_part = time_parts[2]
         if '.' in seconds_part:
             seconds, milliseconds = seconds_part.split('.')
             seconds = int(seconds)
-            milliseconds = int(milliseconds.ljust(3, '0')[:3])  # 确保3位毫秒
+            milliseconds = int(milliseconds.ljust(3, '0')[:3])  # Ensure 3-digit milliseconds
         else:
             seconds = int(seconds_part)
             milliseconds = 0
@@ -160,14 +160,14 @@ class SubtitleProcessor:
     def create_edit_operations(self, deleted_segments: List[str], 
                              original_data: List[Dict]) -> List[Dict]:
         """
-        根据删除的字幕段创建编辑操作
+        Create edit operations based on deleted subtitle segments
         
         Args:
-            deleted_segments: 要删除的字幕段ID列表
-            original_data: 原始字幕数据
+            deleted_segments: List of subtitle segment IDs to delete
+            original_data: Original subtitle data
             
         Returns:
-            编辑操作列表
+            List of edit operations
         """
         operations = []
         
@@ -193,14 +193,14 @@ class SubtitleProcessor:
     def generate_edited_video_timeline(self, original_data: List[Dict], 
                                      deleted_segments: List[str]) -> List[Tuple[float, float]]:
         """
-        生成编辑后的视频时间轴
+        Generate edited video timeline
         
         Args:
-            original_data: 原始字幕数据
-            deleted_segments: 要删除的字幕段ID列表
+            original_data: Original subtitle data
+            deleted_segments: List of subtitle segment IDs to delete
             
         Returns:
-            保留片段的时间范围列表 [(start, end), ...]
+            List of retained segment time ranges [(start, end), ...]
         """
         deleted_ids = set(deleted_segments)
         timeline = []
@@ -209,14 +209,14 @@ class SubtitleProcessor:
             if segment['id'] not in deleted_ids:
                 timeline.append((segment['startTime'], segment['endTime']))
         
-        # 合并相邻的时间段
+        # Merge adjacent time segments
         if timeline:
             merged_timeline = [timeline[0]]
             for current_start, current_end in timeline[1:]:
                 last_start, last_end = merged_timeline[-1]
                 
-                # 如果当前段与上一段相邻或重叠，则合并
-                if current_start <= last_end + 0.1:  # 允许0.1秒的间隔
+                # If current segment is adjacent to or overlaps with previous segment, merge them
+                if current_start <= last_end + 0.1:  # Allow 0.1 second gap
                     merged_timeline[-1] = (last_start, max(last_end, current_end))
                 else:
                     merged_timeline.append((current_start, current_end))
@@ -229,15 +229,15 @@ class SubtitleProcessor:
                          deleted_segments: List[str], 
                          output_path: Path) -> bool:
         """
-        导出编辑后的SRT文件
+        Export edited SRT file
         
         Args:
-            original_data: 原始字幕数据
-            deleted_segments: 要删除的字幕段ID列表
-            output_path: 输出文件路径
+            original_data: Original subtitle data
+            deleted_segments: List of subtitle segment IDs to delete
+            output_path: Output file path
             
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             deleted_ids = set(deleted_segments)
@@ -247,11 +247,11 @@ class SubtitleProcessor:
                 if segment['id'] not in deleted_ids:
                     edited_segments.append(segment)
             
-            # 重新编号
+            # Renumber
             for i, segment in enumerate(edited_segments, 1):
                 segment['index'] = i
             
-            # 写入SRT文件
+            # Write SRT file
             with open(output_path, 'w', encoding='utf-8') as f:
                 for segment in edited_segments:
                     start_time = self._seconds_to_srt_time(segment['startTime'])
@@ -261,22 +261,22 @@ class SubtitleProcessor:
                     f.write(f"{start_time} --> {end_time}\n")
                     f.write(f"{segment['text']}\n\n")
             
-            logger.info(f"编辑后的SRT文件已保存: {output_path}")
+            logger.info(f"Edited SRT file saved: {output_path}")
             return True
             
         except Exception as e:
-            logger.error(f"导出编辑后的SRT文件失败: {e}")
+            logger.error(f"Failed to export edited SRT file: {e}")
             return False
     
     def _seconds_to_srt_time(self, seconds: float) -> str:
         """
-        将秒数转换为SRT时间格式
+        Convert seconds to SRT time format
         
         Args:
-            seconds: 秒数
+            seconds: Seconds
             
         Returns:
-            SRT时间格式字符串
+            SRT time format string
         """
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
@@ -287,13 +287,13 @@ class SubtitleProcessor:
     
     def get_subtitle_statistics(self, data: List[Dict]) -> Dict:
         """
-        获取字幕统计信息
+        Get subtitle statistics
         
         Args:
-            data: 字幕数据
+            data: Subtitle data
             
         Returns:
-            统计信息
+            Statistics information
         """
         if not data:
             return {

@@ -1,5 +1,5 @@
 """
-Step 1: 大纲提取 - 从转写文本中提取结构性大纲
+Step 1: Outline Extraction - Extract structural outline from transcription text
 """
 import json
 import logging
@@ -7,7 +7,7 @@ import re
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
-# 导入依赖
+# Import dependencies
 from ..utils.llm_client import LLMClient
 from ..utils.text_processor import TextProcessor
 from ..core.shared_config import PROMPT_FILES, METADATA_DIR
@@ -15,95 +15,95 @@ from ..core.shared_config import PROMPT_FILES, METADATA_DIR
 logger = logging.getLogger(__name__)
 
 class OutlineExtractor:
-    """大纲提取器（重构版）"""
+    """Outline Extractor (Refactored)"""
     
     def __init__(self, metadata_dir: Path = None, prompt_files: Dict = None):
         self.llm_client = LLMClient()
         self.text_processor = TextProcessor()
         
-        # 使用传入的metadata_dir或默认值
+        # Use passed metadata_dir or default value
         if metadata_dir is None:
             metadata_dir = METADATA_DIR
         self.metadata_dir = metadata_dir
         
-        # 使用传入的prompt_files或默认值
+        # Use passed prompt_files or default value
         if prompt_files is None:
             prompt_files = PROMPT_FILES
         
-        # 加载提示词
+        # Load prompts
         with open(prompt_files['outline'], 'r', encoding='utf-8') as f:
             self.outline_prompt = f.read()
             
-        # 创建用于存放中间文本块的目录
+        # Create directory for intermediate text chunks
         self.chunks_dir = self.metadata_dir / "step1_chunks"
         self.chunks_dir.mkdir(parents=True, exist_ok=True)
-        # 创建用于存放中间SRT块的目录
+        # Create directory for intermediate SRT chunks
         self.srt_chunks_dir = self.metadata_dir / "step1_srt_chunks"
         self.srt_chunks_dir.mkdir(parents=True, exist_ok=True)
 
     def extract_outline(self, srt_path: Path) -> List[Dict]:
         """
-        从SRT文件提取视频大纲
+        Extract video outline from SRT file
         
         Args:
-            srt_path: SRT文件路径
+            srt_path: Path to the SRT file
             
         Returns:
-            视频大纲列表
+            List of video outlines
         """
-        logger.info("开始提取视频大纲...")
+        logger.info("Starting video outline extraction...")
         
-        # 1. 解析SRT文件
+        # 1. Parse SRT file
         try:
             srt_data = self.text_processor.parse_srt(srt_path)
             if not srt_data:
-                logger.warning("SRT文件为空或解析失败")
+                logger.warning("SRT file is empty or parsing failed")
                 return []
         except Exception as e:
-            logger.error(f"解析SRT文件失败: {e}")
+            logger.error(f"Failed to parse SRT file: {e}")
             return []
             
-        # 2. 基于时间智能分块
+        # 2. Intelligent time-based chunking
         chunks = self.text_processor.chunk_srt_data(srt_data, interval_minutes=30)
-        logger.info(f"文本已按~30分钟/块切分，共{len(chunks)}个块")
+        logger.info(f"Text divided into ~30min/chunk, total {len(chunks)} chunks")
         
-        # 3. 保存文本块和SRT块到中间文件
+        # 3. Save text chunks and SRT chunks to intermediate files
         chunk_files = self._save_chunks_to_files(chunks)
         self._save_srt_chunks(chunks)
         
         all_outlines = []
         
-        # 4. 逐一处理每个文本块文件
+        # 4. Process each text chunk file individually
         for i, chunk_file in enumerate(chunk_files):
-            logger.info(f"处理第{i+1}/{len(chunks)}个文本块: {chunk_file.name}")
+            logger.info(f"Processing chunk {i+1}/{len(chunks)}: {chunk_file.name}")
             try:
-                # 读取文本块内容
+                # Read text chunk content
                 with open(chunk_file, 'r', encoding='utf-8') as f:
                     chunk_text = f.read()
                 
-                # 为每个块调用LLM
+                # Call LLM for each chunk
                 input_data = {"text": chunk_text}
                 response = self.llm_client.call_with_retry(self.outline_prompt, input_data)
                 
                 if response:
-                    # 解析响应并附加块索引
-                    # 注意：这里的chunk_index直接用i，与文件名和原始chunk对应
+                    # Parse response and attach chunk index
+                    # Note: chunk_index here directly uses i, corresponding to filename and original chunk
                     parsed_outlines = self._parse_outline_response(response, i)
                     all_outlines.extend(parsed_outlines)
                 else:
-                    logger.warning(f"处理第{i+1}个文本块时返回空响应")
+                    logger.warning(f"Empty response when processing chunk {i+1}")
             except Exception as e:
-                logger.error(f"处理第{i+1}个文本块失败: {e}")
+                logger.error(f"Failed to process chunk {i+1}: {e}")
                 continue
         
-        # 5. 合并和去重
+        # 5. Merge and deduplicate
         final_outlines = self._merge_outlines(all_outlines)
         
-        logger.info(f"大纲提取完成，共{len(final_outlines)}个话题")
+        logger.info(f"Outline extraction completed, total {len(final_outlines)} topics")
         return final_outlines
 
     def _save_chunks_to_files(self, chunks: List[Dict]) -> List[Path]:
-        """将文本块保存为单独的 .txt 文件"""
+        """Save text chunks as individual .txt files"""
         chunk_files = []
         for chunk in chunks:
             chunk_index = chunk['chunk_index']
@@ -114,11 +114,11 @@ class OutlineExtractor:
                 f.write(text_content)
             chunk_files.append(file_path)
         
-        logger.info(f"所有文本块已保存到: {self.chunks_dir}")
+        logger.info(f"All text chunks saved to: {self.chunks_dir}")
         return chunk_files
 
     def _save_srt_chunks(self, chunks: List[Dict]):
-        """将SRT数据块保存为单独的 .json 文件"""
+        """Save SRT data chunks as individual .json files"""
         for chunk in chunks:
             chunk_index = chunk['chunk_index']
             srt_entries = chunk['srt_entries']
@@ -127,18 +127,18 @@ class OutlineExtractor:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(srt_entries, f, ensure_ascii=False, indent=2)
         
-        logger.info(f"所有SRT块已保存到: {self.srt_chunks_dir}")
+        logger.info(f"All SRT chunks saved to: {self.srt_chunks_dir}")
 
     def _parse_outline_response(self, response: str, chunk_index: int) -> List[Dict]:
         """
-        解析大模型的大纲响应 (与之前版本保持一致，无质量检查)
+        Parse the LLM's outline response (consistent with previous version, no quality check)
         
         Args:
-            response: 大模型响应
-            chunk_index: 当前处理的块索引
+            response: LLM response
+            chunk_index: Index of the currently processed chunk
             
         Returns:
-            解析后的大纲结构
+            Parsed outline structure
         """
         outlines = []
         lines = response.split('\n')
@@ -170,7 +170,7 @@ class OutlineExtractor:
     
     def _merge_outlines(self, outlines: List[Dict]) -> List[Dict]:
         """
-        合并和去重大纲，保留最先出现的版本
+        Merge and deduplicate outlines, keeping the first occurrence
         """
         unique_outlines = {}
         for outline in outlines:
@@ -181,7 +181,7 @@ class OutlineExtractor:
     
     def save_outline(self, outlines: List[Dict], output_path: Optional[Path] = None) -> Path:
         """
-        保存大纲到文件
+        Save outline to file
         """
         if output_path is None:
             output_path = self.metadata_dir / "step1_outline.json"
@@ -191,19 +191,19 @@ class OutlineExtractor:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(outlines, f, ensure_ascii=False, indent=2)
         
-        logger.info(f"大纲已保存到: {output_path}")
+        logger.info(f"Outline saved to: {output_path}")
         return output_path
     
     def load_outline(self, input_path: Path) -> List[Dict]:
         """
-        从文件加载大纲
+        Load outline from file
         """
         with open(input_path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
 def run_step1_outline(srt_path: Path, metadata_dir: Path = None, output_path: Optional[Path] = None, prompt_files: Dict = None) -> List[Dict]:
     """
-    运行Step 1: 大纲提取
+    Run Step 1: Outline Extraction
     """
     if metadata_dir is None:
         metadata_dir = METADATA_DIR

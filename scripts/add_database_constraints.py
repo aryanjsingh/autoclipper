@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-添加数据库约束脚本
-为数据库表添加外键约束和数据完整性约束
+Add Database Constraints Script
+Adds foreign key constraints and data integrity constraints to database tables
 """
 
 import sys
@@ -9,11 +9,11 @@ import sqlite3
 import logging
 from pathlib import Path
 
-# 添加项目根目录到Python路径
+# Add project root directory to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# 配置日志
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -22,23 +22,23 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConstraintManager:
-    """数据库约束管理器"""
+    """Database constraint manager"""
     
     def __init__(self, db_path: str = None):
         self.db_path = db_path or str(project_root / "data" / "autoclip.db")
         
     def add_foreign_key_constraints(self) -> bool:
-        """启用外键约束（SQLite不支持动态添加外键约束）"""
-        logger.info("🔗 启用外键约束...")
+        """Enable foreign key constraints (SQLite does not support dynamically adding foreign key constraints)"""
+        logger.info("Enabling foreign key constraints...")
         
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # 启用外键约束
+            # Enable foreign key constraints
             cursor.execute("PRAGMA foreign_keys = ON")
             
-            # 验证外键约束是否启用
+            # Verify foreign key constraints are enabled
             cursor.execute("PRAGMA foreign_keys")
             fk_enabled = cursor.fetchone()[0]
             
@@ -46,48 +46,48 @@ class DatabaseConstraintManager:
             conn.close()
             
             if fk_enabled:
-                logger.info("✅ 外键约束已启用")
+                logger.info("Foreign key constraints enabled")
                 return True
             else:
-                logger.error("❌ 外键约束启用失败")
+                logger.error("Failed to enable foreign key constraints")
                 return False
             
         except Exception as e:
-            logger.error(f"启用外键约束失败: {e}")
+            logger.error(f"Failed to enable foreign key constraints: {e}")
             return False
     
     def add_check_constraints(self) -> bool:
-        """添加检查约束（SQLite不支持动态添加检查约束）"""
-        logger.info("🔍 检查约束说明...")
+        """Add check constraints (SQLite does not support dynamically adding check constraints)"""
+        logger.info("Check constraint notes...")
         
-        # SQLite不支持动态添加检查约束，需要在创建表时定义
-        # 这里我们只记录约束要求，实际约束在模型定义中
+        # SQLite does not support dynamically adding check constraints, they need to be defined when creating tables
+        # Here we only log the constraint requirements, actual constraints are in model definitions
         
         constraints_info = [
-            "项目状态: pending, processing, completed, failed",
-            "任务状态: pending, running, completed, failed", 
-            "切片状态: pending, processing, completed, failed",
-            "合集状态: pending, processing, completed, failed",
-            "投稿记录状态: pending, uploading, completed, failed"
+            "Project status: pending, processing, completed, failed",
+            "Task status: pending, running, completed, failed", 
+            "Clip status: pending, processing, completed, failed",
+            "Collection status: pending, processing, completed, failed",
+            "Upload record status: pending, uploading, completed, failed"
         ]
         
-        logger.info("📋 数据完整性约束要求:")
+        logger.info("Data integrity constraint requirements:")
         for constraint in constraints_info:
             logger.info(f"  - {constraint}")
         
-        logger.info("ℹ️  注意: SQLite不支持动态添加检查约束，约束已在模型定义中实现")
+        logger.info("Note: SQLite does not support dynamically adding check constraints, constraints are implemented in model definitions")
         return True
     
     def add_indexes(self) -> bool:
-        """添加索引以提高查询性能"""
-        logger.info("📊 开始添加索引...")
+        """Add indexes to improve query performance"""
+        logger.info("Starting to add indexes...")
         
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
             indexes = [
-                # 项目表索引
+                # Project table indexes
                 {
                     'name': 'idx_projects_status',
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)'
@@ -97,7 +97,7 @@ class DatabaseConstraintManager:
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at)'
                 },
                 
-                # 任务表索引
+                # Task table indexes
                 {
                     'name': 'idx_tasks_project_id',
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)'
@@ -111,7 +111,7 @@ class DatabaseConstraintManager:
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_tasks_created_at ON tasks(created_at)'
                 },
                 
-                # 切片表索引
+                # Clip table indexes
                 {
                     'name': 'idx_clips_project_id',
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_clips_project_id ON clips(project_id)'
@@ -125,7 +125,7 @@ class DatabaseConstraintManager:
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_clips_score ON clips(score)'
                 },
                 
-                # 合集表索引
+                # Collection table indexes
                 {
                     'name': 'idx_collections_project_id',
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_collections_project_id ON collections(project_id)'
@@ -135,7 +135,7 @@ class DatabaseConstraintManager:
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_collections_status ON collections(status)'
                 },
                 
-                # 投稿记录表索引
+                # Upload record table indexes
                 {
                     'name': 'idx_upload_records_account_id',
                     'sql': 'CREATE INDEX IF NOT EXISTS idx_upload_records_account_id ON upload_records(account_id)'
@@ -157,86 +157,86 @@ class DatabaseConstraintManager:
                 try:
                     cursor.execute(index['sql'])
                     success_count += 1
-                    logger.info(f"✅ 添加索引成功: {index['name']}")
+                    logger.info(f"Index added successfully: {index['name']}")
                 except sqlite3.Error as e:
-                    logger.error(f"❌ 添加索引失败: {index['name']}, 错误: {e}")
+                    logger.error(f"Failed to add index: {index['name']}, error: {e}")
                     error_count += 1
             
             conn.commit()
             conn.close()
             
-            logger.info(f"🎉 索引添加完成: 成功 {success_count}, 失败 {error_count}")
+            logger.info(f"Index addition complete: {success_count} succeeded, {error_count} failed")
             return error_count == 0
             
         except Exception as e:
-            logger.error(f"添加索引失败: {e}")
+            logger.error(f"Failed to add indexes: {e}")
             return False
     
     def verify_constraints(self) -> bool:
-        """验证约束是否正确添加"""
-        logger.info("🔍 验证约束...")
+        """Verify constraints were correctly added"""
+        logger.info("Verifying constraints...")
         
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # 检查外键约束是否启用
+            # Check if foreign key constraints are enabled
             cursor.execute("PRAGMA foreign_keys")
             fk_enabled = cursor.fetchone()[0]
-            logger.info(f"外键约束状态: {'启用' if fk_enabled else '禁用'}")
+            logger.info(f"Foreign key constraint status: {'Enabled' if fk_enabled else 'Disabled'}")
             
-            # 检查表结构
+            # Check table structure
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = [row[0] for row in cursor.fetchall()]
-            logger.info(f"数据库表: {', '.join(tables)}")
+            logger.info(f"Database tables: {', '.join(tables)}")
             
-            # 检查索引
+            # Check indexes
             cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'")
             indexes = [row[0] for row in cursor.fetchall()]
-            logger.info(f"自定义索引: {', '.join(indexes)}")
+            logger.info(f"Custom indexes: {', '.join(indexes)}")
             
             conn.close()
             
-            logger.info("✅ 约束验证完成")
+            logger.info("Constraint verification complete")
             return True
             
         except Exception as e:
-            logger.error(f"验证约束失败: {e}")
+            logger.error(f"Failed to verify constraints: {e}")
             return False
 
 
 def main():
-    """主函数"""
-    logger.info("🚀 开始添加数据库约束...")
+    """Main function"""
+    logger.info("Starting to add database constraints...")
     
     manager = DatabaseConstraintManager()
     
-    # 1. 添加外键约束
+    # 1. Add foreign key constraints
     fk_success = manager.add_foreign_key_constraints()
     
-    # 2. 添加检查约束
+    # 2. Add check constraints
     check_success = manager.add_check_constraints()
     
-    # 3. 添加索引
+    # 3. Add indexes
     index_success = manager.add_indexes()
     
-    # 4. 验证约束
+    # 4. Verify constraints
     verify_success = manager.verify_constraints()
     
     print("\n" + "=" * 80)
-    print("📊 数据库约束添加结果")
+    print("Database Constraint Addition Results")
     print("=" * 80)
-    print(f"外键约束: {'✅ 成功' if fk_success else '❌ 失败'}")
-    print(f"检查约束: {'✅ 成功' if check_success else '❌ 失败'}")
-    print(f"索引添加: {'✅ 成功' if index_success else '❌ 失败'}")
-    print(f"约束验证: {'✅ 成功' if verify_success else '❌ 失败'}")
+    print(f"Foreign key constraints: {'Succeeded' if fk_success else 'Failed'}")
+    print(f"Check constraints: {'Succeeded' if check_success else 'Failed'}")
+    print(f"Index addition: {'Succeeded' if index_success else 'Failed'}")
+    print(f"Constraint verification: {'Succeeded' if verify_success else 'Failed'}")
     
     if all([fk_success, check_success, index_success, verify_success]):
-        print("\n🎉 所有数据库约束添加成功！")
+        print("\nAll database constraints added successfully!")
     else:
-        print("\n⚠️  部分约束添加失败，请检查日志")
+        print("\nSome constraints failed to add, please check logs")
     
-    logger.info("🎉 数据库约束添加完成!")
+    logger.info("Database constraint addition complete!")
 
 
 if __name__ == "__main__":

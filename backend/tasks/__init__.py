@@ -1,42 +1,42 @@
 """
-任务模块
-包含所有异步任务定义
+Tasks module
+Contains all asynchronous task definitions
 """
 
 from .processing import *
 from .video import *
 from .notification import *
 from .maintenance import *
-from .upload import *  # 添加upload任务导入
-from .data_cleanup import *  # 添加数据清理任务导入
+from .upload import *  # Add upload task import
+from .data_cleanup import *  # Add data cleanup task import
 
 __all__ = [
-    # 处理任务
+    # Processing tasks
     'process_video_pipeline',
     'process_single_step',
     'retry_processing_step',
     
-    # 视频任务
+    # Video tasks
     'extract_video_clips',
     'generate_video_collections',
     'optimize_video_quality',
     
-    # 通知任务
+    # Notification tasks
     'send_processing_notification',
     'send_error_notification',
     'send_completion_notification',
     
-    # 维护任务
+    # Maintenance tasks
     'cleanup_expired_tasks',
     'health_check',
     'backup_project_data',
     
-    # 数据清理任务
+    # Data cleanup tasks
     'cleanup_expired_data',
     'check_data_consistency',
     'cleanup_orphaned_data',
     
-    # 投稿任务
+    # Upload tasks
     'upload_clip_task',
     'batch_upload_task'
 ] 

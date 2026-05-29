@@ -1,71 +1,71 @@
-# 更新日志
+# Changelog
 
-本文档记录了AutoClip项目的所有重要变更。
+This document records all important changes to the AutoClip project.
 
-格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
-项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [未发布]
+## [Unreleased]
 
-### 新增
-- 添加视频标题编辑功能
-- 支持B站多账号管理
-- 添加账号健康状态监控
-- 实现拖拽排序功能
-- 添加视频分类支持
-- 完善Docker部署支持
-- 添加Docker管理脚本
+### Added
+- Video title editing feature
+- Bilibili multi-account management support
+- Account health status monitoring
+- Drag-and-drop sorting functionality
+- Video category support
+- Docker deployment support
+- Docker management scripts
 
-### 开发中
-- B站上传功能（预计下个版本发布）
-- 字幕编辑功能（预计下个版本发布）
+### In Development
+- Bilibili upload feature (expected in next version)
+- Subtitle editing feature (expected in next version)
 
-### 改进
-- 优化AI处理流水线
-- 改进实时进度显示
-- 增强错误处理机制
-- 优化用户界面体验
+### Changed
+- Optimized AI processing pipeline
+- Improved real-time progress display
+- Enhanced error handling mechanisms
+- Optimized user interface experience
 
-### 修复
-- 修复上传队列管理问题
-- 解决进度显示异常
-- 修复视频生成失败问题
+### Fixed
+- Upload queue management issues
+- Progress display anomalies
+- Video generation failures
 
 ## [1.0.0] - 2024-01-15
 
-### 新增
-- 🎬 支持YouTube视频下载
-- 🎬 支持B站视频下载
-- 🎬 支持本地文件上传
-- 🤖 AI智能视频分析
-- ✂️ 自动视频切片
-- 📚 智能合集生成
-- 🎨 现代化Web界面
-- 🚀 异步任务处理
-- 📊 实时进度监控
-- 🔐 B站账号管理
-- 📱 响应式设计
-- 🛠️ 一键启动脚本
+### Added
+- 🎬 YouTube video download support
+- 🎬 Bilibili video download support
+- 🎬 Local file upload support
+- 🤖 AI intelligent video analysis
+- ✂️ Automatic video clipping
+- 📚 Smart collection generation
+- 🎨 Modern web interface
+- 🚀 Asynchronous task processing
+- 📊 Real-time progress monitoring
+- 🔐 Bilibili account management
+- 📱 Responsive design
+- 🛠️ One-click startup scripts
 
-### 技术特性
-- FastAPI后端框架
-- React + TypeScript前端
-- Celery异步任务队列
-- Redis消息代理
-- SQLite数据库
-- WebSocket实时通信
-- 通义千问AI集成
+### Technical Features
+- FastAPI backend framework
+- React + TypeScript frontend
+- Celery asynchronous task queue
+- Redis message broker
+- SQLite database
+- WebSocket real-time communication
+- Tongyi Qianwen AI integration
 
 ## [0.9.0] - 2024-01-01
 
-### 新增
-- 基础项目架构
-- 核心API接口
-- 基础前端界面
-- 视频处理流水线
-- AI分析服务
+### Added
+- Basic project architecture
+- Core API endpoints
+- Basic frontend interface
+- Video processing pipeline
+- AI analysis service
 
-### 技术栈
+### Technology Stack
 - Python 3.8+
 - React 18
 - FastAPI
@@ -75,25 +75,25 @@
 
 ---
 
-## 版本说明
+## Version Notes
 
-### 版本号格式
+### Version Number Format
 
-我们使用语义化版本控制 (SemVer)：
+We use Semantic Versioning (SemVer):
 
-- **主版本号**: 不兼容的API修改
-- **次版本号**: 向下兼容的功能性新增
-- **修订号**: 向下兼容的问题修正
+- **Major Version**: Incompatible API changes
+- **Minor Version**: Backward-compatible functionality additions
+- **Patch Version**: Backward-compatible bug fixes
 
-### 变更类型
+### Change Types
 
-- **新增**: 新功能
-- **改进**: 现有功能的改进
-- **修复**: Bug修复
-- **移除**: 移除的功能
-- **安全**: 安全相关的修复
+- **Added**: New features
+- **Changed**: Changes to existing features
+- **Fixed**: Bug fixes
+- **Removed**: Removed features
+- **Security**: Security-related fixes
 
-### 链接
+### Links
 
 - [Unreleased]: https://github.com/your-username/autoclip/compare/v1.0.0...HEAD
 - [1.0.0]: https://github.com/your-username/autoclip/releases/tag/v1.0.0

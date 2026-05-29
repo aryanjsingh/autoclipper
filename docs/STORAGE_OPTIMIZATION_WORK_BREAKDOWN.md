@@ -1,199 +1,199 @@
-# 存储优化工作拆解
+# Storage Optimization Work Breakdown
 
-## 总体目标
-将当前的双重存储架构（文件系统+数据库）优化为分离存储架构（数据库存储元数据+文件系统存储实际文件），避免数据冗余，提升系统性能。
+## Overall Goal
+Optimize the current dual storage architecture (file system + database) into a separated storage architecture (database stores metadata + file system stores actual files) to avoid data redundancy and improve system performance.
 
-## 工作拆解
+## Work Breakdown
 
-### 第一阶段：数据库模型优化 (2-3天)
+### Phase 1: Database Model Optimization (2-3 days)
 
-#### 1.1 优化Clip模型 (0.5天)
-**当前问题：**
-- `processing_result` 字段存储了完整的处理结果数据
-- `clip_metadata` 字段可能包含冗余信息
+#### 1.1 Optimize Clip Model (0.5 days)
+**Current Issues:**
+- The `processing_result` field stores the complete processing result data
+- The `clip_metadata` field may contain redundant information
 
-**需要修改：**
+**Required Changes:**
 ```python
 # backend/models/clip.py
 class Clip(BaseModel):
-    # 移除冗余字段
-    # processing_result = Column(JSON, nullable=True, comment="处理结果数据")  # 删除
+    # Remove redundant fields
+    # processing_result = Column(JSON, nullable=True, comment="Processing result data")  # Delete
     
-    # 优化文件路径字段
-    video_path = Column(String(500), nullable=True, comment="切片视频文件路径")
-    thumbnail_path = Column(String(500), nullable=True, comment="缩略图文件路径")
+    # Optimize file path fields
+    video_path = Column(String(500), nullable=True, comment="Clip video file path")
+    thumbnail_path = Column(String(500), nullable=True, comment="Thumbnail file path")
     
-    # 保留必要的元数据
-    clip_metadata = Column(JSON, nullable=True, comment="切片元数据（精简版）")
+    # Keep essential metadata
+    clip_metadata = Column(JSON, nullable=True, comment="Clip metadata (simplified)")
 ```
 
-**具体工作：**
-- [ ] 分析 `processing_result` 字段的使用情况
-- [ ] 确定哪些数据需要保留在数据库，哪些移到文件系统
-- [ ] 修改Clip模型，移除冗余字段
-- [ ] 创建数据库迁移脚本
+**Specific Work:**
+- [ ] Analyze the usage of the `processing_result` field
+- [ ] Determine which data needs to be retained in the database and which should be moved to the file system
+- [ ] Modify the Clip model and remove redundant fields
+- [ ] Create database migration script
 
-#### 1.2 优化Project模型 (0.5天)
-**当前问题：**
-- `project_metadata` 字段可能包含大量文件系统数据
+#### 1.2 Optimize Project Model (0.5 days)
+**Current Issues:**
+- The `project_metadata` field may contain large amounts of file system data
 
-**需要修改：**
+**Required Changes:**
 ```python
 # backend/models/project.py
 class Project(BaseModel):
-    # 添加文件路径引用字段
-    video_path = Column(String(500), nullable=True, comment="视频文件路径")
-    subtitle_path = Column(String(500), nullable=True, comment="字幕文件路径")
+    # Add file path reference fields
+    video_path = Column(String(500), nullable=True, comment="Video file path")
+    subtitle_path = Column(String(500), nullable=True, comment="Subtitle file path")
     
-    # 优化元数据字段
-    project_metadata = Column(JSON, nullable=True, comment="项目元数据（精简版）")
+    # Optimize metadata field
+    project_metadata = Column(JSON, nullable=True, comment="Project metadata (simplified)")
 ```
 
-**具体工作：**
-- [ ] 分析 `project_metadata` 字段的内容
-- [ ] 添加文件路径引用字段
-- [ ] 优化元数据存储结构
-- [ ] 创建数据库迁移脚本
+**Specific Work:**
+- [ ] Analyze the contents of the `project_metadata` field
+- [ ] Add file path reference field
+- [ ] Optimize metadata storage structure
+- [ ] Create database migration script
 
-#### 1.3 优化Collection模型 (0.5天)
-**当前问题：**
-- `collection_metadata` 字段可能包含冗余数据
+#### 1.3 Optimize Collection Model (0.5 days)
+**Current Issues:**
+- The `collection_metadata` field may contain redundant data
 
-**需要修改：**
+**Required Changes:**
 ```python
 # backend/models/collection.py
 class Collection(BaseModel):
-    # 添加文件路径引用字段
-    export_path = Column(String(500), nullable=True, comment="合集导出文件路径")
+    # Add file path reference fields
+    export_path = Column(String(500), nullable=True, comment="Collection export file path")
     
-    # 优化元数据字段
-    collection_metadata = Column(JSON, nullable=True, comment="合集元数据（精简版）")
+    # Optimize metadata field
+    collection_metadata = Column(JSON, nullable=True, comment="Collection metadata (simplified)")
 ```
 
-**具体工作：**
-- [ ] 分析 `collection_metadata` 字段的内容
-- [ ] 添加文件路径引用字段
-- [ ] 优化元数据存储结构
-- [ ] 创建数据库迁移脚本
+**Specific Work:**
+- [ ] Analyze the contents of the `collection_metadata` field
+- [ ] Add file path reference field
+- [ ] Optimize metadata storage structure
+- [ ] Create database migration script
 
-#### 1.4 创建数据库迁移 (1天)
-**具体工作：**
-- [ ] 创建Alembic迁移脚本
-- [ ] 测试迁移脚本
-- [ ] 备份现有数据
-- [ ] 执行迁移
-- [ ] 验证数据完整性
+#### 1.4 Create Database Migration (1 day)
+**Specific Work:**
+- [ ] Create Alembic migration script
+- [ ] Test migration script
+- [ ] Back up existing data
+- [ ] Execute migration
+- [ ] Verify data integrity
 
-### 第二阶段：存储服务重构 (3-4天)
+### Phase 2: Storage Service Reconstruction (3-4 days)
 
-#### 2.1 完善StorageService (1天)
-**当前状态：**
-- 已创建基础的StorageService
-- 需要完善文件管理功能
+#### 2.1 Improve StorageService (1 day)
+**Current Status:**
+- Basic StorageService has been created
+- Need to improve file management functions
 
-**需要完善的功能：**
+**Features to Improve:**
 ```python
 # backend/services/storage_service.py
 class StorageService:
     def save_processing_result(self, step: str, result: Dict[str, Any]) -> str:
-        """保存处理结果到文件系统"""
+        """Save processing result to the file system"""
         
     def save_clip_file(self, clip_data: Dict[str, Any], clip_id: str) -> str:
-        """保存切片文件并返回路径"""
+        """Save clip file and return path"""
         
     def save_collection_file(self, collection_data: Dict[str, Any], collection_id: str) -> str:
-        """保存合集文件并返回路径"""
+        """Save collection file and return path"""
         
     def get_file_content(self, file_path: str) -> Optional[Dict[str, Any]]:
-        """获取文件内容"""
+        """Get file content"""
         
     def cleanup_old_files(self, project_id: str, keep_days: int = 30):
-        """清理旧文件"""
+        """Clean up old files"""
 ```
 
-**具体工作：**
-- [ ] 完善文件保存功能
-- [ ] 添加文件读取功能
-- [ ] 添加文件清理功能
-- [ ] 添加错误处理
-- [ ] 添加日志记录
+**Specific Work:**
+- [ ] Improve file saving function
+- [ ] Add file reading function
+- [ ] Add file cleaning function
+- [ ] Add error handling
+- [ ] Add logging
 
-#### 2.2 重构PipelineAdapter (1天)
-**当前问题：**
-- `_save_clips_to_database` 方法存储了完整的数据
-- `_save_collections_to_database` 方法存储了完整的数据
+#### 2.2 Refactor PipelineAdapter (1 day)
+**Current Issues:**
+- The `_save_clips_to_database` method stores the complete data
+- The `_save_collections_to_database` method stores the complete data
 
-**需要修改：**
+**Required Changes:**
 ```python
 # backend/services/pipeline_adapter.py
 class PipelineAdapter:
     def _save_clips_to_database(self, project_id: str, clips_file: Path):
-        """将切片数据保存到数据库（只保存元数据）"""
-        # 1. 读取切片数据
-        # 2. 保存切片文件到文件系统
-        # 3. 保存元数据到数据库（只保存路径引用）
+        """Save clip data to the database (metadata only)"""
+        # 1. Read clip data
+        # 2. Save clip files to the file system
+        # 3. Save metadata to the database (path references only)
         
     def _save_collections_to_database(self, project_id: str, collections_file: Path):
-        """将合集数据保存到数据库（只保存元数据）"""
-        # 1. 读取合集数据
-        # 2. 保存合集文件到文件系统
-        # 3. 保存元数据到数据库（只保存路径引用）
+        """Save collection data to the database (metadata only)"""
+        # 1. Read collection data
+        # 2. Save collection files to the file system
+        # 3. Save metadata to the database (path references only)
 ```
 
-**具体工作：**
-- [ ] 分析当前的保存逻辑
-- [ ] 重构为分离存储模式
-- [ ] 集成StorageService
-- [ ] 测试新的保存逻辑
+**Specific Work:**
+- [ ] Analyze the current saving logic
+- [ ] Refactor to separated storage mode
+- [ ] Integrate StorageService
+- [ ] Test new save logic
 
-#### 2.3 重构Repository层 (1天)
-**需要修改的Repository：**
+#### 2.3 Refactor Repository Layer (1 day)
+**Repositories to Modify:**
 - `ClipRepository`
 - `CollectionRepository`
 - `ProjectRepository`
 
-**具体工作：**
+**Specific Work:**
 ```python
 # backend/repositories/clip_repository.py
 class ClipRepository(BaseRepository[Clip]):
     def create_clip(self, clip_data: Dict[str, Any]) -> Clip:
-        """创建切片记录（分离存储）"""
-        # 1. 保存切片文件到文件系统
-        # 2. 保存元数据到数据库
+        """Create clip record (separated storage)"""
+        # 1. Save clip file to the file system
+        # 2. Save metadata to the database
         
     def get_clip_file(self, clip_id: str) -> Optional[Path]:
-        """获取切片文件路径"""
+        """Get clip file path"""
         
     def get_clip_content(self, clip_id: str) -> Optional[Dict[str, Any]]:
-        """获取切片完整内容"""
+        """Get full clip content"""
 ```
 
-**具体工作：**
-- [ ] 重构ClipRepository
-- [ ] 重构CollectionRepository
-- [ ] 重构ProjectRepository
-- [ ] 添加文件访问方法
-- [ ] 测试Repository功能
+**Specific Work:**
+- [ ] Refactor ClipRepository
+- [ ] Refactor CollectionRepository
+- [ ] Refactor ProjectRepository
+- [ ] Add file access methods
+- [ ] Test Repository functions
 
-#### 2.4 优化Service层 (0.5天)
-**需要修改的Service：**
+#### 2.4 Optimize Service Layer (0.5 days)
+**Services to Modify:**
 - `ClipService`
 - `CollectionService`
 - `ProjectService`
 
-**具体工作：**
-- [ ] 更新Service层以使用新的存储模式
-- [ ] 添加文件访问接口
-- [ ] 优化数据返回格式
-- [ ] 测试Service功能
+**Specific Work:**
+- [ ] Update the Service layer to use the new storage model
+- [ ] Add file access interfaces
+- [ ] Optimize data return format
+- [ ] Test Service functions
 
-### 第三阶段：API层优化 (2天)
+### Phase 3: API Layer Optimization (2 days)
 
-#### 3.1 优化文件上传API (0.5天)
-**当前问题：**
-- 文件上传后可能存储了冗余数据
+#### 3.1 Optimize File Upload API (0.5 days)
+**Current Issues:**
+- Redundant data may be stored after file upload
 
-**需要修改：**
+**Required Changes:**
 ```python
 # backend/api/v1/files.py
 @router.post("/upload")
@@ -202,25 +202,25 @@ async def upload_files(
     project_id: str,
     db: Session = Depends(get_db)
 ):
-    """上传文件（优化存储）"""
-    # 1. 保存文件到文件系统
-    # 2. 更新数据库中的文件路径
-    # 3. 不存储文件内容到数据库
+    """Upload files (optimized storage)"""
+    # 1. Save files to the file system
+    # 2. Update file paths in the database
+    # 3. Do not store file content in the database
 ```
 
-**具体工作：**
-- [ ] 分析当前的文件上传逻辑
-- [ ] 优化为只保存文件路径
-- [ ] 添加文件验证
-- [ ] 测试上传功能
+**Specific Work:**
+- [ ] Analyze the current file upload logic
+- [ ] Optimize to only save file paths
+- [ ] Add file verification
+- [ ] Test upload function
 
-#### 3.2 优化数据返回API (0.5天)
-**需要修改的API：**
-- `/api/v1/clips/` - 切片数据API
-- `/api/v1/collections/` - 合集数据API
-- `/api/v1/projects/` - 项目数据API
+#### 3.2 Optimize Data Return API (0.5 days)
+**APIs to Modify:**
+- `/api/v1/clips/` - Clip data API
+- `/api/v1/collections/` - Collection data API
+- `/api/v1/projects/` - Project data API
 
-**具体工作：**
+**Specific Work:**
 ```python
 # backend/api/v1/clips.py
 @router.get("/")
@@ -228,171 +228,171 @@ async def get_clips(
     project_id: str = Query(None),
     db: Session = Depends(get_db)
 ):
-    """获取切片列表（优化数据返回）"""
-    # 1. 从数据库获取元数据
-    # 2. 根据需要从文件系统获取完整数据
-    # 3. 返回优化后的数据格式
+    """Get clip list (optimized data return)"""
+    # 1. Get metadata from the database
+    # 2. Load full data from the file system when needed
+    # 3. Return optimized data format
 ```
 
-**具体工作：**
-- [ ] 分析当前的数据返回逻辑
-- [ ] 优化为按需加载完整数据
-- [ ] 添加数据缓存机制
-- [ ] 测试API功能
+**Specific Work:**
+- [ ] Analyze the current data return logic
+- [ ] Optimize to load full data on demand
+- [ ] Add data caching mechanism
+- [ ] Test API functionality
 
-#### 3.3 添加文件访问API (0.5天)
-**需要新增的API：**
+#### 3.3 Add File Access API (0.5 days)
+**New APIs Required:**
 ```python
 # backend/api/v1/files.py
 @router.get("/clips/{clip_id}/content")
 async def get_clip_content(clip_id: str, db: Session = Depends(get_db)):
-    """获取切片完整内容"""
+    """Get full clip content"""
     
 @router.get("/collections/{collection_id}/content")
 async def get_collection_content(collection_id: str, db: Session = Depends(get_db)):
-    """获取合集完整内容"""
+    """Get full collection content"""
 ```
 
-**具体工作：**
-- [ ] 创建文件内容访问API
-- [ ] 添加访问权限控制
-- [ ] 添加缓存机制
-- [ ] 测试API功能
+**Specific Work:**
+- [ ] Create file content access API
+- [ ] Add access control
+- [ ] Add caching mechanism
+- [ ] Test API functionality
 
-#### 3.4 优化前端API调用 (0.5天)
-**需要修改的前端代码：**
+#### 3.4 Optimize Frontend API Calls (0.5 days)
+**Frontend Code to Modify:**
 - `frontend/src/services/api.ts`
-- 相关的React组件
+- Related React components
 
-**具体工作：**
-- [ ] 分析当前的前端API调用
-- [ ] 优化为按需加载数据
-- [ ] 添加数据缓存
-- [ ] 测试前端功能
+**Specific Work:**
+- [ ] Analyze current frontend API calls
+- [ ] Optimize to load data on demand
+- [ ] Add data cache
+- [ ] Test frontend functionality
 
-### 第四阶段：数据迁移 (1天)
+### Phase 4: Data Migration (1 day)
 
-#### 4.1 创建数据迁移脚本 (0.5天)
-**具体工作：**
+#### 4.1 Create Data Migration Script (0.5 days)
+**Specific Work:**
 ```python
 # scripts/migrate_to_optimized_storage.py
 def migrate_clips_data():
-    """迁移切片数据"""
-    # 1. 读取数据库中的完整数据
-    # 2. 保存到文件系统
-    # 3. 更新数据库为只保存路径引用
+    """Migrate clip data"""
+    # 1. Read full data from the database
+    # 2. Save to the file system
+    # 3. Update database to store path references only
     
 def migrate_collections_data():
-    """迁移合集数据"""
-    # 1. 读取数据库中的完整数据
-    # 2. 保存到文件系统
-    # 3. 更新数据库为只保存路径引用
+    """Migrate collection data"""
+    # 1. Read full data from the database
+    # 2. Save to the file system
+    # 3. Update database to store path references only
 ```
 
-**具体工作：**
-- [ ] 创建数据迁移脚本
-- [ ] 添加数据验证
-- [ ] 添加回滚机制
-- [ ] 测试迁移脚本
+**Specific Work:**
+- [ ] Create data migration script
+- [ ] Add data validation
+- [ ] Add rollback mechanism
+- [ ] Test migration script
 
-#### 4.2 执行数据迁移 (0.5天)
-**具体工作：**
-- [ ] 备份现有数据
-- [ ] 执行迁移脚本
-- [ ] 验证数据完整性
-- [ ] 清理冗余数据
+#### 4.2 Perform Data Migration (0.5 days)
+**Specific Work:**
+- [ ] Back up existing data
+- [ ] Execute migration script
+- [ ] Verify data integrity
+- [ ] Clean up redundant data
 
-### 第五阶段：测试和优化 (1-2天)
+### Phase 5: Testing and Optimization (1-2 days)
 
-#### 5.1 功能测试 (0.5天)
-**测试内容：**
-- [ ] 文件上传功能
-- [ ] 数据处理功能
-- [ ] 数据查询功能
-- [ ] 文件访问功能
+#### 5.1 Functional Test (0.5 days)
+**Test Content:**
+- [ ] File upload function
+- [ ] Data processing function
+- [ ] Data query function
+- [ ] File access function
 
-#### 5.2 性能测试 (0.5天)
-**测试内容：**
-- [ ] 存储空间使用情况
-- [ ] 数据访问性能
-- [ ] 系统响应时间
-- [ ] 并发处理能力
+#### 5.2 Performance Test (0.5 days)
+**Test Content:**
+- [ ] Storage space usage
+- [ ] Data access performance
+- [ ] System response time
+- [ ] Concurrent processing capability
 
-#### 5.3 优化调整 (0.5天)
-**优化内容：**
-- [ ] 根据测试结果调整配置
-- [ ] 优化缓存策略
-- [ ] 优化文件组织
-- [ ] 优化错误处理
+#### 5.3 Optimization and Adjustment (0.5 days)
+**Optimization Content:**
+- [ ] Adjust configuration based on test results
+- [ ] Optimize caching strategy
+- [ ] Optimize file organization
+- [ ] Optimize error handling
 
-## 时间安排
+## Time Schedule
 
-| 阶段 | 工作内容 | 预计时间 | 负责人 |
+| Stage | Work Content | Estimated Time | Owner |
 |------|----------|----------|--------|
-| 第一阶段 | 数据库模型优化 | 2-3天 | 后端开发 |
-| 第二阶段 | 存储服务重构 | 3-4天 | 后端开发 |
-| 第三阶段 | API层优化 | 2天 | 后端开发 |
-| 第四阶段 | 数据迁移 | 1天 | 后端开发 |
-| 第五阶段 | 测试和优化 | 1-2天 | 全栈开发 |
+| Phase 1 | Database model optimization | 2-3 days | Backend development |
+| Phase 2 | Storage service reconstruction | 3-4 days | Backend development |
+| Phase 3 | API layer optimization | 2 days | Backend development |
+| Phase 4 | Data migration | 1 day | Backend development |
+| Phase 5 | Testing and optimization | 1-2 days | Full-stack development |
 
-**总计：9-12天**
+**Total: 9-12 days**
 
-## 风险评估
+## Risk Assessment
 
-### 高风险项
-1. **数据迁移风险**
-   - 风险：数据丢失或损坏
-   - 缓解：充分备份，分步迁移，回滚机制
+### High-Risk Items
+1. **Data Migration Risk**
+   - Risk: Data loss or corruption
+   - Mitigation: Adequate backup, step-by-step migration, rollback mechanism
 
-2. **API兼容性风险**
-   - 风险：前端功能受影响
-   - 缓解：保持API接口兼容，渐进式迁移
+2. **API Compatibility Risk**
+   - Risk: Frontend functionality affected
+   - Mitigation: Keep API interfaces compatible and migrate gradually
 
-3. **性能风险**
-   - 风险：文件访问性能下降
-   - 缓解：添加缓存机制，优化文件组织
+3. **Performance Risk**
+   - Risk: Decreased file access performance
+   - Mitigation: Add caching mechanism, optimize file organization
 
-### 中风险项
-1. **代码复杂度增加**
-   - 风险：维护难度增加
-   - 缓解：良好的代码组织，完善的文档
+### Medium-Risk Items
+1. **Increased Code Complexity**
+   - Risk: Increased maintenance difficulty
+   - Mitigation: Good code organization, complete documentation
 
-2. **测试覆盖不足**
-   - 风险：功能缺陷
-   - 缓解：全面的测试用例，自动化测试
+2. **Insufficient Test Coverage**
+   - Risk: Functional defects
+   - Mitigation: Comprehensive test cases, automated testing
 
-## 成功标准
+## Success Criteria
 
-### 功能标准
-- [ ] 所有现有功能正常工作
-- [ ] 数据完整性得到保证
-- [ ] 文件访问功能正常
-- [ ] API接口保持兼容
+### Functional Standards
+- [ ] All existing features work properly
+- [ ] Data integrity is guaranteed
+- [ ] File access function is normal
+- [ ] API interface remains compatible
 
-### 性能标准
-- [ ] 存储空间使用减少10%以上
-- [ ] 数据访问性能不降低
-- [ ] 系统响应时间保持稳定
-- [ ] 并发处理能力保持稳定
+### Performance Standards
+- [ ] Storage space usage reduced by more than 10%
+- [ ] Data access performance does not decrease
+- [ ] System response time remains stable
+- [ ] Concurrent processing capabilities remain stable
 
-### 质量标准
-- [ ] 代码覆盖率不低于80%
-- [ ] 无严重bug
-- [ ] 文档完整
-- [ ] 测试通过率100%
+### Quality Standards
+- [ ] Code coverage is no less than 80%
+- [ ] No serious bugs
+- [ ] Complete documentation
+- [ ] Test pass rate 100%
 
-## 后续维护
+## Follow-Up Maintenance
 
-### 监控指标
-- 存储空间使用情况
-- 文件访问性能
-- 数据一致性
-- 错误率
+### Monitoring Indicators
+- Storage usage
+- File access performance
+- Data consistency
+- Error rate
 
-### 维护任务
-- 定期清理临时文件
-- 监控存储空间使用
-- 优化文件组织
-- 更新文档
+### Maintenance Tasks
+- Clean temporary files regularly
+- Monitor storage space usage
+- Optimize file organization
+- Update documentation
 
-这个工作拆解涵盖了从数据库模型优化到最终测试的完整流程，确保存储优化能够顺利实施。
+This work breakdown covers the complete process from database model optimization to final testing to ensure that storage optimization can be implemented smoothly.

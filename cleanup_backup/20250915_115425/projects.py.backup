@@ -1,5 +1,5 @@
 """
-项目API路由
+Project API routes
 """
 
 from typing import List, Optional
@@ -55,20 +55,20 @@ async def upload_files(
 ):
     """Upload video file and optionally subtitle file to create a new project. If no subtitle is provided, speech recognition will be used."""
     try:
-        # 验证文件类型
+        # Validate file types
         if not video_file.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
             raise HTTPException(status_code=400, detail="Invalid video file format")
         
-        # 如果提供了字幕文件，验证其格式
+        # If subtitle file is provided, validate its format
         if srt_file and not srt_file.filename.lower().endswith('.srt'):
             raise HTTPException(status_code=400, detail="Invalid subtitle file format")
         
-        # 创建项目数据
+        # Create project data
         subtitle_info = f", Subtitle: {srt_file.filename}" if srt_file else " (Will generate subtitle using speech recognition)"
         project_data = ProjectCreate(
             name=project_name,
             description=f"Video: {video_file.filename}{subtitle_info}",
-            project_type=ProjectType.KNOWLEDGE,  # 默认类型
+            project_type=ProjectType.KNOWLEDGE,  # Default type
             status=ProjectStatus.PENDING,
             source_url=None,
             source_file=video_file.filename,
@@ -80,67 +80,67 @@ async def upload_files(
             }
         )
         
-        # 创建项目
+        # Create project
         project = project_service.create_project(project_data)
         
-        # 保存文件到项目目录
+        # Save files to project directory
         project_id = str(project.id)
         from ...core.path_utils import get_project_raw_directory, ensure_directory_exists
         raw_dir = ensure_directory_exists(get_project_raw_directory(project_id))
         
-        logger.info(f"开始保存文件到项目目录: {project_dir}")
+        logger.info(f"Starting to save files to project directory: {project_dir}")
         
-        # 保存视频文件
+        # Save video file
         video_path = raw_dir / video_file.filename
-        logger.info(f"保存视频文件: {video_path}")
+        logger.info(f"Saving video file: {video_path}")
         try:
             with open(video_path, "wb") as f:
                 content = await video_file.read()
                 f.write(content)
-            logger.info(f"视频文件保存成功: {video_path}, 大小: {len(content)} bytes")
+            logger.info(f"Video file saved successfully: {video_path}, size: {len(content)} bytes")
         except Exception as e:
-            logger.error(f"视频文件保存失败: {e}")
+            logger.error(f"Failed to save video file: {e}")
             raise
         
-        # 处理字幕文件
+        # Process subtitle file
         srt_path = None
         if srt_file:
-            # 保存用户提供的字幕文件
+            # Save user-provided subtitle file
             srt_path = raw_dir / srt_file.filename
-            logger.info(f"保存用户字幕文件: {srt_path}")
+            logger.info(f"Saving user subtitle file: {srt_path}")
             try:
                 with open(srt_path, "wb") as f:
                     content = await srt_file.read()
                     f.write(content)
-                logger.info(f"用户字幕文件保存成功: {srt_path}, 大小: {len(content)} bytes")
+                logger.info(f"User subtitle file saved successfully: {srt_path}, size: {len(content)} bytes")
             except Exception as e:
-                logger.error(f"用户字幕文件保存失败: {e}")
+                logger.error(f"Failed to save user subtitle file: {e}")
                 raise
         else:
-            # 优先使用Whisper生成字幕，而不是依赖平台字幕
-            logger.info("未提供字幕文件，优先使用Whisper生成高质量字幕")
+            # Prefer using Whisper to generate subtitles instead of relying on platform subtitles
+            logger.info("No subtitle file provided, using Whisper to generate high-quality subtitles")
             try:
                 from ...utils.speech_recognizer import generate_subtitle_for_video, SpeechRecognitionError
                 
-                # 生成字幕文件
+                # Generate subtitle file
                 srt_path = raw_dir / f"{video_file.filename.rsplit('.', 1)[0]}.srt"
-                logger.info(f"开始使用Whisper生成字幕，输出路径: {srt_path}")
+                logger.info(f"Starting to generate subtitles with Whisper, output path: {srt_path}")
                 
-                # 根据视频分类确定语言和模型
-                language = "auto"  # 默认自动检测
-                model = "base"  # 默认使用平衡的模型
+                # Determine language and model based on video category
+                language = "auto"  # Default auto-detection
+                model = "base"  # Default balanced model
                 
                 if video_category == "business" or video_category == "knowledge":
-                    language = "zh"  # 中文内容
-                    model = "small"  # 商业/知识内容使用更准确的模型
+                    language = "zh"  # Chinese content
+                    model = "small"  # Use more accurate model for business/knowledge content
                 elif video_category == "entertainment":
-                    language = "auto"  # 娱乐内容可能是多语言
-                    model = "base"  # 娱乐内容使用平衡模型
+                    language = "auto"  # Entertainment content may be multilingual
+                    model = "base"  # Use balanced model for entertainment content
                 elif video_category == "speech":
-                    language = "zh"  # 演讲内容通常是中文
-                    model = "medium"  # 演讲内容使用高精度模型
+                    language = "zh"  # Speech content is usually Chinese
+                    model = "medium"  # Use high-accuracy model for speech content
                 
-                logger.info(f"使用语言: {language}, 模型: {model}")
+                logger.info(f"Using language: {language}, model: {model}")
                 
                 generated_srt = generate_subtitle_for_video(
                     video_path, 
@@ -149,57 +149,57 @@ async def upload_files(
                     model=model
                 )
                 if generated_srt:
-                    logger.info(f"Whisper字幕生成成功: {generated_srt}")
+                    logger.info(f"Whisper subtitle generation successful: {generated_srt}")
                     srt_path = generated_srt
                 else:
-                    raise SpeechRecognitionError("Whisper字幕生成返回空结果")
+                    raise SpeechRecognitionError("Whisper subtitle generation returned empty result")
                 
             except SpeechRecognitionError as e:
-                logger.error(f"Whisper字幕生成失败: {e}")
-                # 如果Whisper失败，可以考虑其他备用方案
+                logger.error(f"Whisper subtitle generation failed: {e}")
+                # If Whisper fails, consider other fallback options
                 raise HTTPException(
                     status_code=400,
-                    detail=f"字幕生成失败: {str(e)}。请确保已安装Whisper或提供字幕文件。"
+                    detail=f"Subtitle generation failed: {str(e)}. Please ensure Whisper is installed or provide a subtitle file."
                 )
             except Exception as e:
-                logger.error(f"字幕生成过程中发生未知错误: {e}")
+                logger.error(f"Unknown error during subtitle generation: {e}")
                 raise HTTPException(
                     status_code=500,
-                    detail=f"字幕生成过程中发生错误: {str(e)}"
+                    detail=f"Error during subtitle generation: {str(e)}"
                 )
         
-        logger.info(f"文件保存完成，项目目录: {project_dir}")
+        logger.info(f"File save completed, project directory: {project_dir}")
         
-        # 验证文件是否存在
+        # Verify files exist
         if not video_path.exists():
-            logger.error(f"视频文件不存在: {video_path}")
-            raise HTTPException(status_code=500, detail="视频文件保存失败")
+            logger.error(f"Video file does not exist: {video_path}")
+            raise HTTPException(status_code=500, detail="Failed to save video file")
         
         if not srt_path:
-            logger.error("字幕文件路径为空")
-            raise HTTPException(status_code=500, detail="字幕文件路径生成失败")
+            logger.error("Subtitle file path is empty")
+            raise HTTPException(status_code=500, detail="Failed to generate subtitle file path")
         
         if not srt_path.exists():
-            logger.error(f"字幕文件不存在: {srt_path}")
-            raise HTTPException(status_code=500, detail=f"字幕文件不存在: {srt_path}")
+            logger.error(f"Subtitle file does not exist: {srt_path}")
+            raise HTTPException(status_code=500, detail=f"Subtitle file does not exist: {srt_path}")
         
-        logger.info(f"文件验证成功: video={video_path.exists()}, srt={srt_path.exists()}")
+        logger.info(f"File verification successful: video={video_path.exists()}, srt={srt_path.exists()}")
         
-        # 自动启动处理流程
+        # Auto-start processing flow
         try:
-            # 更新项目状态为处理中
+            # Update project status to processing
             project_service.update_project_status(project_id, "processing")
             
-            # 发送WebSocket通知：处理开始
+            # Send WebSocket notification: processing started
             await websocket_service.send_processing_started(
                 project_id=project_id,
-                message="开始视频处理流程"
+                message="Video processing started"
             )
             
-            # 提交Celery任务
-            logger.info(f"准备提交Celery任务: {project_id}")
+            # Submit Celery task
+            logger.info(f"Preparing to submit Celery task: {project_id}")
             
-            # 使用任务提交工具
+            # Use task submission utility
             task_result = submit_video_pipeline_task(
                 project_id=project_id,
                 input_video_path=str(video_path),
@@ -207,25 +207,25 @@ async def upload_files(
             )
             
             if not task_result['success']:
-                logger.error(f"Celery任务提交失败: {task_result['error']}")
-                raise Exception(f"任务提交失败: {task_result['error']}")
+                logger.error(f"Celery task submission failed: {task_result['error']}")
+                raise Exception(f"Task submission failed: {task_result['error']}")
             
             celery_task_id = task_result['task_id']
-            logger.info(f"Celery任务已提交: {celery_task_id}")
+            logger.info(f"Celery task submitted: {celery_task_id}")
             
-            # 创建处理任务记录
+            # Create processing task record
             task_result = processing_service._create_processing_task(
                 project_id=project_id,
                 task_type=TaskType.VIDEO_PROCESSING
             )
-            logger.info(f"处理任务记录已创建: {task_result}")
+            logger.info(f"Processing task record created: {task_result}")
             
-            logger.info(f"项目 {project_id} 处理任务已启动，Celery任务ID: {celery_task.id}")
+            logger.info(f"Project {project_id} processing task started, Celery task ID: {celery_task.id}")
             
         except Exception as e:
-            logger.error(f"启动项目 {project_id} 处理失败: {str(e)}")
-            # 即使处理启动失败，也要返回项目创建成功
-            # 用户可以通过重试按钮重新启动处理
+            logger.error(f"Failed to start project {project_id} processing: {str(e)}")
+            # Even if processing fails to start, return project creation success
+            # User can restart processing via retry button
         
         # 返回项目响应
         return ProjectResponse(
@@ -245,7 +245,7 @@ async def upload_files(
             total_tasks=0
         )
     except HTTPException:
-        # 重新抛出HTTP异常，不要被通用异常处理器捕获
+        # Re-throw HTTP exception, don't let it be caught by generic exception handler
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload files: {str(e)}")

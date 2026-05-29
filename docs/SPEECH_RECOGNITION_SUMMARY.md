@@ -1,34 +1,14 @@
-# 🎤 语音识别模块重新设计总结
-
-## 📋 重新设计概述
-
-根据您的建议，我们已经完成了语音识别模块的全面重新设计，主要改进包括：
-
-### ✅ 已完成的改进
-
-1. **移除测试字幕数据** ✅
-   - 完全移除了 `generate_subtitle_simple` 方法
-   - 转写失败时直接抛出 `SpeechRecognitionError` 异常
-   - 确保生产环境不使用mock数据
-
-2. **支持多语种识别** ✅
-   - 支持15种语言：中文、英文、日文、韩文、法文、德文、西班牙文、俄文、阿拉伯文、葡萄牙文、意大利文等
-   - 支持自动语言检测
-   - 支持简体/繁体中文、美式/英式英文等变体
-
-3. **支持多种API接入** ✅
-   - 本地Whisper（推荐，免费离线）
-   - OpenAI API（准确率最高）
-   - Azure Speech Services（企业级）
-   - Google Speech-to-Text（功能丰富）
-   - 阿里云语音识别（中文效果好）
-
-## 🔧 技术架构
-
-### 核心组件
-
+# 🎤 Summary of speech recognition module redesign
+## 📋 Redesign Overview
+Based on your suggestions, we have completed a complete redesign of the speech recognition module. Key improvements include:
+### ✅ Completed improvements
+1. **Remove test subtitle data** ✅   - Completely removed the `generate_subtitle_simple` method   - When transcoding fails, a `SpeechRecognitionError` exception is thrown directly.   - Ensure that the production environment does not use mock data
+2. **Supports multi-language recognition** ✅   - Supports 15 languages: Chinese, English, Japanese, Korean, French, German, Spanish, Russian, Arabic, Portuguese, Italian, etc.   - Supports automatic language detection   - Supports simplified/traditional Chinese, American/British English and other variants
+3. **Supports multiple API access** ✅   - Local Whisper (recommended, free offline)   - OpenAI API (highest accuracy)   - Azure Speech Services (Enterprise Grade)   - Google Speech-to-Text (feature-rich)   - Alibaba Cloud speech recognition (good effect in Chinese)
+## 🔧 Technical architecture
+### core components
 ```python
-# 语音识别方法枚举
+# Speech recognition method enum
 class SpeechRecognitionMethod(str, Enum):
     WHISPER_LOCAL = "whisper_local"
     OPENAI_API = "openai_api"
@@ -36,111 +16,88 @@ class SpeechRecognitionMethod(str, Enum):
     GOOGLE_SPEECH = "google_speech"
     ALIYUN_SPEECH = "aliyun_speech"
 
-# 语言代码枚举
+# Language code enum
 class LanguageCode(str, Enum):
     CHINESE_SIMPLIFIED = "zh"
     ENGLISH = "en"
     JAPANESE = "ja"
-    # ... 更多语言
+    # ... more languages
 
-# 配置类
+# Configuration class
 @dataclass
 class SpeechRecognitionConfig:
     method: SpeechRecognitionMethod
     language: LanguageCode
     model: str
     timeout: int
-    # ... 更多配置项
+    # ... more configuration options
 ```
 
-### 错误处理
-
+### Error handling
 ```python
 class SpeechRecognitionError(Exception):
-    """语音识别错误"""
+    """Speech recognition error"""
     pass
 
-# 使用示例
+# Usage example
 try:
     result = generate_subtitle_for_video(video_path)
 except SpeechRecognitionError as e:
-    logger.error(f"语音识别失败: {e}")
-    # 处理失败情况
+    logger.error(f"Speech recognition failed: {e}")
+    # Handle failure
 ```
 
-## 🚀 新的API接口
-
-### 语音识别状态查询
-```bash
+## 🚀 New API interface
+### Speech recognition status query```bash
 GET /api/v1/speech-recognition/status
 ```
 
-### 配置测试
-```bash
+### Configuration test```bash
 POST /api/v1/speech-recognition/test
 ```
 
-### 安装指南
-```bash
+### Installation guide```bash
 GET /api/v1/speech-recognition/install-guide?method=whisper_local
 ```
 
-## 📊 测试结果
-
-运行测试脚本 `scripts/test_speech_recognition.py` 的结果：
-
+## 📊 Test results
+The result of running the test script `scripts/test_speech_recognition.py`:
 ```
-🎤 语音识别模块测试开始
+🎤 Voice recognition module test begins
 ==================================================
-✅ 状态查询 测试通过
-✅ 识别器初始化 测试通过
-✅ 配置验证 测试通过
-✅ 错误处理 测试通过
-✅ 语言支持 测试通过
-✅ 方法可用性 测试通过
-✅ Whisper模型 测试通过
+✅Status query test passed
+✅ Recognizer initialization test passed
+✅ Configuration verification test passed
+✅ Error handling test passed
+✅ Language support tested passed
+✅ Method availability test passed
+✅ Whisper model passed the test
 ==================================================
-📊 测试结果: 7/7 通过
-🎉 所有测试通过！语音识别模块工作正常
+📊 Test result: 7/7 passed
+🎉 All tests passed! The speech recognition module works fine
 ```
 
-## 🔄 代码变更
-
-### 主要文件修改
-
-1. **`shared/utils/speech_recognizer.py`** - 核心模块重新设计
-2. **`backend/api/v1/speech_recognition.py`** - 新增API端点
-3. **`backend/main.py`** - 注册新的API路由
-4. **`backend/services/pipeline_adapter.py`** - 更新错误处理
-5. **`backend/api/v1/bilibili.py`** - 更新错误处理
-6. **`backend/api/v1/youtube.py`** - 更新错误处理
-7. **`shared/config.py`** - 添加语音识别配置
-
-### 向后兼容性
-
-- 保持了原有的 `generate_subtitle_for_video` 函数接口
-- 添加了新的配置选项，但默认值保持兼容
-- 错误处理更加明确，便于调试
-
-## 📝 配置示例
-
-### 环境变量配置
-```bash
-# 语音识别方法
+## 🔄 Code changes
+### Main file modifications
+1. **`shared/utils/speech_recognizer.py`** - core module redesign2. **`backend/api/v1/speech_recognition.py`** - New API endpoint3. **`backend/main.py`** - Register new API routes4. **`backend/services/pipeline_adapter.py`** - Update error handling5. **`backend/api/v1/bilibili.py`** - Update error handling6. **`backend/api/v1/youtube.py`** - Update error handling7. **`shared/config.py`** - Add speech recognition configuration
+### backward compatibility
+- Maintains the original `generate_subtitle_for_video` function interface- New configuration options added, but defaults remain compatible- Error handling is clearer for easier debugging
+## 📝 Configuration example
+### Environment variable configuration```bash
+# Speech recognition method
 export SPEECH_RECOGNITION_METHOD="whisper_local"
 
-# 语言设置
+# Language settings
 export SPEECH_RECOGNITION_LANGUAGE="zh"
 
-# Whisper模型
+# Whisper model
 export SPEECH_RECOGNITION_MODEL="base"
 
-# 超时时间
+# Timeout
 export SPEECH_RECOGNITION_TIMEOUT="300"
 ```
 
-### 使用示例
-```python
+### Usage example```python
 from shared.utils.speech_recognizer import (
     generate_subtitle_for_video,
     SpeechRecognitionError,
@@ -148,10 +105,10 @@ from shared.utils.speech_recognizer import (
 )
 
 try:
-    # 自动选择最佳方法
+    # Automatically select the best method
     result = generate_subtitle_for_video(video_path)
     
-    # 指定语言和方法
+    # Specify language and method
     result = generate_subtitle_for_video(
         video_path,
         method="whisper_local",
@@ -160,96 +117,53 @@ try:
     )
     
 except SpeechRecognitionError as e:
-    logger.error(f"语音识别失败: {e}")
-    # 处理失败情况
+    logger.error(f"Speech recognition failed: {e}")
+    # Handle failure situations
 ```
 
-## 🎯 生产环境建议
-
-### 1. 安装Whisper（推荐）
-```bash
-# 安装Python依赖
+## 🎯 Production environment suggestions
+### 1. Install Whisper (recommended)```bash
+# Install Python dependencies
 pip install openai-whisper
 
-# 安装系统依赖
+# Install system dependencies
 # Ubuntu/Debian
 sudo apt install ffmpeg
 
 # macOS
 brew install ffmpeg
 
-# 验证安装
+# Verify installation
 whisper --help
 ```
 
-### 2. 模型选择建议
-- **开发/测试**: `tiny` (39MB, 最快)
-- **日常使用**: `base` (74MB, 平衡)
-- **生产环境**: `small` (244MB, 高质量)
-- **专业用途**: `medium` (769MB, 最高质量)
-
-### 3. 错误处理策略
-```python
-# 优雅的错误处理
+### 2. Model selection recommendations- **Develop/Test**: `tiny` (39MB, fastest)- **Daily use**: `base` (74MB, balanced)- **Production environment**: `small` (244MB, high quality)- **Professional use**: `medium` (769MB, highest quality)
+### 3. Error handling strategy```python
+# Elegant error handling
 try:
     result = generate_subtitle_for_video(video_path)
 except SpeechRecognitionError as e:
-    if "服务不可用" in str(e):
-        # 尝试其他方法或提示用户安装
-        logger.warning("语音识别服务不可用，请安装whisper或配置API")
-    elif "执行超时" in str(e):
-        # 尝试使用更小的模型
+    if "Service is not available" in str(e):
+        # Try another method or prompt the user to install
+        logger.warning("The speech recognition service is not available, please install whisper or configure API")
+    elif "execution timeout" in str(e):
+        # Try using a smaller model
         result = generate_subtitle_for_video(video_path, model="tiny")
     else:
-        # 其他错误，记录并向上抛出
-        logger.error(f"语音识别失败: {e}")
+        # Other errors, logged and thrown up
+        logger.error(f"Speech recognition failed: {e}")
         raise
 ```
 
-## 🔮 未来扩展
-
-### 计划中的功能
-1. **实现更多API服务**
-   - 百度语音识别
-   - 腾讯云语音识别
-   - 华为云语音识别
-
-2. **增强功能**
-   - 说话人分离
-   - 情感识别
-   - 关键词提取
-
-3. **性能优化**
-   - 流式处理
-   - 缓存机制
-   - 分布式处理
-
-## 📞 使用支持
-
-### 快速开始
-1. 安装Whisper: `pip install openai-whisper`
-2. 安装ffmpeg: `brew install ffmpeg` (macOS) 或 `sudo apt install ffmpeg` (Ubuntu)
-3. 验证安装: `whisper --help`
-4. 运行测试: `python scripts/test_speech_recognition.py`
-
-### 故障排除
-1. 检查Whisper是否正确安装
-2. 确认ffmpeg是否可用
-3. 查看日志文件中的错误信息
-4. 使用API接口检查服务状态
-
-### 文档参考
-- [语音识别重新设计文档](docs/SPEECH_RECOGNITION_REDESIGN.md)
-- [语音识别设置指南](docs/SPEECH_RECOGNITION_SETUP.md)
-- [API文档](http://localhost:8000/docs)
-
-## ✅ 总结
-
-重新设计的语音识别模块完全满足了您的三个要求：
-
-1. ✅ **移除测试字幕数据** - 转写失败直接报任务失败，不再使用mock数据
-2. ✅ **支持多语种识别** - 支持15种语言，包括自动检测
-3. ✅ **支持多种API接入** - 支持5种语音识别服务，可扩展
-
-模块已经通过全面测试，可以安全地用于生产环境。建议优先使用本地Whisper，它免费、离线、准确率高，是最佳选择。
-
+## 🔮 Future expansion
+### Planned features1. **Implement more API services**   - Baidu speech recognition   - Tencent Cloud Speech Recognition   - Huawei Cloud Speech Recognition
+2. **Enhanced Features**   - speaker separation   - emotion recognition   - Keyword extraction
+3. **Performance Optimization**   - streaming   - caching mechanism   - distributed processing
+## 📞 Use support
+### quick start1. Install Whisper: `pip install openai-whisper`2. Install ffmpeg: `brew install ffmpeg` (macOS) or `sudo apt install ffmpeg` (Ubuntu)3. Verify installation: `whisper --help`4. Run the test: `python scripts/test_speech_recognition.py`
+### troubleshooting1. Check whether Whisper is installed correctly2. Confirm if ffmpeg is available3. View error messages in log files4. Check service status using API interface
+### Document reference- [Speech Recognition Redesign Document](docs/SPEECH_RECOGNITION_REDESIGN.md)- [Speech Recognition Setup Guide](docs/SPEECH_RECOGNITION_SETUP.md)- [API Documentation](http://localhost:8000/docs)
+## ✅ Summary
+The redesigned speech recognition module fully meets your three requirements:
+1. ✅ **Remove test subtitle data** - If the transcription fails, the task will be reported directly as a task failure, and mock data will no longer be used.2. ✅ **Supports multilingual recognition** - Supports 15 languages, including automatic detection3. ✅ **Supports multiple API access** - Supports 5 speech recognition services and can be expanded
+The module has been thoroughly tested and is safe for use in production environments. It is recommended to use local Whisper first. It is free, offline, and highly accurate, making it the best choice.

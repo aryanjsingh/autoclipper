@@ -1,37 +1,37 @@
-# Cookie导入故障排除指南
+# Cookie Import Troubleshooting Guide
 
-## 问题描述
+## Problem Description
 
-用户反馈Cookie导入失败，出现"Request failed with status code 500"错误。
+Users reported that cookie import failed with the error "Request failed with status code 500".
 
-## 问题分析
+## Problem Analysis
 
-经过排查，发现以下问题：
+After investigation, the following issues were found:
 
-1. **数据格式不匹配**：API传递的Cookie数据格式与`bilibili_service.py`期望的格式不一致
-2. **Cookie验证逻辑**：验证函数期望特定的数据结构，但实际传递的是原始Cookie字典
-3. **错误处理不完善**：异常信息不够详细，难以定位具体问题
+1. **Data format mismatch**: The cookie data format passed by the API is inconsistent with the format expected by `bilibili_service.py`
+2. **Cookie validation logic**: The validation function expects a specific data structure, but what is actually passed is the raw Cookie dictionary
+3. **Incomplete error handling**: Exception information is not detailed enough, making it difficult to locate the specific problem
 
-## 解决方案
+## Solution
 
-### 1. 修复数据格式不匹配
+### 1. Fix Data Format Mismatch
 
-**问题**：API传递原始Cookie字典，但服务期望包含`code`字段的特定格式
+**Issue**: API passes raw cookie dictionary, but service expects a specific format including the `code` field
 
-**修复**：在API中构造符合期望的Cookie数据格式
+**Fix**: Construct cookie data format in API that meets expectations
 
 ```python
-# 修复前：直接传递原始Cookie
+# Before fix: pass raw cookies directly
 cookie_content=json.dumps(cookies)
 
-# 修复后：构造符合期望的格式
+# After fix: construct expected format
 cookie_data = {
     "code": 0,
-    "message": "登录成功",
+    "message": "Login successful",
     "data": {
         "user_info": {
             "username": cookie_validation.get("username", "cookie_user"),
-            "nickname": cookie_validation.get("nickname", "B站用户"),
+            "nickname": cookie_validation.get("nickname", "Bilibili User"),
             "mid": cookie_validation.get("mid", "")
         },
         "cookie_info": {
@@ -42,14 +42,14 @@ cookie_data = {
 cookie_content=json.dumps(cookie_data)
 ```
 
-### 2. 优化Cookie验证逻辑
+### 2. Optimize Cookie Verification Logic
 
-**问题**：验证函数过于严格，开发测试困难
+**Problem**: The verification function is too strict, making development and testing difficult
 
-**修复**：添加开发模式支持，允许跳过真实API验证
+**Fix**: Add development mode support, allowing real API verification to be skipped
 
 ```python
-# 开发环境：允许跳过真实API验证
+# Development environment: allow skipping real API verification
 skip_validation = (
     os.getenv("SKIP_COOKIE_VALIDATION", "false").lower() == "true" or
     os.getenv("ENVIRONMENT", "development") == "development"
@@ -59,131 +59,125 @@ if skip_validation:
     return {
         "valid": True,
         "username": f"user_{cookies.get('DedeUserID', 'unknown')}",
-        "nickname": f"B站用户_{cookies.get('DedeUserID', 'unknown')}",
+        "nickname": f"Bilibili User_{cookies.get('DedeUserID', 'unknown')}",
         "mid": cookies.get('DedeUserID', '')
     }
 ```
 
-### 3. 增强错误处理
+### 3. Enhanced Error Handling
 
-**问题**：异常信息不够详细
+**Problem**: Exception information is not detailed enough
 
-**修复**：添加具体的错误信息和状态码
+**Fix**: Add specific error messages and status codes
 
 ```python
 except HTTPException:
-    raise  # 重新抛出HTTP异常，保持状态码
+    raise  # Re-raise HTTP exceptions to preserve status codes
 except Exception as e:
-    logger.error(f"Cookie登录失败: {str(e)}")
-    raise HTTPException(status_code=500, detail="登录失败")
+    logger.error(f"Cookie login failed: {str(e)}")
+    raise HTTPException(status_code=500, detail="Login failed")
 ```
 
-## 测试验证
+## Test Verification
 
-### 测试结果
+### Test Results
 
 ```
-✅ 获取登录方式列表成功
-✅ Cookie验证功能正常
-✅ 账号密码登录功能正常
-✅ 第三方登录功能正常
-✅ Cookie导入成功 (多个测试场景)
+✅ Successfully retrieved login methods list
+✅ Cookie validation works correctly
+✅ Account and password login works correctly
+✅ Third-party login works correctly
+✅ Cookie import successful (multiple test scenarios)
 ```
 
-### 支持的Cookie格式
+### Supported Cookie Formats
 
-1. **标准B站Cookie**：
+1. **Standard Bilibili Cookie:**
    ```
    SESSDATA=abc123def456; bili_jct=xyz789; DedeUserID=12345; buvid3=test123
    ```
 
-2. **包含空格的Cookie**：
+2. **Cookies containing spaces:**
    ```
    SESSDATA=space test; bili_jct=space jct; DedeUserID=11111; buvid3=space123
    ```
 
-3. **扩展字段Cookie**：
+3. **Extended field cookie:**
    ```
    SESSDATA=test_sessdata; bili_jct=test_jct; DedeUserID=67890; buvid3=test456; sid=test_sid
    ```
 
-## 环境配置
+## Environment Configuration
 
-### 开发环境
+### Development Environment
 
 ```bash
-# 跳过Cookie验证（仅用于开发测试）
+# Skip cookie verification (for development testing only)
 export ENVIRONMENT=development
 
-# 或者
+# or
 export SKIP_COOKIE_VALIDATION=true
 ```
 
-### 生产环境
+### Production Environment
 
 ```bash
-# 启用严格验证
+# Enable strict authentication
 export ENVIRONMENT=production
 export SKIP_COOKIE_VALIDATION=false
 ```
 
-## 使用说明
+## Usage Instructions
 
-### 1. 获取Cookie
+### 1. Get Cookie
+1. Log in to Bilibili in the browser
+2. Press F12 to open developer tools
+3. Switch to the Network tab
+4. Refresh the page and find any request
+5. Copy the value of the Cookie field in the request header
 
-1. 在浏览器中登录B站
-2. 按F12打开开发者工具
-3. 切换到Network标签页
-4. 刷新页面，找到任意请求
-5. 在请求头中复制Cookie字段的值
+### 2. Import Cookies
+1. Open AutoClip's account management interface
+2. Select the "Cookie Import" tab
+3. Paste cookie string
+4. Set nickname
+5. Click "Import Cookies"
 
-### 2. 导入Cookie
+### 3. Verification Successful
+- Status code: 200
+- Returns account information: ID, username, nickname, status, etc.
 
-1. 打开AutoClip的账号管理界面
-2. 选择"Cookie导入"标签页
-3. 粘贴Cookie字符串
-4. 设置昵称
-5. 点击"导入Cookie"
+## FAQ
 
-### 3. 验证成功
+### Q: Why can test cookies be imported successfully?
+A: In development mode, we allow skipping real API verification for the convenience of development and testing. Production environments enable strict validation.
 
-- 状态码：200
-- 返回账号信息：ID、用户名、昵称、状态等
+### Q: What should I do if real cookie import fails?
+A: Check the following:
+1. Whether the cookie contains required fields (SESSDATA, bili_jct, DedeUserID)
+2. Whether the cookie has expired
+3. Whether the network connection is normal
+4. Whether the Bilibili API is accessible
 
-## 常见问题
+### Q: How to distinguish between development and production environments?
+A: Controlled through environment variables:
+- `ENVIRONMENT=development`: development mode, skip verification
+- `ENVIRONMENT=production`: production mode, strict verification
 
-### Q: 为什么测试Cookie能成功导入？
+## Follow-up Optimization
 
-A: 在开发模式下，我们允许跳过真实API验证，这是为了便于开发和测试。生产环境会启用严格的验证。
+1. **Automatic Cookie Update**: Check cookie validity regularly
+2. **Smart Verification**: Determine validity based on cookie characteristics
+3. **Batch Import**: Support importing multiple accounts at once
+4. **Import History**: Record cookie import and update history
 
-### Q: 真实Cookie导入失败怎么办？
+## Summary
 
-A: 检查以下几点：
-1. Cookie是否包含必要字段（SESSDATA、bili_jct、DedeUserID）
-2. Cookie是否已过期
-3. 网络连接是否正常
-4. B站API是否可访问
+By fixing data format mismatches, optimizing validation logic, and enhancing error handling, the cookie import feature now works properly. Users can import cookies in multiple formats, and the system will automatically verify and process them.
 
-### Q: 如何区分开发和生产环境？
-
-A: 通过环境变量控制：
-- `ENVIRONMENT=development`：开发模式，跳过验证
-- `ENVIRONMENT=production`：生产模式，严格验证
-
-## 后续优化
-
-1. **自动Cookie更新**：定期检查Cookie有效性
-2. **智能验证**：根据Cookie特征判断有效性
-3. **批量导入**：支持多个账号同时导入
-4. **导入历史**：记录Cookie导入和更新历史
-
-## 总结
-
-通过修复数据格式不匹配、优化验证逻辑和增强错误处理，Cookie导入功能现在可以正常工作。用户可以使用多种格式的Cookie进行导入，系统会自动验证和处理。
-
-关键改进：
-- ✅ 解决了500错误问题
-- ✅ 支持多种Cookie格式
-- ✅ 提供开发和生产环境配置
-- ✅ 增强了错误处理和用户反馈
-- ✅ 通过了全面的功能测试
+Key improvements:
+- ✅ Solved 500 error issue
+- ✅ Supports multiple cookie formats
+- ✅ Provides development and production environment configurations
+- ✅ Enhanced error handling and user feedback
+- ✅ Passed comprehensive functional testing

@@ -1,21 +1,21 @@
 """
 API v1 package for FastAPI routes.
-统一管理所有API路由
+Unified management of all API routes
 """
 
 from fastapi import APIRouter
 
-# 创建主路由器
+# Create main router
 api_router = APIRouter()
 
-# 导入所有路由模块
+# Import all route modules
 from .health import router as health_router
 from .projects import router as projects_router
 from .clips import router as clips_router
 from .collections import router as collections_router
 from .tasks import router as tasks_router
 from .processing import router as processing_router
-# from .websocket import router as websocket_router  # 已禁用WebSocket系统
+# from .websocket import router as websocket_router  # WebSocket system disabled
 from .files import router as files_router
 from .settings import router as settings_router
 from .bilibili import router as bilibili_router
@@ -30,14 +30,14 @@ from .simple_progress import router as simple_progress_router
 from ..upload_queue import router as upload_queue_router
 from ..account_health import router as account_health_router
 
-# 注册所有路由
+# Register all routes
 api_router.include_router(health_router, prefix="/health", tags=["health"])
 api_router.include_router(projects_router, prefix="/projects", tags=["projects"])
 api_router.include_router(clips_router, prefix="/clips", tags=["clips"])
 api_router.include_router(collections_router, prefix="/collections", tags=["collections"])
 api_router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(processing_router, tags=["processing"])
-# api_router.include_router(websocket_router, tags=["websocket"])  # 已禁用WebSocket系统
+# api_router.include_router(websocket_router, tags=["websocket"])  # WebSocket system disabled
 api_router.include_router(files_router, tags=["files"])
 api_router.include_router(settings_router, prefix="/settings", tags=["settings"])
 api_router.include_router(bilibili_router, prefix="/bilibili", tags=["bilibili"])

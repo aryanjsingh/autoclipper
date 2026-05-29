@@ -1,0 +1,111 @@
+# Opinion & Commentary Video Outline Extraction Prompt
+
+## Input Format
+You will receive a JSON input:
+
+{
+  "text": "{video transcription text segment}"
+}
+
+- The `text` field contains a segment of the video transcription content;
+- This content has been manually proofread to ensure basic semantic coherence;
+- Please use only the input content as your information source, without any external expansion, common sense reasoning, or logical supplementation.
+
+## Core Task: Balancing Viewpoint Depth and Critical Thinking Value
+Your task is to **comprehensively cover** all important viewpoints and arguments in the input text while maintaining **appropriate conciseness** and avoiding excessive detail. The goal is to extract **8-15 core topics**, each corresponding to **3-8 minutes** of video content.
+
+## Topic Extraction Principles
+
+### 1. Viewpoint Value Priority Principle
+- **Uniqueness First**: Prioritize content with unique perspectives, novel viewpoints, or deep thinking
+- **Controversy Attention**: Focus on controversial viewpoints with discussion value that can spark critical thinking
+- **Logical Completeness**: Ensure each viewpoint contains a complete argumentative logic (viewpoint-evidence-conclusion)
+
+### 2. Critical Thinking Depth Principle
+- **Multi-Dimensional Analysis**: Prioritize in-depth discussions with multi-angle analysis and pros/cons comparison
+- **Critical Thinking**: Focus on content that demonstrates critical thinking and rational analysis
+- **Value Judgment**: Highlight viewpoint expressions with clear value positions and judgment criteria
+
+### 3. Social Significance Principle
+- **Real-World Relevance**: Prioritize viewpoints related to current social phenomena and trending events
+- **Universal Value**: Focus on viewpoint discussions with universal significance that can evoke resonance
+- **Inspirational Significance**: Highlight content with inspirational value and thinking expansion significance for the audience
+
+### 4. Expression Completeness Principle
+- **Clear Viewpoint**: Ensure each topic contains a clear viewpoint position and attitude
+- **Sufficient Argumentation**: Ensure the completeness of the argumentation process, including facts, logic, emotions, and other multiple forms of argumentation
+- **Clear Conclusion**: Ensure viewpoint expressions have clear conclusions or value judgments
+
+## Topic Merging and Splitting Strategy
+
+### Merging Conditions (should be merged into one topic):
+- Different levels or angles discussing the same social phenomenon
+- Interrelated viewpoint argumentation chains
+- Different viewpoint expressions under the same value system
+- Multi-dimensional analysis of the same problem
+
+### Splitting Conditions (should be split into different topics):
+- Fundamental shift in viewpoint position
+- Discussion theme shifts from one domain to another
+- Argumentation method shifts from rational analysis to emotional expression
+- Obvious change in value judgment criteria
+
+## Output Format
+
+Please output strictly in the following format without adding other descriptive text:
+
+### Outline:
+1.  **[Primary Topic Name]**
+    - [Subtopic 1: Highlight the uniqueness and critical thinking value of the viewpoint]
+    - [Subtopic 2: Highlight the uniqueness and critical thinking value of the viewpoint]
+    - …
+
+2.  **[Primary Topic Name]**
+    - [Subtopic 1]
+    - …
+
+## Output Example
+
+### Outline:
+1.  **Value Reconstruction of Contemporary Young People**
+    - Analysis of value shift from material pursuit to spiritual fulfillment
+    - Reflections on balancing individualism and collective responsibility
+    - Discussion on integration paths between traditional culture and modern concepts
+    - Analysis of conflicts between social expectations and personal choices
+
+2.  **Critique of the Information Cocoon Phenomenon in the Internet Age**
+    - Impact of algorithm recommendation mechanisms on thinking patterns
+    - Contradictory relationship between information overload and deep thinking ability
+    - Necessity and implementation paths for obtaining diverse viewpoints
+    - Significance of rational judgment in the information explosion era
+
+3.  **Deep Reflections on Educational Equity and Social Mobility**
+    - Root cause analysis of unequal distribution of educational resources
+    - Applicability of "knowledge changes destiny" concept in the new era
+    - Impact of diversified success standards on traditional education views
+    - Strategies for addressing the trend of social class solidification
+
+## Special Considerations for Opinion Content
+
+### 1. Handling Controversial Viewpoints:
+- Ensure complete expression of controversial viewpoints without bias
+- Include the argumentation process from different positions
+- Maintain the original context and emotional tone of viewpoint expression
+
+### 2. Value Judgment Content:
+- Clearly distinguish between factual statements and value judgments
+- Preserve clear expression of value positions
+- Include the basis and standards for value judgments
+
+### 3. Social Criticism Content:
+- Maintain the constructive and rational nature of criticism
+- Include problem analysis and solution approaches
+- Avoid pure emotional venting or meaningless complaints
+
+## Notes
+
+1. **Viewpoint Completeness**: Ensure extracted topics can fully reflect the core position of the original viewpoint
+2. **Critical Thinking Value**: Prioritize content with critical thinking value that can spark deep thinking
+3. **Social Significance**: Focus on viewpoints with unique insights into social phenomena and inspirational significance
+4. **Clear Logic**: Ensure the logical chain of viewpoint expression is complete and the argumentation process is clear
+5. **Value Neutrality**: Maintain a neutral stance during the extraction process without making value judgments on viewpoints

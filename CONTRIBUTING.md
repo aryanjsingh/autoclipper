@@ -1,111 +1,111 @@
-# 贡献指南
+# Contributing Guide
 
-感谢您对AutoClip项目的关注！我们欢迎所有形式的贡献，包括但不限于：
+Thank you for your interest in the AutoClip project! We welcome all forms of contributions, including but not limited to:
 
-- 🐛 Bug修复
-- ✨ 新功能开发
-- 📚 文档改进
-- 🧪 测试用例
-- 💡 功能建议
-- 🎨 UI/UX改进
+- 🐛 Bug fixes
+- ✨ New feature development
+- 📚 Documentation improvements
+- 🧪 Test cases
+- 💡 Feature suggestions
+- 🎨 UI/UX improvements
 
-## 开发环境设置
+## Development Environment Setup
 
-### 1. Fork并克隆项目
+### 1. Fork and Clone the Project
 
 ```bash
-# Fork项目到您的GitHub账户，然后克隆
+# Fork the project to your GitHub account, then clone
 git clone https://github.com/your-username/autoclip.git
 cd autoclip
 
-# 添加上游仓库
+# Add upstream repository
 git remote add upstream https://github.com/original-username/autoclip.git
 ```
 
-### 2. 设置开发环境
+### 2. Set Up Development Environment
 
 ```bash
-# 创建虚拟环境
+# Create virtual environment
 python3 -m venv venv
 source venv/bin/activate  # Linux/macOS
-# 或 venv\Scripts\activate  # Windows
+# or venv\Scripts\activate  # Windows
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 cd frontend && npm install && cd ..
 
-# 配置环境变量
+# Configure environment variables
 cp env.example .env
-# 编辑.env文件，填入必要的配置
+# Edit .env file and fill in necessary configurations
 ```
 
-### 3. 启动开发服务器
+### 3. Start Development Server
 
 ```bash
-# 启动Redis
+# Start Redis
 brew services start redis  # macOS
-# 或 sudo systemctl start redis-server  # Linux
+# or sudo systemctl start redis-server  # Linux
 
-# 启动后端
+# Start backend
 python -m uvicorn backend.main:app --reload --port 8000
 
-# 启动Celery Worker
+# Start Celery Worker
 celery -A backend.core.celery_app worker --loglevel=info
 
-# 启动前端
+# Start frontend
 cd frontend && npm run dev
 ```
 
-## 开发流程
+## Development Workflow
 
-### 1. 创建功能分支
+### 1. Create Feature Branch
 
 ```bash
-# 从main分支创建新分支
+# Create new branch from main
 git checkout main
 git pull upstream main
 git checkout -b feature/your-feature-name
 ```
 
-### 2. 开发规范
+### 2. Development Standards
 
-#### 代码风格
+#### Code Style
 
-**Python (后端)**
-- 遵循PEP 8规范
-- 使用Black进行代码格式化
-- 使用isort进行导入排序
-- 函数和类需要添加docstring
+**Python (Backend)**
+- Follow PEP 8 standards
+- Use Black for code formatting
+- Use isort for import sorting
+- Functions and classes need docstrings
 
 ```python
 def example_function(param1: str, param2: int) -> bool:
     """
-    示例函数的文档字符串
+    Example function docstring
     
     Args:
-        param1: 参数1的描述
-        param2: 参数2的描述
+        param1: Description of parameter 1
+        param2: Description of parameter 2
         
     Returns:
-        返回值的描述
+        Description of return value
     """
     pass
 ```
 
-**TypeScript (前端)**
-- 使用ESLint和Prettier
-- 组件需要添加JSDoc注释
-- 使用函数组件和Hooks
-- 遵循Ant Design设计规范
+**TypeScript (Frontend)**
+- Use ESLint and Prettier
+- Components need JSDoc comments
+- Use functional components and Hooks
+- Follow Ant Design design specifications
 
 ```typescript
 /**
- * 示例组件的描述
+ * Example component description
  */
 interface ExampleProps {
-  /** 属性描述 */
+  /** Property description */
   title: string;
-  /** 可选属性描述 */
+  /** Optional property description */
   optional?: boolean;
 }
 
@@ -114,9 +114,9 @@ const ExampleComponent: React.FC<ExampleProps> = ({ title, optional = false }) =
 };
 ```
 
-#### 提交信息规范
+#### Commit Message Standards
 
-使用约定式提交格式：
+Use conventional commit format:
 
 ```
 <type>(<scope>): <description>
@@ -126,182 +126,182 @@ const ExampleComponent: React.FC<ExampleProps> = ({ title, optional = false }) =
 [optional footer(s)]
 ```
 
-**类型 (type):**
-- `feat`: 新功能
-- `fix`: Bug修复
-- `docs`: 文档更新
-- `style`: 代码格式调整
-- `refactor`: 代码重构
-- `test`: 测试相关
-- `chore`: 构建过程或辅助工具的变动
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation update
+- `style`: Code format adjustment
+- `refactor`: Code refactoring
+- `test`: Test related
+- `chore`: Build process or auxiliary tool changes
 
-**示例:**
+**Examples:**
 ```
 feat(api): add video download endpoint
 fix(ui): resolve upload modal display issue
 docs(readme): update installation instructions
 ```
 
-### 3. 测试
+### 3. Testing
 
-#### 后端测试
+#### Backend Testing
 
 ```bash
-# 运行所有测试
+# Run all tests
 pytest
 
-# 运行特定测试文件
+# Run specific test file
 pytest tests/test_api.py
 
-# 生成覆盖率报告
+# Generate coverage report
 pytest --cov=backend --cov-report=html
 ```
 
-#### 前端测试
+#### Frontend Testing
 
 ```bash
 cd frontend
 
-# 运行测试
+# Run tests
 npm test
 
-# 运行lint检查
+# Run lint check
 npm run lint
 
-# 类型检查
+# Type check
 npm run type-check
 ```
 
-### 4. 提交代码
+### 4. Submit Code
 
 ```bash
-# 添加更改
+# Add changes
 git add .
 
-# 提交更改
+# Commit changes
 git commit -m "feat(api): add video download endpoint"
 
-# 推送分支
+# Push branch
 git push origin feature/your-feature-name
 ```
 
-### 5. 创建Pull Request
+### 5. Create Pull Request
 
-1. 在GitHub上创建Pull Request
-2. 填写PR模板
-3. 确保所有检查通过
-4. 等待代码审查
+1. Create Pull Request on GitHub
+2. Fill in PR template
+3. Ensure all checks pass
+4. Wait for code review
 
-## 代码审查流程
+## Code Review Process
 
-### 审查标准
+### Review Standards
 
-- ✅ 代码符合项目规范
-- ✅ 功能正常工作
-- ✅ 测试用例覆盖
-- ✅ 文档已更新
-- ✅ 无安全漏洞
-- ✅ 性能影响评估
+- ✅ Code conforms to project standards
+- ✅ Features work correctly
+- ✅ Test case coverage
+- ✅ Documentation updated
+- ✅ No security vulnerabilities
+- ✅ Performance impact assessment
 
-### 审查反馈
+### Review Feedback
 
-- 积极回应审查意见
-- 及时修复问题
-- 保持PR更新
-- 与审查者保持沟通
+- Respond actively to review comments
+- Fix issues promptly
+- Keep PR updated
+- Maintain communication with reviewers
 
-## 问题报告
+## Issue Reporting
 
-### Bug报告
+### Bug Reports
 
-使用GitHub Issues报告Bug时，请包含：
+When reporting bugs using GitHub Issues, please include:
 
-1. **环境信息**
-   - 操作系统版本
-   - Python版本
-   - Node.js版本
-   - 浏览器版本
+1. **Environment Information**
+   - Operating system version
+   - Python version
+   - Node.js version
+   - Browser version
 
-2. **重现步骤**
-   - 详细的操作步骤
-   - 预期结果
-   - 实际结果
+2. **Reproduction Steps**
+   - Detailed operation steps
+   - Expected results
+   - Actual results
 
-3. **错误信息**
-   - 完整的错误日志
-   - 截图或录屏
+3. **Error Information**
+   - Complete error logs
+   - Screenshots or screen recordings
 
-4. **附加信息**
-   - 相关配置文件
-   - 网络环境
-   - 其他可能相关的信息
+4. **Additional Information**
+   - Related configuration files
+   - Network environment
+   - Other potentially relevant information
 
-### 功能建议
+### Feature Suggestions
 
-提出新功能建议时，请说明：
+When proposing new feature suggestions, please describe:
 
-1. **功能描述**
-   - 详细的功能说明
-   - 使用场景
-   - 预期效果
+1. **Feature Description**
+   - Detailed feature description
+   - Usage scenarios
+   - Expected effects
 
-2. **实现方案**
-   - 技术实现思路
-   - 可能的挑战
-   - 替代方案
+2. **Implementation Plan**
+   - Technical implementation ideas
+   - Possible challenges
+   - Alternative solutions
 
-3. **影响评估**
-   - 对现有功能的影响
-   - 性能影响
-   - 用户体验影响
+3. **Impact Assessment**
+   - Impact on existing features
+   - Performance impact
+   - User experience impact
 
-## 文档贡献
+## Documentation Contributions
 
-### 文档类型
+### Documentation Types
 
-- 📖 用户文档
-- 🔧 开发者文档
-- 🚀 部署指南
-- ❓ 常见问题
-- 📝 API文档
+- 📖 User documentation
+- 🔧 Developer documentation
+- 🚀 Deployment guide
+- ❓ FAQ
+- 📝 API documentation
 
-### 文档规范
+### Documentation Standards
 
-- 使用Markdown格式
-- 添加目录结构
-- 包含代码示例
-- 保持内容更新
-- 使用清晰的标题层级
+- Use Markdown format
+- Add table of contents structure
+- Include code examples
+- Keep content updated
+- Use clear heading hierarchy
 
-## 社区行为准则
+## Community Code of Conduct
 
-### 我们的承诺
+### Our Commitment
 
-为了营造开放和友好的环境，我们承诺：
+To create an open and friendly environment, we commit to:
 
-- 尊重所有贡献者
-- 接受建设性批评
-- 关注社区最佳利益
-- 对其他社区成员表示同理心
+- Respect all contributors
+- Accept constructive criticism
+- Focus on the best interests of the community
+- Show empathy to other community members
 
-### 不可接受的行为
+### Unacceptable Behavior
 
-- 使用性暗示的语言或图像
-- 人身攻击或侮辱性评论
-- 公开或私下骚扰
-- 未经许可发布他人私人信息
-- 其他在专业环境中不当的行为
+- Use of sexualized language or imagery
+- Personal attacks or insulting comments
+- Public or private harassment
+- Publishing others' private information without permission
+- Other behavior inappropriate in professional settings
 
-## 联系方式
+## Contact Information
 
-- **GitHub Issues**: [项目Issues](https://github.com/your-username/autoclip/issues)
-- **GitHub Discussions**: [项目讨论](https://github.com/your-username/autoclip/discussions)
-- **邮箱**: support@autoclip.com
+- **GitHub Issues**: [Project Issues](https://github.com/your-username/autoclip/issues)
+- **GitHub Discussions**: [Project Discussions](https://github.com/your-username/autoclip/discussions)
+- **Email**: support@autoclip.com
 
-## 致谢
+## Acknowledgments
 
-感谢所有为AutoClip项目做出贡献的开发者！您的贡献让这个项目变得更好。
+Thanks to all developers who have contributed to the AutoClip project! Your contributions make this project better.
 
 ---
 
-**再次感谢您的贡献！** 🎉
+**Thank you again for your contributions!** 🎉

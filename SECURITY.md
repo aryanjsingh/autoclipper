@@ -1,177 +1,177 @@
-# 安全政策
+# Security Policy
 
-## 支持的版本
+## Supported Versions
 
-我们目前为以下版本提供安全更新：
+We currently provide security updates for the following versions:
 
-| 版本 | 支持状态 |
-| ---- | -------- |
-| 1.0.x | ✅ 支持 |
-| 0.9.x | ❌ 不支持 |
+| Version | Support Status |
+| ------- | -------------- |
+| 1.0.x   | ✅ Supported |
+| 0.9.x   | ❌ Not Supported |
 
-## 报告安全漏洞
+## Reporting Security Vulnerabilities
 
-如果您发现了安全漏洞，请通过以下方式报告：
+If you discover a security vulnerability, please report it through the following methods:
 
-### 报告方式
+### Reporting Methods
 
-**请勿在公开的GitHub Issues中报告安全漏洞！**
+**Please do not report security vulnerabilities in public GitHub Issues!**
 
-1. **邮件报告** (推荐)
-   - 发送邮件至: security@autoclip.com
-   - 主题: [SECURITY] 安全漏洞报告
+1. **Email Report** (Recommended)
+   - Send email to: security@autoclip.com
+   - Subject: [SECURITY] Security Vulnerability Report
 
-2. **GitHub安全建议**
-   - 访问: https://github.com/your-username/autoclip/security/advisories/new
-   - 点击"Report a vulnerability"
+2. **GitHub Security Advisory**
+   - Visit: https://github.com/your-username/autoclip/security/advisories/new
+   - Click "Report a vulnerability"
 
-### 报告内容
+### Report Content
 
-请包含以下信息：
+Please include the following information:
 
-1. **漏洞描述**
-   - 详细描述安全漏洞
-   - 影响的功能模块
-   - 潜在的安全风险
+1. **Vulnerability Description**
+   - Detailed description of the security vulnerability
+   - Affected functional modules
+   - Potential security risks
 
-2. **重现步骤**
-   - 详细的重现步骤
-   - 必要的环境配置
-   - 相关的代码片段
+2. **Reproduction Steps**
+   - Detailed reproduction steps
+   - Required environment configuration
+   - Related code snippets
 
-3. **影响评估**
-   - 漏洞的严重程度
-   - 可能影响的用户范围
-   - 潜在的数据泄露风险
+3. **Impact Assessment**
+   - Severity of the vulnerability
+   - Potential user impact scope
+   - Potential data breach risks
 
-4. **环境信息**
-   - 操作系统版本
-   - Python版本
-   - 项目版本
-   - 其他相关环境信息
+4. **Environment Information**
+   - Operating system version
+   - Python version
+   - Project version
+   - Other relevant environment information
 
-### 响应时间
+### Response Time
 
-- **确认收到**: 24小时内
-- **初步评估**: 72小时内
-- **修复计划**: 7天内
-- **修复发布**: 根据严重程度决定
+- **Confirmation of Receipt**: Within 24 hours
+- **Initial Assessment**: Within 72 hours
+- **Fix Plan**: Within 7 days
+- **Fix Release**: Based on severity
 
-## 安全最佳实践
+## Security Best Practices
 
-### 部署安全
+### Deployment Security
 
-1. **环境变量安全**
+1. **Environment Variable Security**
    ```bash
-   # 使用强密码
+   # Use strong passwords
    API_DASHSCOPE_API_KEY=your_strong_api_key
    
-   # 定期轮换密钥
-   # 不要在代码中硬编码敏感信息
+   # Regularly rotate keys
+   # Do not hardcode sensitive information in code
    ```
 
-2. **网络安全**
-   - 使用HTTPS部署
-   - 配置防火墙规则
-   - 限制API访问来源
-   - 启用CORS保护
+2. **Network Security**
+   - Deploy with HTTPS
+   - Configure firewall rules
+   - Limit API access sources
+   - Enable CORS protection
 
-3. **数据安全**
-   - 定期备份数据
-   - 加密敏感数据
-   - 实施访问控制
-   - 监控异常访问
+3. **Data Security**
+   - Regularly backup data
+   - Encrypt sensitive data
+   - Implement access control
+   - Monitor abnormal access
 
-### 开发安全
+### Development Security
 
-1. **依赖管理**
+1. **Dependency Management**
    ```bash
-   # 定期更新依赖
+   # Regularly update dependencies
    pip install --upgrade -r requirements.txt
    npm audit fix
    
-   # 检查安全漏洞
+   # Check for security vulnerabilities
    pip install safety
    safety check
    ```
 
-2. **代码安全**
-   - 输入验证和清理
-   - SQL注入防护
-   - XSS攻击防护
-   - CSRF保护
+2. **Code Security**
+   - Input validation and sanitization
+   - SQL injection protection
+   - XSS attack protection
+   - CSRF protection
 
-3. **API安全**
-   - 实施认证和授权
-   - 限制请求频率
-   - 验证输入参数
-   - 记录安全日志
+3. **API Security**
+   - Implement authentication and authorization
+   - Limit request frequency
+   - Validate input parameters
+   - Record security logs
 
-## 已知安全问题
+## Known Security Issues
 
-### 已修复
+### Fixed
 
-- **CVE-2024-XXXX**: 描述已修复的安全问题
-- **CVE-2024-YYYY**: 另一个已修复的问题
+- **CVE-2024-XXXX**: Description of fixed security issue
+- **CVE-2024-YYYY**: Another fixed issue
 
-### 待修复
+### Pending
 
-- 暂无待修复的安全问题
+- No pending security issues
 
-## 安全更新
+## Security Updates
 
-### 自动更新
+### Automatic Updates
 
-我们建议用户：
+We recommend users:
 
-1. **定期更新依赖**
+1. **Regularly Update Dependencies**
    ```bash
-   # 后端依赖
+   # Backend dependencies
    pip install --upgrade -r requirements.txt
    
-   # 前端依赖
+   # Frontend dependencies
    cd frontend && npm update
    ```
 
-2. **监控安全公告**
-   - 关注GitHub安全公告
-   - 订阅项目更新通知
-   - 定期检查依赖漏洞
+2. **Monitor Security Announcements**
+   - Follow GitHub security announcements
+   - Subscribe to project update notifications
+   - Regularly check dependency vulnerabilities
 
-### 手动更新
+### Manual Updates
 
-对于关键安全更新：
+For critical security updates:
 
-1. 查看发布说明
-2. 备份现有数据
-3. 按照升级指南操作
-4. 验证系统功能
+1. Review release notes
+2. Backup existing data
+3. Follow upgrade guide
+4. Verify system functionality
 
-## 安全配置
+## Security Configuration
 
-### 生产环境配置
+### Production Environment Configuration
 
 ```bash
-# .env 生产环境配置示例
+# .env production environment configuration example
 ENVIRONMENT=production
 DEBUG=false
 LOG_LEVEL=WARNING
 
-# 使用强密码
+# Use strong passwords
 API_DASHSCOPE_API_KEY=your_production_api_key
 ENCRYPTION_KEY=your_strong_encryption_key
 
-# 数据库安全
+# Database security
 DATABASE_URL=postgresql://user:password@localhost/autoclip
 
-# Redis安全
+# Redis security
 REDIS_URL=redis://:password@localhost:6379/0
 ```
 
-### 网络安全
+### Network Security
 
 ```nginx
-# Nginx配置示例
+# Nginx configuration example
 server {
     listen 443 ssl;
     server_name your-domain.com;
@@ -179,7 +179,7 @@ server {
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
     
-    # 安全头
+    # Security headers
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
     add_header X-XSS-Protection "1; mode=block";
@@ -192,48 +192,48 @@ server {
 }
 ```
 
-## 安全审计
+## Security Audits
 
-### 定期审计
+### Regular Audits
 
-我们定期进行以下安全审计：
+We regularly conduct the following security audits:
 
-1. **依赖审计**
-   - 检查已知漏洞
-   - 更新过时依赖
-   - 移除未使用依赖
+1. **Dependency Audits**
+   - Check for known vulnerabilities
+   - Update outdated dependencies
+   - Remove unused dependencies
 
-2. **代码审计**
-   - 静态代码分析
-   - 安全代码审查
-   - 渗透测试
+2. **Code Audits**
+   - Static code analysis
+   - Security code review
+   - Penetration testing
 
-3. **配置审计**
-   - 检查安全配置
-   - 验证访问控制
-   - 测试备份恢复
+3. **Configuration Audits**
+   - Check security configurations
+   - Verify access controls
+   - Test backup recovery
 
-### 第三方审计
+### Third-party Audits
 
-- 定期邀请安全专家审计
-- 参与开源安全项目
-- 遵循安全最佳实践
+- Regularly invite security experts for audits
+- Participate in open source security projects
+- Follow security best practices
 
-## 联系信息
+## Contact Information
 
-- **安全邮箱**: security@autoclip.com
-- **项目维护者**: [GitHub Profile](https://github.com/your-username)
-- **紧急联系**: 通过GitHub Issues标记为"security"
+- **Security Email**: security@autoclip.com
+- **Project Maintainer**: [GitHub Profile](https://github.com/your-username)
+- **Emergency Contact**: Mark as "security" via GitHub Issues
 
-## 免责声明
+## Disclaimer
 
-本安全政策旨在帮助用户安全地使用AutoClip项目。我们努力保持项目的安全性，但不能保证绝对安全。用户需要：
+This security policy is designed to help users safely use the AutoClip project. We strive to maintain project security but cannot guarantee absolute security. Users need to:
 
-1. 自行评估安全风险
-2. 采取适当的安全措施
-3. 定期更新和维护系统
-4. 遵守相关法律法规
+1. Assess security risks independently
+2. Take appropriate security measures
+3. Regularly update and maintain systems
+4. Comply with relevant laws and regulations
 
 ---
 
-**最后更新**: 2024-01-15
+**Last Updated**: 2024-01-15

@@ -14,7 +14,7 @@ generation
 [![GitHub forks](https://img.shields.io/badge/Forks-0-blue?style=social)](https://github.com/zhouxiaoka/autoclip)
 [![GitHub issues](https://img.shields.io/badge/Issues-0-blue)](https://github.com/zhouxiaoka/autoclip/issues)
 
-**Language**: [English](README-EN.md) | [中文](README.md)
+**Language**: [English](README-EN.md) | [Chinese (legacy)](README.md)
 
 </div>
 
@@ -825,11 +825,11 @@ For questions or suggestions, please contact us through:
 
 #### 💬 QQ
 
-<img src="./qq_qr.jpg" alt="QQ二维码" width="150">
+<img src="./qq_qr.jpg" alt="QQ QR Code" width="150">
 
 #### 📱 Feishu
 
-<img src="./feishu_qr.jpg" alt="飞书二维码" width="150">
+<img src="./feishu_qr.jpg" alt="Feishu QR Code" width="150">
 
 #### 📧 Other Contact Methods
 

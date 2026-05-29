@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AutoClip Backend Server Startup Script
-解决模块导入问题，确保在正确的Python路径下启动
+Resolves module import issues and ensures the server starts with the correct Python path
 """
 
 import os
@@ -10,30 +10,30 @@ import uvicorn
 from pathlib import Path
 
 def main():
-    # 获取项目根目录
+    # Get project root directory
     project_root = Path(__file__).parent.parent
     backend_dir = project_root / "backend"
     
-    # 添加backend目录到Python路径
+    # Add backend directory to Python path
     if str(backend_dir) not in sys.path:
         sys.path.insert(0, str(backend_dir))
     
-    # 切换到backend目录
+    # Switch to backend directory
     os.chdir(backend_dir)
     
-    print("启动AutoClip后端服务...")
-    print(f"项目根目录: {project_root}")
-    print(f"后端目录: {backend_dir}")
-    print(f"当前工作目录: {os.getcwd()}")
-    print("服务地址: http://localhost:8000")
-    print("API文档: http://localhost:8000/docs")
-    print("按 Ctrl+C 停止服务")
+    print("Starting AutoClip backend service...")
+    print(f"Project root: {project_root}")
+    print(f"Backend directory: {backend_dir}")
+    print(f"Current working directory: {os.getcwd()}")
+    print("Service address: http://localhost:8000")
+    print("API docs: http://localhost:8000/docs")
+    print("Press Ctrl+C to stop the service")
     
-    # 启动服务
+    # Start service
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8003,  # 修改端口避免与其他服务冲突
+        port=8003,  # Modified port to avoid conflicts with other services
         reload=True,
         log_level="info"
     )

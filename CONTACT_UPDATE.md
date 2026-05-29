@@ -1,41 +1,41 @@
-# 联系方式更新总结
+# Contact Information Update Summary
 
-## 📋 更新内容
+## Update Content
 
-根据您的要求，我已经简化了所有文档中的联系方式部分，删除了复杂的社区支持和商业支持内容，只保留了个人联系方式。
+As per your request, I have simplified the contact information section in all documentation, removed complex community support and business support content, and retained only personal contact information.
 
-### 🔄 更新的文件
+### Updated Files
 
-1. **README.md** (中文版)
-2. **README-EN.md** (英文版)  
-3. **.github/README.md** (GitHub首页)
-4. **docs/README.md** (文档中心)
-5. **scripts/check-i18n.sh** (检查脚本)
+1. **README.md** (Chinese version)
+2. **README-EN.md** (English version)  
+3. **.github/README.md** (GitHub homepage)
+4. **docs/README.md** (Documentation center)
+5. **scripts/check-i18n.sh** (Check script)
 
-### ✂️ 删除的内容
+### Removed Content
 
-- ❌ 社区支持部分（QQ群、微信群、Discord、Telegram）
-- ❌ 商业支持部分（商务邮箱、官网、技术交流邮箱）
-- ❌ 复杂的多平台联系方式
+- Community support section (QQ group, WeChat group, Discord, Telegram)
+- Business support section (Business email, official website, technical exchange email)
+- Complex multi-platform contact information
 
-### ✅ 保留的内容
+### Retained Content
 
-- ✅ **个人微信**: your_wechat_id
-- ✅ **飞书**: your_feishu_id
-- ✅ GitHub Issues和Discussions链接
-- ✅ 开源贡献指南
+- **Personal WeChat**: your_wechat_id
+- **Feishu**: your_feishu_id
+- GitHub Issues and Discussions links
+- Open source contribution guide
 
-## 📊 更新后的联系方式结构
+## Updated Contact Information Structure
 
-### 中文版
+### Chinese Version
 ```markdown
-### 联系方式
+### Contact Information
 
-- **个人微信**: your_wechat_id
-- **飞书**: your_feishu_id
+- **Personal WeChat**: your_wechat_id
+- **Feishu**: your_feishu_id
 ```
 
-### 英文版
+### English Version
 ```markdown
 ### Contact
 
@@ -43,30 +43,30 @@
 - **Feishu**: your_feishu_id
 ```
 
-## 🔍 质量检查结果
+## Quality Check Results
 
-运行国际化检查脚本的结果：
-- **总检查项**: 19项
-- **通过检查**: 19项
-- **通过率**: 100%
-- **文件一致性**: 良好
-- **内容完整性**: 完整
+Results from running the internationalization check script:
+- **Total Check Items**: 19
+- **Passed Checks**: 19
+- **Pass Rate**: 100%
+- **File Consistency**: Good
+- **Content Completeness**: Complete
 
-## 💡 使用建议
+## Usage Recommendations
 
-1. **替换占位符**: 将 `your_wechat_id` 和 `your_feishu_id` 替换为您的实际联系方式
-2. **保持简洁**: 当前的联系方式简洁明了，便于维护
-3. **专注核心**: 专注于GitHub平台的开源协作，减少维护负担
+1. **Replace Placeholders**: Replace `your_wechat_id` and `your_feishu_id` with your actual contact information
+2. **Keep It Simple**: Current contact information is concise and easy to maintain
+3. **Focus on Core**: Focus on GitHub platform open source collaboration to reduce maintenance burden
 
-## 🎯 优势
+## Advantages
 
-- **维护简单**: 只需要维护两个个人联系方式
-- **用户友好**: 直接的个人联系方式，沟通更高效
-- **国际化**: 中英文版本保持一致
-- **专业**: 保持了开源项目的专业性
+- **Easy Maintenance**: Only need to maintain two personal contact methods
+- **User Friendly**: Direct personal contact methods for more efficient communication
+- **Internationalized**: Chinese and English versions remain consistent
+- **Professional**: Maintains the professionalism of an open source project
 
 ---
 
-**更新完成时间**: $(date)
-**更新状态**: ✅ 完成
-**质量检查**: ✅ 通过
+**Update Completion Time**: $(date)
+**Update Status**: Complete
+**Quality Check**: Passed

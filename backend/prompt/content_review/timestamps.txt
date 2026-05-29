@@ -1,0 +1,134 @@
+# Content Commentary Video Timestamp Positioning Prompt
+
+## Core Principles: Complete Commentary, Clear Logic, Accurate Information
+
+1.  **Commentary completeness**: Timestamps must strictly correspond to complete commentary units and content segments.
+2.  **Logical coherence**: The time range must fully cover the logical chain of the commentary, ensuring analytical completeness.
+3.  **Natural boundaries**: Prioritize positioning time points at plot transitions, theme switches, or natural boundaries of commentary paragraphs.
+
+---
+
+## Key Instructions: How to Determine `start_time` and `end_time`
+
+### Determining `start_time`:
+-   Should be positioned at the start time of the **first core content** of the commentary topic.
+-   Ignore irrelevant transitions, background music, or opening/closing credits before that content.
+-   **Preferred choice**: Start at the point where the topic is clearly introduced or the commentary begins, ensuring commentary completeness.
+-   **Special consideration for content commentary**: If there is important background introduction, work excerpts, or contextual content, the start time should be moved slightly earlier.
+
+### Determining `end_time` (Most Important):
+-   **Must be** the end timestamp of the **last sentence** covering the topic's core commentary.
+-   **Commentary completeness**: Ensure core content such as plot commentary, analytical evaluation, and technique explanations are complete with no commentary gaps.
+-   **Natural ending**: Prioritize ending at summarizing statements, evaluation conclusions, or topic transitions.
+-   **Information preservation**: If there is important supplementary information, bonus content, or work excerpts at the end of the commentary, they should be included.
+-   If the commentary topic discussion continues until the end of the provided SRT text block, then `end_time` should be the end timestamp of the last relevant subtitle.
+-   **Incorrect approach**: Mindlessly setting `end_time` to the end of the entire text block. This must be absolutely avoided.
+
+### Content Commentary Duration Control Principles:
+-   **Target duration**: Each commentary topic segment should be between 3-8 minutes
+-   **Complex commentary duration**: Commentary involving deep analysis or complex plots can be extended up to 10 minutes
+-   **Simple introductions**: Basic background introductions or simple concepts can be compressed to 2-3 minutes
+-   **Important content**: Core plot commentary or important analysis can be extended up to 12 minutes
+
+### Special Handling for Content Commentary:
+-   **Complete plot**: Commentary on complete plots with introduction, development, twist, and conclusion should be kept as a whole
+-   **Analysis process**: Important analysis processes and reasoning logic should be fully preserved
+-   **Work excerpts**: Work excerpts accompanying the commentary should be synchronized with the commentary content
+-   **Technique explanations**: Technique demonstrations and theoretical explanations should appear together and not be separated
+
+---
+
+## Input Format
+You will receive a JSON object containing:
+-   `outline`: A JSON array containing **multiple** commentary topics to process.
+-   `srt_text`: A **single** SRT text block related to this batch of topics, formatted as `sequence_number\nstart --> end\ntext\n\n`.
+
+## Output Format
+-   Strictly follow the structure of the input outline, adding `start_time` and `end_time` fields to **each** topic object.
+-   **Key**: In the output, rename the input `title` field to `outline`, and rename the `subtopics` field to `content`.
+-   Output a JSON array containing **all** processed topics.
+-   Ensure the time format is `HH:MM:SS,mmm`.
+
+**Strict JSON output requirements:**
+1. Output must start with `[` and end with `]`; do not add any explanatory text, titles, or Markdown code block markers
+2. Use standard English double quotes `"`; never use Chinese quotes "" or single quotes
+3. Ensure all brackets and square brackets match correctly, objects are separated by commas, and no trailing comma after the last object
+4. Quotes within strings must be escaped as \"
+5. Must not contain any comments, extra text, or control characters
+6. Ensure the JSON is fully valid and can be parsed by a standard JSON parser
+
+## Content Commentary Time Positioning Examples
+
+### Correct time positioning:
+- **Plot commentary**: From "Next, let's look at this key plot point..." to "That's the core significance of this plot segment"
+- **Character analysis**: From "Let's analyze this character..." to "That's the deeper meaning of the character"
+- **Technique explanation**: From technique introduction to demonstration completion and effect explanation
+- **Background introduction**: From background description to summary of background-theme connection
+
+### Errors to avoid:
+- Breaking at the critical analysis point of plot commentary
+- Separating technique explanations from actual demonstrations
+- Cutting at the deep interpretation point of character analysis
+- Ignoring important supplementary information or work excerpts
+
+## Special Considerations by Content Commentary Type
+
+### 1. Film/TV Commentary:
+- Ensure plot commentary completeness and logical coherence
+- Preserve important character analysis and relationship interpretation
+- Include film excerpts accompanying the commentary
+- Ensure technique analysis is professional and accurate
+
+### 2. Game Commentary:
+- Maintain synchronization between gameplay and commentary
+- Include complete walkthrough steps and technique demonstrations
+- Preserve important game background and world-building introductions
+- Ensure authentic conveyance of the gaming experience
+
+### 3. Work Analysis:
+- Include complete analysis process and reasoning logic
+- Maintain integration of theoretical exposition and example analysis
+- Ensure completeness of cultural background and historical context
+- Include important value judgments and significance interpretation
+
+### 4. Educational Commentary:
+- Maintain systematic and logical knowledge explanation
+- Include complete experimental processes and principle explanations
+- Ensure accuracy and accessibility of concept explanations
+- Preserve important application examples and extended content
+
+## Time Positioning Strategies for Different Commentary Content
+
+### Plot-Oriented Commentary:
+- Position by plot development: Background setting - Plot development - Climax and turning point - Conclusion interpretation
+- Maintain completeness and coherence of plot commentary
+- Include important plot analysis and deeper meanings
+- Ensure audience's complete understanding of the plot
+
+### Technique-Oriented Commentary:
+- Position by technique type: Basic techniques - Advanced techniques - Expert applications - Practical demonstrations
+- Maintain systematic and practical technique explanations
+- Include complete operation demonstrations and effect presentations
+- Ensure techniques are learnable and replicable
+
+### Analysis-Oriented Commentary:
+- Position by analysis level: Surface phenomena - Underlying causes - Impact and significance - Value judgments
+- Maintain logical depth in the analysis process
+- Include important argumentation processes and conclusion summaries
+- Ensure objectivity and persuasiveness of the analysis
+
+### Knowledge-Oriented Commentary:
+- Position by knowledge structure: Basic concepts - Core principles - Application examples - Extended exploration
+- Maintain systematic and accurate knowledge transfer
+- Include important concept explanations and principle elaborations
+- Ensure knowledge is practical and understandable
+
+## Notes
+
+1. **Commentary completeness**: Ensure each segment contains complete commentary logic and content structure
+2. **Information accuracy**: Important factual information and technical details must be fully included
+3. **Logical coherence**: The commentary's logical chain and analysis process should remain complete
+4. **Viewing experience**: Consider the audience's comprehension ability and reception pace
+5. **Value delivery**: Ensure complete conveyance of the commentary's educational and entertainment value
+6. **Original work respect**: Maintain respect for the original work during time positioning
+7. **Copyright awareness**: Be mindful of usage duration and copyright issues with work excerpts

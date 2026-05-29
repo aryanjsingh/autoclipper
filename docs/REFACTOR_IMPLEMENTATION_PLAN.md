@@ -1,65 +1,72 @@
-# 🚀 AI切片项目重构实施规划
+# 🚀 AI clipping project refactor implementation plan
 
-## 📋 项目现状评估
+## 📋 Project status assessment
 
-### 优势分析
-1. ✅ 已有完整的6步处理流水线
-2. ✅ 支持多种视频分类和Prompt模板
-3. ✅ 前端React界面已经比较完善
-4. ✅ 配置管理系统相对完善
-5. ✅ 有详细的架构文档和重构计划
+### Strengths
 
-### 主要问题
-1. ❌ 后端架构分散，存在多个API文件
-2. ❌ 缺乏数据持久化存储
-3. ❌ 服务模块化程度不够
-4. ❌ 前后端任务调度未打通
-5. ❌ 缺乏完整的错误处理和监控
+1. ✅ Complete 6-step processing pipeline
+2. ✅ Multiple video categories and prompt templates
+3. ✅ React frontend is largely complete
+4. ✅ Configuration management is largely in place
+5. ✅ Detailed architecture documentation and refactor plan
 
-## 🎯 重构目标
+### Main issues
 
-### 第一阶段：数据持久化存储 (1周)
-**目标：** 引入SQLite + SQLAlchemy，建立完整的数据模型
+1. ❌ Backend architecture is fragmented with multiple API entry points
+2. ❌ No persistent data storage
+3. ❌ Insufficient service modularity
+4. ❌ Frontend and backend task scheduling are not connected
+5. ❌ Incomplete error handling and monitoring
 
-### 第二阶段：FastAPI服务模块化重构 (1-2周)
-**目标：** 重构FastAPI架构，实现服务模块化管理
+## 🎯 Refactoring goals
 
-### 第三阶段：任务调度系统 (1周)
-**目标：** 实现前后端任务调度打通
+### Phase 1: Persistent data storage (1 week)
 
-## 🏗️ 技术架构设计
+**Goal:** Introduce SQLite + SQLAlchemy and establish a complete data model.
 
-### 后端技术栈
-- **Web框架**: FastAPI (保持现有)
-- **数据库**: SQLite (开发) + PostgreSQL (生产)
+### Phase 2: FastAPI service modularization (1–2 weeks)
+
+**Goal:** Refactor the FastAPI architecture for modular service management.
+
+### Phase 3: Task scheduling system (1 week)
+
+**Goal:** Integrate frontend and backend task scheduling.
+
+## 🏗️ Technical architecture
+
+### Backend stack
+
+- **Web framework**: FastAPI (keep existing)
+- **Database**: SQLite (development) + PostgreSQL (production)
 - **ORM**: SQLAlchemy 2.0
-- **任务队列**: Celery + Redis
-- **实时通信**: WebSocket
-- **依赖管理**: Poetry
-- **数据库迁移**: Alembic
+- **Task queue**: Celery + Redis
+- **Real-time communication**: WebSocket
+- **Dependency management**: Poetry
+- **Database migrations**: Alembic
 
-### 前端技术栈
-- **框架**: React + TypeScript (保持现有)
-- **状态管理**: Zustand (保持现有)
-- **UI组件**: Ant Design (保持现有)
-- **实时通信**: WebSocket客户端
-- **构建工具**: Vite (保持现有)
+### Frontend stack
 
-## 📁 项目结构规划
+- **Framework**: React + TypeScript (keep existing)
+- **State management**: Zustand (keep existing)
+- **UI components**: Ant Design (keep existing)
+- **Real-time communication**: WebSocket client
+- **Build tool**: Vite (keep existing)
+
+## 📁 Project structure
 
 ```
 autoclip/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── main.py              # FastAPI应用入口
-│   │   ├── config.py            # 应用配置
-│   │   ├── dependencies.py      # 依赖注入
-│   │   └── middleware.py        # 中间件
+│   │   ├── main.py              # FastAPI application entry
+│   │   ├── config.py            # Application configuration
+│   │   ├── dependencies.py      # Dependency injection
+│   │   └── middleware.py        # Middleware
 │   ├── api/
 │   │   ├── __init__.py
-│   │   ├── deps.py              # API依赖
-│   │   └── v1/                  # API版本1
+│   │   ├── deps.py              # API dependencies
+│   │   └── v1/                  # API version 1
 │   │       ├── __init__.py
 │   │       ├── projects.py
 │   │       ├── processing.py
@@ -69,23 +76,23 @@ autoclip/
 │   │       └── settings.py
 │   ├── core/
 │   │   ├── __init__.py
-│   │   ├── config.py            # 核心配置
-│   │   ├── database.py          # 数据库配置
-│   │   ├── security.py          # 安全相关
-│   │   └── exceptions.py        # 异常处理
+│   │   ├── config.py            # Core configuration
+│   │   ├── database.py          # Database configuration
+│   │   ├── security.py          # Security utilities
+│   │   └── exceptions.py        # Exception handling
 │   ├── models/
 │   │   ├── __init__.py
-│   │   ├── base.py              # 基础模型
-│   │   ├── project.py           # 项目模型
-│   │   ├── clip.py              # 切片模型
-│   │   ├── collection.py        # 合集模型
-│   │   └── task.py              # 任务模型
+│   │   ├── base.py              # Base model
+│   │   ├── project.py           # Project model
+│   │   ├── clip.py              # Clip model
+│   │   ├── collection.py        # Collection model
+│   │   └── task.py              # Task model
 │   ├── schemas/
 │   │   ├── __init__.py
-│   │   ├── project.py           # 项目Schema
-│   │   ├── clip.py              # 切片Schema
-│   │   ├── collection.py        # 合集Schema
-│   │   └── task.py              # 任务Schema
+│   │   ├── project.py           # Project schema
+│   │   ├── clip.py              # Clip schema
+│   │   ├── collection.py        # Collection schema
+│   │   └── task.py              # Task schema
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── project_service.py
@@ -96,78 +103,84 @@ autoclip/
 │   │   └── llm_service.py
 │   ├── tasks/
 │   │   ├── __init__.py
-│   │   ├── celery_app.py        # Celery配置
-│   │   ├── processing_tasks.py  # 处理任务
-│   │   └── file_tasks.py        # 文件任务
+│   │   ├── celery_app.py        # Celery configuration
+│   │   ├── processing_tasks.py  # Processing tasks
+│   │   └── file_tasks.py        # File tasks
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   ├── file_utils.py
 │   │   ├── video_utils.py
 │   │   └── text_utils.py
-│   └── migrations/              # 数据库迁移
-├── frontend/                    # 保持现有结构
-├── shared/                      # 保持现有结构
-├── data/                        # 数据文件
-├── logs/                        # 日志文件
-├── tests/                       # 测试文件
-├── docs/                        # 文档
-├── scripts/                     # 脚本工具
-├── pyproject.toml              # Python依赖管理
-├── alembic.ini                 # 数据库迁移配置
-└── docker-compose.yml          # 容器化配置
+│   └── migrations/              # Database migrations
+├── frontend/                    # Keep existing structure
+├── shared/                      # Keep existing structure
+├── data/                        # Data files
+├── logs/                        # Log files
+├── tests/                       # Tests
+├── docs/                        # Documentation
+├── scripts/                     # Utility scripts
+├── pyproject.toml               # Python dependency management
+├── alembic.ini                  # Database migration config
+└── docker-compose.yml           # Container orchestration
 ```
 
-## 📅 实施时间规划
+## 📅 Implementation timeline
 
-**总工期：3-4周**
+**Total duration: 3–4 weeks**
 
-### 第1周：数据持久化存储
-- **数据库模型设计** (2天)
-- **SQLAlchemy集成** (2天)
-- **数据访问层实现** (1天)
+### Week 1: Persistent data storage
 
-### 第2-3周：FastAPI服务模块化
-- **API路由重构** (3天)
-- **服务层重构** (3天)
-- **中间件和依赖注入** (2天)
-- **测试和调试** (2天)
+- **Database model design** (2 days)
+- **SQLAlchemy integration** (2 days)
+- **Data access layer** (1 day)
 
-### 第4周：任务调度系统
-- **Celery集成** (2天)
-- **WebSocket实现** (2天)
-- **前后端联调** (2天)
+### Weeks 2–3: FastAPI modularization
 
-## 🛡️ 风险控制策略
+- **API route refactor** (3 days)
+- **Service layer refactor** (3 days)
+- **Middleware and dependency injection** (2 days)
+- **Testing and debugging** (2 days)
 
-1. **渐进式重构**: 按阶段实施，每个阶段都要确保功能正常
-2. **数据备份**: 重构前完整备份现有数据
-3. **功能测试**: 每个阶段都要进行完整的功能测试
-4. **回滚准备**: 准备快速回滚方案
-5. **文档更新**: 及时更新技术文档
+### Week 4: Task scheduling
 
-## 📊 重构收益预期
+- **Celery integration** (2 days)
+- **WebSocket implementation** (2 days)
+- **Frontend–backend integration** (2 days)
 
-### 技术收益
-- ✅ 清晰的分层架构
-- ✅ 完整的数据持久化
-- ✅ 模块化的服务设计
-- ✅ 实时任务调度
-- ✅ 完善的错误处理
+## 🛡️ Risk control
 
-### 开发收益
-- ✅ 更好的代码可维护性
-- ✅ 更快的开发效率
-- ✅ 更完善的测试覆盖
-- ✅ 更简单的部署流程
+1. **Progressive refactoring**: Implement in stages; keep functionality working at each stage
+2. **Data backup**: Full backup before major changes
+3. **Functional testing**: Complete testing at every stage
+4. **Rollback plan**: Prepare a quick rollback path
+5. **Documentation**: Update technical docs promptly
 
-### 用户体验收益
-- ✅ 实时进度反馈
-- ✅ 更好的错误提示
-- ✅ 更稳定的系统性能
-- ✅ 更完整的功能体验
+## 📊 Expected benefits
+
+### Technical
+
+- ✅ Clear layered architecture
+- ✅ Complete data persistence
+- ✅ Modular service design
+- ✅ Real-time task scheduling
+- ✅ Robust error handling
+
+### Development
+
+- ✅ Better code maintainability
+- ✅ Faster development velocity
+- ✅ Better test coverage
+- ✅ Easier deployment
+
+### User experience
+
+- ✅ Real-time progress feedback
+- ✅ Clearer error messages
+- ✅ More stable performance
+- ✅ More complete feature set
 
 ---
 
-**文档版本**: 1.0  
-**创建日期**: 2024年12月  
-**最后更新**: 2024年12月 
+**Document version**: 1.0  
+**Created**: December 2024  
+**Last updated**: December 2024

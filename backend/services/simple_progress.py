@@ -1,86 +1,87 @@
 """
-简化的进度服务 - 固定阶段 + 固定权重
-基于你提出的"做笨做稳"方案
+Simplified Progress Service - Fixed Stages + Fixed Weights
+Based on the "keep it simple and stable" approach
 """
 
 import time
 import json
 import logging
+import os
 from typing import List, Tuple, Optional, Dict, Any
 import redis
 
 logger = logging.getLogger(__name__)
 
-# 固定阶段定义 - 根据你的项目实际调整
+# Fixed stage definitions - adjust based on your project's actual needs
 STAGES: List[Tuple[str, int]] = [
-    ("INGEST", 10),        # 下载/就绪
-    ("SUBTITLE", 15),      # 字幕/对齐
-    ("ANALYZE", 20),       # 语义分析/大纲
-    ("HIGHLIGHT", 25),     # 片段定位/打分
-    ("EXPORT", 20),        # 导出/封装
-    ("DONE", 10),          # 校验/归档
+    ("INGEST", 10),        # Download/Ready
+    ("SUBTITLE", 15),      # Subtitles/Alignment
+    ("ANALYZE", 20),       # Semantic Analysis/Outline
+    ("HIGHLIGHT", 25),     # Clip Location/Scoring
+    ("EXPORT", 20),        # Export/Packaging
+    ("DONE", 10),          # Verification/Archiving
 ]
 
-# 阶段权重映射
+# Stage weight mapping
 WEIGHTS = {name: w for name, w in STAGES}
-# 阶段顺序
+# Stage order
 ORDER = [name for name, _ in STAGES]
 
-# Redis连接 - 使用项目现有的Redis配置
+# Redis connection - uses the project's existing Redis configuration
 try:
-    # 从环境变量获取Redis URL，默认为本地地址
+    # Get Redis URL from environment variable, default to local address
     redis_url = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
     r = redis.Redis.from_url(redis_url, decode_responses=True)
-    # 测试连接
+    # Test connection
     r.ping()
-    logger.info("Redis连接成功")
+    logger.info("Redis connection successful")
 except Exception as e:
-    logger.error(f"Redis连接失败: {e}")
+    logger.error(f"Redis connection failed: {e}")
     r = None
 
 
 def compute_percent(stage: str, subpercent: Optional[float] = None) -> int:
     """
-    计算阶段对应的百分比
+    Calculate the percentage corresponding to a stage
     
     Args:
-        stage: 当前阶段名称
-        subpercent: 子进度百分比 (0-100)，可选
+        stage: Current stage name
+        subpercent: Sub-progress percentage (0-100), optional
         
     Returns:
-        总进度百分比 (0-100)
+        Total progress percentage (0-100)
     """
-    # 累加之前阶段权重
+    # Accumulate weights of previous stages
     done = 0
     for s in ORDER:
         if s == stage:
             break
         done += WEIGHTS[s]
     
-    # 当前阶段
+    # Current stage
     cur = WEIGHTS.get(stage, 0)
     
     if subpercent is None:
-        # 阶段切换时，显示到当前阶段开始
+        # When switching stages, show up to the start of the current stage
         return min(100, done + cur) if stage == "DONE" else min(99, done)
     else:
-        # 带子进度，按权重线性换算
+        # With sub-progress, linearly convert by weight
         subpercent = max(0, min(100, subpercent))
         return min(99, done + int(cur * subpercent / 100))
 
 
 def emit_progress(project_id: str, stage: str, message: str = "", subpercent: Optional[float] = None):
     """
-    发送进度事件
+    Send progress event
     
     Args:
-        project_id: 项目ID
-        stage: 当前阶段
-        message: 进度消息
-        subpercent: 子进度百分比，可选
+        project_id: Project ID
+        stage: Current stage
+        message: Progress message
+        subpercent: Sub-progress percentage, optional
     """
     if not r:
-        logger.warning("Redis未连接，跳过进度发送")
+        logger.warning("Redis not connected, skipping progress emission")
         return
         
     percent = compute_percent(stage, subpercent)
@@ -93,7 +94,7 @@ def emit_progress(project_id: str, stage: str, message: str = "", subpercent: Op
     }
     
     try:
-        # 1) 持久化最新快照（给轮询/刷新用）
+        # 1) Persist latest snapshot (for polling/refresh)
         r.hset(f"progress:project:{project_id}", mapping={
             "stage": stage, 
             "percent": str(percent), 
@@ -101,24 +102,24 @@ def emit_progress(project_id: str, stage: str, message: str = "", subpercent: Op
             "ts": str(payload["ts"])
         })
         
-        # 2) 即时广播（可选，用于WebSocket）
+        # 2) Real-time broadcast (optional, for WebSocket)
         r.publish(f"progress:project:{project_id}", json.dumps(payload))
         
-        logger.info(f"进度事件已发送: {project_id} - {stage} ({percent}%) - {message}")
+        logger.info(f"Progress event sent: {project_id} - {stage} ({percent}%) - {message}")
         
     except Exception as e:
-        logger.error(f"发送进度事件失败: {e}")
+        logger.error(f"Failed to send progress event: {e}")
 
 
 def get_progress_snapshot(project_id: str) -> Optional[Dict[str, Any]]:
     """
-    获取项目进度快照
+    Get project progress snapshot
     
     Args:
-        project_id: 项目ID
+        project_id: Project ID
         
     Returns:
-        进度快照数据，如果不存在返回None
+        Progress snapshot data, or None if not found
     """
     if not r:
         return None
@@ -136,19 +137,19 @@ def get_progress_snapshot(project_id: str) -> Optional[Dict[str, Any]]:
             "ts": int(h.get("ts", 0))
         }
     except Exception as e:
-        logger.error(f"获取进度快照失败: {e}")
+        logger.error(f"Failed to get progress snapshot: {e}")
         return None
 
 
 def get_multiple_progress_snapshots(project_ids: List[str]) -> List[Dict[str, Any]]:
     """
-    批量获取多个项目的进度快照
+    Batch get progress snapshots for multiple projects
     
     Args:
-        project_ids: 项目ID列表
+        project_ids: List of project IDs
         
     Returns:
-        进度快照列表
+        List of progress snapshots
     """
     if not r:
         return []
@@ -164,28 +165,28 @@ def get_multiple_progress_snapshots(project_ids: List[str]) -> List[Dict[str, An
 
 def clear_progress(project_id: str):
     """
-    清除项目进度数据
+    Clear project progress data
     
     Args:
-        project_id: 项目ID
+        project_id: Project ID
     """
     if not r:
         return
         
     try:
         r.delete(f"progress:project:{project_id}")
-        logger.info(f"已清除项目进度数据: {project_id}")
+        logger.info(f"Cleared project progress data: {project_id}")
     except Exception as e:
-        logger.error(f"清除进度数据失败: {e}")
+        logger.error(f"Failed to clear progress data: {e}")
 
 
 STAGE_NAMES_ZH = {
-    "INGEST": "素材准备",
-    "SUBTITLE": "字幕处理",
-    "ANALYZE": "内容分析",
-    "HIGHLIGHT": "片段定位",
-    "EXPORT": "视频导出",
-    "DONE": "处理完成",
+    "INGEST": "Preparing source",
+    "SUBTITLE": "Subtitles",
+    "ANALYZE": "Content analysis",
+    "HIGHLIGHT": "Highlight clips",
+    "EXPORT": "Exporting video",
+    "DONE": "Complete",
 }
 
 STAGE_NAMES_EN = {

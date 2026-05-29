@@ -1,183 +1,183 @@
-# 投稿上传功能 v2.0 实现指南
+# Upload Feature v2.0 Implementation Guide
 
-## 概述
+## Overview
 
-基于 [biliup-rs](https://github.com/biliup/biliup-rs) 项目的实现思路，我们重新开发了B站投稿上传功能，支持多种上传线路、智能线路选择和完整的错误处理。
+Based on the implementation approach of the [biliup-rs](https://github.com/biliup/biliup-rs) project, we rebuilt the Bilibili upload feature with support for multiple upload routes, intelligent route selection, and complete error handling.
 
-## 新功能特性
+## New Features
 
-### 🚀 核心功能
-- **多种上传线路**: 支持 bda2、qn、alia、bldsa、tx、txa、bda 等线路
-- **智能线路选择**: 自动测速选择最佳上传线路
-- **分片上传**: 支持大文件分片上传，提高稳定性
-- **完整错误处理**: 详细的错误信息和重试机制
-- **进度跟踪**: 实时上传进度和状态更新
+### 🚀 Core Features
+- **Multiple upload routes**: Supports routes such as bda2, qn, alia, bldsa, tx, txa, and bda
+- **Intelligent route selection**: Automatically speed-tests and selects the best upload route
+- **Chunked upload**: Supports chunked upload for large files to improve stability
+- **Complete error handling**: Detailed error messages and retry mechanism
+- **Progress tracking**: Real-time upload progress and status updates
 
-### 🔧 技术改进
-- **基于 biliup-rs**: 借鉴成熟的实现方案
-- **异步处理**: 完整的异步上传流程
-- **Cookie管理**: 修复了加密系统，支持正确的密钥格式
-- **API兼容**: 与现有系统完全兼容
+### 🔧 Technical Improvements
+- **Based on biliup-rs**: Draws on a mature implementation
+- **Async processing**: Full asynchronous upload flow
+- **Cookie management**: Fixed the encryption system to support the correct key format
+- **API compatibility**: Fully compatible with the existing system
 
-## 实现架构
+## Architecture
 
-### 文件结构
+### File Structure
 ```
 backend/services/
-├── bilibili_service.py          # 原有服务（已更新）
-├── bilibili_upload_v2.py        # 新的v2.0上传实现
-└── bilibili_service_backup.py   # 备份文件
+├── bilibili_service.py          # Original service (updated)
+├── bilibili_upload_v2.py        # New v2.0 upload implementation
+└── bilibili_service_backup.py   # Backup file
 ```
 
-### 核心类
-- `BilibiliUploaderV2`: 核心上传器，处理具体的上传逻辑
-- `BilibiliUploadServiceV2`: 上传服务，管理上传流程和状态
+### Core Classes
+- `BilibiliUploaderV2`: Core uploader that handles upload logic
+- `BilibiliUploadServiceV2`: Upload service that manages upload flow and status
 
-## 使用步骤
+## Usage Steps
 
-### 1. 重新导入Cookie
+### 1. Re-import Cookie
 
-由于加密系统已更新，需要重新导入B站Cookie：
+Because the encryption system has been updated, you need to re-import your Bilibili Cookie:
 
-1. **获取Cookie**:
-   - 登录B站网页版
-   - 打开开发者工具 (F12)
-   - 在Network标签页中找到任意请求
-   - 复制Cookie值
+1. **Get Cookie**:
+   - Log in to Bilibili on the web
+   - Open Developer Tools (F12)
+   - In the Network tab, find any request
+   - Copy the Cookie value
 
-2. **导入Cookie**:
-   - 访问投稿状态页面: `http://localhost:3000/upload-status`
-   - 点击"投稿状态"按钮进入B站管理
-   - 在"账号管理"标签页中点击"添加账号"
-   - 选择"Cookie登录"方式
-   - 粘贴完整的Cookie字符串
+2. **Import Cookie**:
+   - Visit the upload status page: `http://localhost:3000/upload-status`
+   - Click the "Upload Status" button to open Bilibili management
+   - On the "Account Management" tab, click "Add Account"
+   - Choose "Cookie Login"
+   - Paste the full Cookie string
 
-### 2. 测试上传功能
+### 2. Test Upload
 
-1. **检查账号状态**:
-   - 确保账号状态显示为"活跃"
-   - 检查Cookie是否有效
+1. **Check account status**:
+   - Ensure the account status shows as "Active"
+   - Verify the Cookie is valid
 
-2. **创建投稿任务**:
-   - 在项目详情页选择视频切片
-   - 点击"投稿到B站"按钮
-   - 填写标题、描述、标签等信息
-   - 选择投稿账号和分区
+2. **Create upload task**:
+   - On the project details page, select a video clip
+   - Click "Upload to Bilibili"
+   - Fill in title, description, tags, etc.
+   - Select upload account and partition
 
-3. **监控上传进度**:
-   - 在投稿状态页面查看任务进度
-   - 实时监控上传状态和错误信息
+3. **Monitor upload progress**:
+   - View task progress on the upload status page
+   - Monitor upload status and error messages in real time
 
-## 技术细节
+## Technical Details
 
-### 上传流程
+### Upload Flow
 ```
-1. 验证登录状态 → 2. 预上传获取ID → 3. 选择最佳线路
+1. Verify login → 2. Pre-upload to get ID → 3. Select best route
     ↓
-4. 分片上传 → 5. 合并分片 → 6. 提交投稿 → 7. 返回BV号
+4. Chunk upload → 5. Merge chunks → 6. Submit upload → 7. Return BV ID
 ```
 
-### 上传线路
-| 线路 | 提供商 | 特点 |
+### Upload Routes
+| Route | Provider | Notes |
 |------|--------|------|
-| bda2 | 百度云 | 默认线路，稳定性好 |
-| qn | 七牛 | 速度快 |
-| alia | 阿里云海外 | 海外访问优化 |
-| bldsa | B站自建 | 官方线路 |
-| tx | 腾讯云 | 国内优化 |
-| txa | 腾讯云海外 | 海外优化 |
-| bda | 百度云海外 | 海外优化 |
+| bda2 | Baidu Cloud | Default route, good stability |
+| qn | Qiniu | Fast speed |
+| alia | Alibaba Cloud (overseas) | Optimized for overseas access |
+| bldsa | Bilibili self-hosted | Official route |
+| tx | Tencent Cloud | Optimized for China |
+| txa | Tencent Cloud (overseas) | Overseas optimization |
+| bda | Baidu Cloud (overseas) | Overseas optimization |
 
-### 错误处理
-- **网络错误**: 自动重试，最多3次
-- **认证错误**: 提示重新登录
-- **文件错误**: 检查文件格式和大小
-- **API错误**: 详细错误信息显示
+### Error Handling
+- **Network errors**: Auto-retry, up to 3 times
+- **Authentication errors**: Prompt to log in again
+- **File errors**: Check file format and size
+- **API errors**: Display detailed error messages
 
-## 配置说明
+## Configuration
 
-### 环境变量
+### Environment Variables
 ```bash
-# 加密密钥（已自动生成）
+# Encryption key (auto-generated)
 export ENCRYPTION_KEY="BekpMhcsOolyI_n9Hz9NxzLqMgll3vfa9qJYPOxtQXM="
 ```
 
-### 上传参数
+### Upload Parameters
 ```python
 metadata = {
-    'title': '视频标题',           # 最大80字符
-    'description': '视频描述',     # 最大2000字符
-    'tags': ['标签1', '标签2'],   # 标签列表
-    'partition_id': 3             # 分区ID
+    'title': 'Video title',           # Max 80 characters
+    'description': 'Video description',  # Max 2000 characters
+    'tags': ['tag1', 'tag2'],         # Tag list
+    'partition_id': 3                 # Partition ID
 }
 ```
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **Cookie解密失败**
-   - 原因: 使用了旧的加密密钥
-   - 解决: 重新导入Cookie
+1. **Cookie decryption failed**
+   - Cause: Old encryption key was used
+   - Fix: Re-import Cookie
 
-2. **上传失败**
-   - 原因: 网络问题或API限制
-   - 解决: 检查网络连接，尝试不同线路
+2. **Upload failed**
+   - Cause: Network issues or API limits
+   - Fix: Check network connection, try a different route
 
-3. **文件过大**
-   - 原因: 超过B站8GB限制
-   - 解决: 压缩视频或分割文件
+3. **File too large**
+   - Cause: Exceeds Bilibili 8GB limit
+   - Fix: Compress video or split file
 
-4. **账号状态异常**
-   - 原因: Cookie过期或无效
-   - 解决: 重新登录获取新Cookie
+4. **Abnormal account status**
+   - Cause: Cookie expired or invalid
+   - Fix: Log in again and get a new Cookie
 
-### 调试方法
+### Debugging
 
-1. **查看日志**:
+1. **View logs**:
    ```bash
    tail -f logs/celery.log
    ```
 
-2. **检查数据库**:
+2. **Check database**:
    ```sql
    SELECT * FROM bilibili_upload_records ORDER BY created_at DESC LIMIT 5;
    ```
 
-3. **测试API**:
+3. **Test API**:
    ```bash
    curl -s http://localhost:8000/api/v1/upload/records | jq .
    ```
 
-## 性能优化
+## Performance Optimization
 
-### 上传速度优化
-- **并发上传**: 支持多分片并发上传
-- **线路选择**: 自动选择最快线路
-- **重试机制**: 智能重试失败的分片
+### Upload Speed
+- **Concurrent upload**: Supports concurrent upload of multiple chunks
+- **Route selection**: Automatically selects the fastest route
+- **Retry mechanism**: Smart retry for failed chunks
 
-### 稳定性优化
-- **错误恢复**: 自动处理网络中断
-- **状态同步**: 实时更新上传状态
-- **数据完整性**: 确保文件完整上传
+### Stability
+- **Error recovery**: Automatically handles network interruptions
+- **Status sync**: Real-time upload status updates
+- **Data integrity**: Ensures complete file upload
 
-## 更新日志
+## Changelog
 
 ### v2.0.0 (2025-09-11)
-- ✅ 基于 biliup-rs 重新实现上传功能
-- ✅ 支持多种上传线路和智能选择
-- ✅ 修复Cookie加密系统
-- ✅ 完善错误处理和重试机制
-- ✅ 添加详细的上传进度跟踪
+- ✅ Reimplemented upload based on biliup-rs
+- ✅ Multiple upload routes and intelligent selection
+- ✅ Fixed Cookie encryption system
+- ✅ Improved error handling and retry mechanism
+- ✅ Added detailed upload progress tracking
 
-### 后续计划
-- 🔄 支持多P投稿
-- 🔄 添加上传队列管理
-- 🔄 实现断点续传
-- 🔄 支持批量投稿
+### Planned
+- 🔄 Multi-part (multi-P) upload support
+- 🔄 Upload queue management
+- 🔄 Resume from breakpoint
+- 🔄 Batch upload support
 
-## 相关链接
+## Related Links
 
-- [biliup-rs 项目](https://github.com/biliup/biliup-rs)
-- [B站投稿API文档](https://github.com/biliup/biliup-rs)
-- [投稿状态页面使用指南](./UPLOAD_STATUS_PAGE_GUIDE.md)
+- [biliup-rs project](https://github.com/biliup/biliup-rs)
+- [Bilibili upload API docs](https://github.com/biliup/biliup-rs)
+- [Upload Status Page Guide](./UPLOAD_STATUS_PAGE_GUIDE.md)

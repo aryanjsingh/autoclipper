@@ -1,5 +1,5 @@
 services:
-  # Redis服务
+  # Redis Service
   redis:
     image: redis:7-alpine
     container_name: autoclip-redis-dev
@@ -10,7 +10,7 @@ services:
       - redis_dev_data:/data
     command: redis-server --appendonly yes
 
-  # 主应用服务（开发模式）
+  # Main Application Service (Development Mode)
   autoclip-dev:
     build:
       context: .
@@ -18,15 +18,13 @@ services:
     container_name: autoclip-app-dev
     restart: unless-stopped
     ports:
-      - "8000:8000"  # 后端API
-      - "3000:3000"  # 前端界面
+      - "8000:8000"  # Backend API
     volumes:
       - ./backend:/app/backend
-      - ./frontend:/app/frontend
       - ./data:/app/data
       - ./logs:/app/logs
       - ./uploads:/app/uploads
-      - /app/venv  # 排除虚拟环境
+      - /app/venv  # Exclude virtual environment
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=sqlite:///./data/autoclip.db
@@ -38,14 +36,10 @@ services:
     command: >
       sh -c "
         source venv/bin/activate &&
-        python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload &
-        cd frontend && 
-        if [ ! -d node_modules ]; then npm install; fi &&
-        npx vite --host 0.0.0.0 --port 3000 &
-        wait
+        python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
-  # Celery Worker服务（开发模式）
+  # Celery Worker Service (Development Mode)
   celery-worker-dev:
     build:
       context: .

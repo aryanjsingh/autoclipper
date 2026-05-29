@@ -1,6 +1,6 @@
 """
-数据清理任务
-定期清理数据库和文件系统中的过期数据
+Data cleanup tasks
+Periodically clean up expired data in database and filesystem
 """
 
 import os
@@ -26,18 +26,18 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, name='backend.tasks.data_cleanup.cleanup_expired_data')
 def cleanup_expired_data(self, days: int = 30) -> Dict[str, Any]:
     """
-    清理过期数据
+    Clean up expired data
     
     Args:
-        days: 保留天数，默认30天
+        days: Retention days, default 30 days
         
     Returns:
-        清理结果
+        Cleanup result
     """
-    logger.info(f"开始清理过期数据，保留天数: {days}")
+    logger.info(f"Starting expired data cleanup, retention days: {days}")
     
     try:
-        # 创建数据库会话
+        # Create database session
         db = SessionLocal()
         
         try:
@@ -50,44 +50,44 @@ def cleanup_expired_data(self, days: int = 30) -> Dict[str, Any]:
                 'errors': []
             }
             
-            # 1. 清理过期任务
+            # 1. Clean up expired tasks
             try:
                 task_repo = TaskRepository(db)
                 tasks_cleaned = task_repo.cleanup_old_tasks(days)
                 cleanup_results['tasks_cleaned'] = tasks_cleaned
-                logger.info(f"清理了 {tasks_cleaned} 个过期任务")
+                logger.info(f"Cleaned up {tasks_cleaned} expired tasks")
             except Exception as e:
-                error_msg = f"清理任务失败: {str(e)}"
+                error_msg = f"Task cleanup failed: {str(e)}"
                 logger.error(error_msg)
                 cleanup_results['errors'].append(error_msg)
             
-            # 2. 清理过期项目
+            # 2. Clean up expired projects
             try:
                 projects_cleaned = _cleanup_expired_projects(db, days)
                 cleanup_results['projects_cleaned'] = projects_cleaned
-                logger.info(f"清理了 {projects_cleaned} 个过期项目")
+                logger.info(f"Cleaned up {projects_cleaned} expired projects")
             except Exception as e:
-                error_msg = f"清理项目失败: {str(e)}"
+                error_msg = f"Project cleanup failed: {str(e)}"
                 logger.error(error_msg)
                 cleanup_results['errors'].append(error_msg)
             
-            # 3. 清理孤立文件
+            # 3. Clean up orphaned files
             try:
                 files_cleaned = _cleanup_orphaned_files()
                 cleanup_results['files_cleaned'] = files_cleaned
-                logger.info(f"清理了 {files_cleaned} 个孤立文件")
+                logger.info(f"Cleaned up {files_cleaned} orphaned files")
             except Exception as e:
-                error_msg = f"清理文件失败: {str(e)}"
+                error_msg = f"File cleanup failed: {str(e)}"
                 logger.error(error_msg)
                 cleanup_results['errors'].append(error_msg)
             
-            # 4. 清理临时文件
+            # 4. Clean up temporary files
             try:
                 temp_files_cleaned = _cleanup_temp_files()
                 cleanup_results['temp_files_cleaned'] = temp_files_cleaned
-                logger.info(f"清理了 {temp_files_cleaned} 个临时文件")
+                logger.info(f"Cleaned up {temp_files_cleaned} temporary files")
             except Exception as e:
-                error_msg = f"清理临时文件失败: {str(e)}"
+                error_msg = f"Temporary file cleanup failed: {str(e)}"
                 logger.error(error_msg)
                 cleanup_results['errors'].append(error_msg)
             
@@ -99,22 +99,22 @@ def cleanup_expired_data(self, days: int = 30) -> Dict[str, Any]:
                 cleanup_results.get('temp_files_cleaned', 0)
             )
             
-            logger.info(f"数据清理完成，共清理 {cleanup_results['total_cleaned']} 项数据")
+            logger.info(f"Data cleanup complete, cleaned {cleanup_results['total_cleaned']} items total")
             return cleanup_results
             
         finally:
             db.close()
             
     except Exception as e:
-        logger.error(f"清理过期数据失败，错误: {e}")
+        logger.error(f"Expired data cleanup failed, error: {e}")
         raise
 
 
 def _cleanup_expired_projects(db: SessionLocal, days: int) -> int:
-    """清理过期项目"""
+    """Clean up expired projects"""
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     
-    # 查找过期的已完成项目
+    # Find expired completed projects
     expired_projects = db.query(Project).filter(
         Project.status == ProjectStatus.COMPLETED,
         Project.updated_at < cutoff_date
@@ -123,58 +123,58 @@ def _cleanup_expired_projects(db: SessionLocal, days: int) -> int:
     cleaned_count = 0
     for project in expired_projects:
         try:
-            # 删除项目相关数据
+            # Delete project related data
             _delete_project_data(db, project.id)
             cleaned_count += 1
-            logger.info(f"清理过期项目: {project.id}")
+            logger.info(f"Cleaned up expired project: {project.id}")
         except Exception as e:
-            logger.error(f"清理项目 {project.id} 失败: {e}")
+            logger.error(f"Failed to clean up project {project.id}: {e}")
     
     return cleaned_count
 
 
 def _delete_project_data(db: SessionLocal, project_id: str):
-    """删除项目数据"""
-    # 删除相关任务
+    """Delete project data"""
+    # Delete related tasks
     db.query(Task).filter(Task.project_id == project_id).delete()
     
-    # 删除相关切片
+    # Delete related clips
     db.query(Clip).filter(Clip.project_id == project_id).delete()
     
-    # 删除相关合集
+    # Delete related collections
     db.query(Collection).filter(Collection.project_id == project_id).delete()
     
-    # 删除项目记录
+    # Delete project record
     db.query(Project).filter(Project.id == project_id).delete()
     
-    # 删除项目文件
+    # Delete project files
     project_dir = Path(f"data/projects/{project_id}")
     if project_dir.exists():
         shutil.rmtree(project_dir)
     
-    # 清理进度数据
+    # Clean up progress data
     try:
         from ..services.simple_progress import clear_progress
         clear_progress(project_id)
     except Exception as e:
-        logger.warning(f"清理进度数据失败: {e}")
+        logger.warning(f"Failed to clean up progress data: {e}")
     
     db.commit()
 
 
 def _cleanup_orphaned_files() -> int:
-    """清理孤立文件"""
+    """Clean up orphaned files"""
     cleaned_count = 0
     
     try:
-        # 获取数据库中的项目ID
+        # Get project IDs from database
         db = SessionLocal()
         try:
             db_projects = {p.id for p in db.query(Project).all()}
         finally:
             db.close()
         
-        # 清理孤立的项目目录
+        # Clean up orphaned project directories
         projects_dir = Path("data/projects")
         if projects_dir.exists():
             for project_dir in projects_dir.iterdir():
@@ -182,14 +182,14 @@ def _cleanup_orphaned_files() -> int:
                     if not project_dir.name.startswith('.'):
                         shutil.rmtree(project_dir)
                         cleaned_count += 1
-                        logger.info(f"清理孤立项目目录: {project_dir.name}")
+                        logger.info(f"Cleaned up orphaned project directory: {project_dir.name}")
         
-        # 清理孤立的输出文件
+        # Clean up orphaned output files
         output_dir = Path("data/output")
         if output_dir.exists():
             for file_path in output_dir.rglob("*"):
                 if file_path.is_file():
-                    # 检查文件是否属于现有项目
+                    # Check if file belongs to existing project
                     file_name = file_path.name
                     is_orphaned = True
                     
@@ -201,16 +201,16 @@ def _cleanup_orphaned_files() -> int:
                     if is_orphaned:
                         file_path.unlink()
                         cleaned_count += 1
-                        logger.info(f"清理孤立输出文件: {file_path}")
+                        logger.info(f"Cleaned up orphaned output file: {file_path}")
         
     except Exception as e:
-        logger.error(f"清理孤立文件失败: {e}")
+        logger.error(f"Failed to clean up orphaned files: {e}")
     
     return cleaned_count
 
 
 def _cleanup_temp_files() -> int:
-    """清理临时文件"""
+    """Clean up temporary files"""
     cleaned_count = 0
     
     try:
@@ -218,14 +218,14 @@ def _cleanup_temp_files() -> int:
         if temp_dir.exists():
             for file_path in temp_dir.iterdir():
                 if file_path.is_file():
-                    # 检查文件是否超过1小时
+                    # Check if file is older than 1 hour
                     file_age = datetime.now() - datetime.fromtimestamp(file_path.stat().st_mtime)
                     if file_age > timedelta(hours=1):
                         file_path.unlink()
                         cleaned_count += 1
-                        logger.info(f"清理临时文件: {file_path}")
+                        logger.info(f"Cleaned up temporary file: {file_path}")
         
-        # 清理处理中间文件
+        # Clean up processing intermediate files
         projects_dir = Path("data/projects")
         if projects_dir.exists():
             for project_dir in projects_dir.iterdir():
@@ -234,15 +234,15 @@ def _cleanup_temp_files() -> int:
                     if processing_dir.exists():
                         for file_path in processing_dir.iterdir():
                             if file_path.is_file():
-                                # 检查文件是否超过24小时
+                                # Check if file is older than 24 hours
                                 file_age = datetime.now() - datetime.fromtimestamp(file_path.stat().st_mtime)
                                 if file_age > timedelta(hours=24):
                                     file_path.unlink()
                                     cleaned_count += 1
-                                    logger.info(f"清理处理中间文件: {file_path}")
+                                    logger.info(f"Cleaned up processing intermediate file: {file_path}")
         
     except Exception as e:
-        logger.error(f"清理临时文件失败: {e}")
+        logger.error(f"Failed to clean up temporary files: {e}")
     
     return cleaned_count
 
@@ -250,21 +250,21 @@ def _cleanup_temp_files() -> int:
 @shared_task(bind=True, name='backend.tasks.data_cleanup.check_data_consistency')
 def check_data_consistency(self) -> Dict[str, Any]:
     """
-    检查数据一致性
+    Check data consistency
     
     Returns:
-        一致性检查结果
+        Consistency check result
     """
-    logger.info("开始数据一致性检查")
+    logger.info("Starting data consistency check")
     
     try:
-        # 创建数据库会话
+        # Create database session
         db = SessionLocal()
         
         try:
             issues = []
             
-            # 1. 检查项目数据一致性
+            # 1. Check project data consistency
             db_projects = {p.id for p in db.query(Project).all()}
             fs_projects = set()
             
@@ -274,7 +274,7 @@ def check_data_consistency(self) -> Dict[str, Any]:
                     if project_dir.is_dir() and not project_dir.name.startswith('.'):
                         fs_projects.add(project_dir.name)
             
-            # 检查孤立文件
+            # Check orphaned files
             orphaned_files = fs_projects - db_projects
             if orphaned_files:
                 issues.append({
@@ -283,7 +283,7 @@ def check_data_consistency(self) -> Dict[str, Any]:
                     "details": list(orphaned_files)
                 })
             
-            # 检查缺失文件
+            # Check missing files
             missing_files = db_projects - fs_projects
             if missing_files:
                 issues.append({
@@ -292,7 +292,7 @@ def check_data_consistency(self) -> Dict[str, Any]:
                     "details": list(missing_files)
                 })
             
-            # 2. 检查任务数据一致性
+            # 2. Check task data consistency
             orphaned_tasks = db.query(Task).filter(
                 ~Task.project_id.in_(db_projects)
             ).count()
@@ -304,7 +304,7 @@ def check_data_consistency(self) -> Dict[str, Any]:
                     "details": []
                 })
             
-            # 3. 检查切片数据一致性
+            # 3. Check clip data consistency
             orphaned_clips = db.query(Clip).filter(
                 ~Clip.project_id.in_(db_projects)
             ).count()
@@ -316,7 +316,7 @@ def check_data_consistency(self) -> Dict[str, Any]:
                     "details": []
                 })
             
-            # 4. 检查合集数据一致性
+            # 4. Check collection data consistency
             orphaned_collections = db.query(Collection).filter(
                 ~Collection.project_id.in_(db_projects)
             ).count()
@@ -339,22 +339,22 @@ def check_data_consistency(self) -> Dict[str, Any]:
             db.close()
             
     except Exception as e:
-        logger.error(f"数据一致性检查失败，错误: {e}")
+        logger.error(f"Data consistency check failed, error: {e}")
         raise
 
 
 @shared_task(bind=True, name='backend.tasks.data_cleanup.cleanup_orphaned_data')
 def cleanup_orphaned_data(self) -> Dict[str, Any]:
     """
-    清理孤立数据
+    Clean up orphaned data
     
     Returns:
-        清理结果
+        Cleanup result
     """
-    logger.info("开始清理孤立数据")
+    logger.info("Starting orphaned data cleanup")
     
     try:
-        # 创建数据库会话
+        # Create database session
         db = SessionLocal()
         
         try:
@@ -366,10 +366,10 @@ def cleanup_orphaned_data(self) -> Dict[str, Any]:
                 'orphaned_files_cleaned': 0
             }
             
-            # 获取所有项目ID
+            # Get all project IDs
             db_projects = {p.id for p in db.query(Project).all()}
             
-            # 1. 清理孤立任务
+            # 1. Clean up orphaned tasks
             orphaned_tasks = db.query(Task).filter(
                 ~Task.project_id.in_(db_projects)
             ).all()
@@ -377,9 +377,9 @@ def cleanup_orphaned_data(self) -> Dict[str, Any]:
             for task in orphaned_tasks:
                 db.delete(task)
                 cleanup_results['orphaned_tasks_cleaned'] += 1
-                logger.info(f"清理孤立任务: {task.id}")
+                logger.info(f"Cleaned up orphaned task: {task.id}")
             
-            # 2. 清理孤立切片
+            # 2. Clean up orphaned clips
             orphaned_clips = db.query(Clip).filter(
                 ~Clip.project_id.in_(db_projects)
             ).all()
@@ -387,9 +387,9 @@ def cleanup_orphaned_data(self) -> Dict[str, Any]:
             for clip in orphaned_clips:
                 db.delete(clip)
                 cleanup_results['orphaned_clips_cleaned'] += 1
-                logger.info(f"清理孤立切片: {clip.id}")
+                logger.info(f"Cleaned up orphaned clip: {clip.id}")
             
-            # 3. 清理孤立合集
+            # 3. Clean up orphaned collections
             orphaned_collections = db.query(Collection).filter(
                 ~Collection.project_id.in_(db_projects)
             ).all()
@@ -397,9 +397,9 @@ def cleanup_orphaned_data(self) -> Dict[str, Any]:
             for collection in orphaned_collections:
                 db.delete(collection)
                 cleanup_results['orphaned_collections_cleaned'] += 1
-                logger.info(f"清理孤立合集: {collection.id}")
+                logger.info(f"Cleaned up orphaned collection: {collection.id}")
             
-            # 4. 清理孤立文件
+            # 4. Clean up orphaned files
             cleanup_results['orphaned_files_cleaned'] = _cleanup_orphaned_files()
             
             db.commit()
@@ -414,12 +414,12 @@ def cleanup_orphaned_data(self) -> Dict[str, Any]:
             cleanup_results['total_cleaned'] = total_cleaned
             cleanup_results['success'] = True
             
-            logger.info(f"孤立数据清理完成，共清理 {total_cleaned} 项数据")
+            logger.info(f"Orphaned data cleanup complete, cleaned {total_cleaned} items total")
             return cleanup_results
             
         finally:
             db.close()
             
     except Exception as e:
-        logger.error(f"清理孤立数据失败，错误: {e}")
+        logger.error(f"Orphaned data cleanup failed, error: {e}")
         raise

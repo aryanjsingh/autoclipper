@@ -1,5 +1,5 @@
 """
-任务管理API路由
+Task management API routes
 """
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
@@ -20,7 +20,7 @@ async def get_tasks(
     project_id: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
-    """获取任务列表"""
+    """Get task list"""
     try:
         task_service = TaskService(db)
         tasks = task_service.get_tasks(
@@ -31,50 +31,50 @@ async def get_tasks(
         )
         return tasks
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取任务列表失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get task list: {str(e)}")
 
 @router.get("/project/{project_id}", response_model=List[TaskResponse])
 async def get_project_tasks(
     project_id: str,
     db: Session = Depends(get_db)
 ):
-    """获取指定项目的任务列表"""
+    """Get task list for a specific project"""
     try:
         task_service = TaskService(db)
         tasks = task_service.get_tasks_by_project_id(project_id)
         return tasks
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取项目任务失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get project tasks: {str(e)}")
 
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: str,
     db: Session = Depends(get_db)
 ):
-    """获取单个任务详情"""
+    """Get single task details"""
     try:
         task_service = TaskService(db)
         task = task_service.get_task_by_id(task_id)
         if not task:
-            raise HTTPException(status_code=404, detail="任务不存在")
+            raise HTTPException(status_code=404, detail="Task does not exist")
         return task
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取任务详情失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get task details: {str(e)}")
 
 @router.post("/", response_model=TaskResponse)
 async def create_task(
     task_data: TaskCreate,
     db: Session = Depends(get_db)
 ):
-    """创建新任务"""
+    """Create a new task"""
     try:
         task_service = TaskService(db)
         task = task_service.create_task(task_data)
         return task
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"创建任务失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create task: {str(e)}")
 
 @router.put("/{task_id}", response_model=TaskResponse)
 async def update_task(
@@ -82,93 +82,93 @@ async def update_task(
     task_data: TaskUpdate,
     db: Session = Depends(get_db)
 ):
-    """更新任务"""
+    """Update a task"""
     try:
         task_service = TaskService(db)
         task = task_service.update_task(task_id, task_data)
         if not task:
-            raise HTTPException(status_code=404, detail="任务不存在")
+            raise HTTPException(status_code=404, detail="Task does not exist")
         return task
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"更新任务失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update task: {str(e)}")
 
 @router.delete("/{task_id}")
 async def delete_task(
     task_id: str,
     db: Session = Depends(get_db)
 ):
-    """删除任务"""
+    """Delete a task"""
     try:
         task_service = TaskService(db)
         success = task_service.delete_task(task_id)
         if not success:
-            raise HTTPException(status_code=404, detail="任务不存在")
-        return {"message": "任务删除成功"}
+            raise HTTPException(status_code=404, detail="Task does not exist")
+        return {"message": "Task deleted successfully"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"删除任务失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
 
 @router.post("/{task_id}/submit")
 async def submit_task(
     task_id: str,
     db: Session = Depends(get_db)
 ):
-    """提交任务到队列"""
+    """Submit task to queue"""
     try:
         task_service = TaskService(db)
         task = task_service.get_task_by_id(task_id)
         if not task:
-            raise HTTPException(status_code=404, detail="任务不存在")
+            raise HTTPException(status_code=404, detail="Task does not exist")
         
-        # 提交到任务队列
+        # Submit to task queue
         queue_service = TaskQueueService()
         result = queue_service.submit_task(task)
         
-        return {"message": "任务已提交到队列", "task_id": task_id, "celery_task_id": result.id}
+        return {"message": "Task submitted to queue", "task_id": task_id, "celery_task_id": result.id}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"提交任务失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
 
 @router.post("/{task_id}/retry")
 async def retry_task(
     task_id: str,
     db: Session = Depends(get_db)
 ):
-    """重试失败的任务"""
+    """Retry failed task"""
     try:
         task_service = TaskService(db)
         task = task_service.get_task_by_id(task_id)
         if not task:
-            raise HTTPException(status_code=404, detail="任务不存在")
+            raise HTTPException(status_code=404, detail="Task does not exist")
         
-        # 重置任务状态并重新提交
+        # Reset task status and resubmit
         task_service.update_task(task_id, TaskUpdate(status="pending", progress=0))
         
-        # 提交到任务队列
+        # Submit to task queue
         queue_service = TaskQueueService()
         result = queue_service.submit_task(task)
         
-        return {"message": "任务已重新提交", "task_id": task_id, "celery_task_id": result.id}
+        return {"message": "Task resubmitted", "task_id": task_id, "celery_task_id": result.id}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"重试任务失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retry task: {str(e)}")
 
 @router.get("/{task_id}/status")
 async def get_task_status(
     task_id: str,
     db: Session = Depends(get_db)
 ):
-    """获取任务状态"""
+    """Get task status"""
     try:
         task_service = TaskService(db)
         task = task_service.get_task_by_id(task_id)
         if not task:
-            raise HTTPException(status_code=404, detail="任务不存在")
+            raise HTTPException(status_code=404, detail="Task does not exist")
         
         return {
             "task_id": task_id,
@@ -181,5 +181,4 @@ async def get_task_status(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取任务状态失败: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"Failed to get task status: {str(e)}")

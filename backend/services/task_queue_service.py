@@ -1,6 +1,6 @@
 """
-任务队列管理服务
-管理Celery任务的提交、监控和状态查询
+Task queue management service
+Manages Celery task submission, monitoring, and status queries
 """
 
 import logging
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class TaskQueueService:
-    """任务队列管理服务"""
+    """Task queue management service"""
     
     def __init__(self, db: Session):
         self.db = db
@@ -29,82 +29,82 @@ class TaskQueueService:
     
     def submit_video_processing_task(self, project_id: str, srt_path: str) -> Dict[str, Any]:
         """
-        提交视频处理任务
+        Submit video processing task
         
         Args:
-            project_id: 项目ID
-            srt_path: SRT文件路径
+            project_id: Project ID
+            srt_path: SRT file path
             
         Returns:
-            任务提交结果
+            Task submission result
         """
-        logger.info(f"提交视频处理任务: {project_id}")
+        logger.info(f"Submitting video processing task: {project_id}")
         
         try:
-            # 创建并保存任务记录
+            # Create and save task record
             task = self.task_repo.create(
                 project_id=project_id,
-                name="视频流水线处理",
-                description=f"处理项目 {project_id} 的视频流水线",
+                name="Video pipeline processing",
+                description=f"Processing video pipeline for project {project_id}",
                 task_type=TaskType.VIDEO_PROCESSING,
                 status=TaskStatus.PENDING,
                 priority=1
             )
             
-            # 提交Celery任务
+            # Submit Celery task
             celery_task = process_video_pipeline.delay(project_id, srt_path)
             
-            # 更新任务记录
+            # Update task record
             task.celery_task_id = celery_task.id
             self.db.commit()
             
-            logger.info(f"视频处理任务已提交: {task.id}, Celery任务ID: {celery_task.id}")
+            logger.info(f"Video processing task submitted: {task.id}, Celery task ID: {celery_task.id}")
             
             return {
                 'success': True,
                 'task_id': task.id,
                 'celery_task_id': celery_task.id,
                 'status': 'PENDING',
-                'message': '视频处理任务已提交'
+                'message': 'Video processing task submitted'
             }
             
         except Exception as e:
-            logger.error(f"提交视频处理任务失败: {project_id}, 错误: {e}")
+            logger.error(f"Failed to submit video processing task: {project_id}, error: {e}")
             raise
     
     def submit_single_step_task(self, project_id: str, step_name: str, srt_path: Optional[str] = None) -> Dict[str, Any]:
         """
-        提交单个步骤处理任务
+        Submit single step processing task
         
         Args:
-            project_id: 项目ID
-            step_name: 步骤名称
-            srt_path: SRT文件路径（仅Step1需要）
+            project_id: Project ID
+            step_name: Step name
+            srt_path: SRT file path (only needed for Step1)
             
         Returns:
-            任务提交结果
+            Task submission result
         """
-        logger.info(f"提交单个步骤任务: {project_id}, {step_name}")
+        logger.info(f"Submitting single step task: {project_id}, {step_name}")
         
         try:
-            # 创建并保存任务记录
+            # Create and save task record
             task = self.task_repo.create(
                 project_id=project_id,
-                name=f"步骤处理: {step_name}",
-                description=f"处理项目 {project_id} 的步骤 {step_name}",
+                name=f"Step processing: {step_name}",
+                description=f"Processing step {step_name} for project {project_id}",
                 task_type=TaskType.VIDEO_PROCESSING,
                 status=TaskStatus.PENDING,
                 priority=2
             )
             
-            # 提交Celery任务
+            # Submit Celery task
             celery_task = process_single_step.delay(project_id, step_name, srt_path)
             
-            # 更新任务记录
+            # Update task record
             task.celery_task_id = celery_task.id
             self.db.commit()
             
-            logger.info(f"单个步骤任务已提交: {task.id}, Celery任务ID: {celery_task.id}")
+            logger.info(f"Single step task submitted: {task.id}, Celery task ID: {celery_task.id}")
             
             return {
                 'success': True,
@@ -112,47 +112,47 @@ class TaskQueueService:
                 'celery_task_id': celery_task.id,
                 'step': step_name,
                 'status': 'PENDING',
-                'message': f'步骤 {step_name} 处理任务已提交'
+                'message': f'Step {step_name} processing task submitted'
             }
             
         except Exception as e:
-            logger.error(f"提交单个步骤任务失败: {project_id}, {step_name}, 错误: {e}")
+            logger.error(f"Failed to submit single step task: {project_id}, {step_name}, error: {e}")
             raise
     
     def submit_retry_task(self, project_id: str, task_id: str, step_name: str, srt_path: Optional[str] = None) -> Dict[str, Any]:
         """
-        提交重试任务
+        Submit retry task
         
         Args:
-            project_id: 项目ID
-            task_id: 任务ID
-            step_name: 步骤名称
-            srt_path: SRT文件路径（仅Step1需要）
+            project_id: Project ID
+            task_id: Task ID
+            step_name: Step name
+            srt_path: SRT file path (only needed for Step1)
             
         Returns:
-            任务提交结果
+            Task submission result
         """
-        logger.info(f"提交重试任务: {project_id}, {task_id}, {step_name}")
+        logger.info(f"Submitting retry task: {project_id}, {task_id}, {step_name}")
         
         try:
-            # 创建并保存任务记录
+            # Create and save task record
             task = self.task_repo.create(
                 project_id=project_id,
-                name=f"重试步骤: {step_name}",
-                description=f"重试项目 {project_id} 的步骤 {step_name}",
+                name=f"Retry step: {step_name}",
+                description=f"Retrying step {step_name} for project {project_id}",
                 task_type=TaskType.VIDEO_PROCESSING,
                 status=TaskStatus.PENDING,
                 priority=3
             )
             
-            # 提交Celery任务
+            # Submit Celery task
             celery_task = retry_processing_step.delay(project_id, task_id, step_name, srt_path)
             
-            # 更新任务记录
+            # Update task record
             task.celery_task_id = celery_task.id
             self.db.commit()
             
-            logger.info(f"重试任务已提交: {task.id}, Celery任务ID: {celery_task.id}")
+            logger.info(f"Retry task submitted: {task.id}, Celery task ID: {celery_task.id}")
             
             return {
                 'success': True,
@@ -161,30 +161,30 @@ class TaskQueueService:
                 'original_task_id': task_id,
                 'step': step_name,
                 'status': 'PENDING',
-                'message': f'步骤 {step_name} 重试任务已提交'
+                'message': f'Step {step_name} retry task submitted'
             }
             
         except Exception as e:
-            logger.error(f"提交重试任务失败: {project_id}, {task_id}, {step_name}, 错误: {e}")
+            logger.error(f"Failed to submit retry task: {project_id}, {task_id}, {step_name}, error: {e}")
             raise
     
     def get_task_status(self, task_id: str) -> Dict[str, Any]:
         """
-        获取任务状态
+        Get task status
         
         Args:
-            task_id: 任务ID
+            task_id: Task ID
             
         Returns:
-            任务状态信息
+            Task status info
         """
         try:
-            # 获取数据库任务记录
+            # Get database task record
             task = self.task_repo.get_by_id(task_id)
             if not task:
-                return {'error': '任务不存在'}
+                return {'error': 'Task does not exist'}
             
-            # 获取Celery任务状态
+            # Get Celery task status
             celery_status = {}
             if task.celery_task_id:
                 celery_result = AsyncResult(task.celery_task_id, app=celery_app)
@@ -210,18 +210,18 @@ class TaskQueueService:
             }
             
         except Exception as e:
-            logger.error(f"获取任务状态失败: {task_id}, 错误: {e}")
-            return {'error': f'获取任务状态失败: {e}'}
+            logger.error(f"Failed to get task status: {task_id}, error: {e}")
+            return {'error': f'Failed to get task status: {e}'}
     
     def get_project_tasks(self, project_id: str) -> List[Dict[str, Any]]:
         """
-        获取项目的所有任务
+        Get all tasks for a project
         
         Args:
-            project_id: 项目ID
+            project_id: Project ID
             
         Returns:
-            任务列表
+            Task list
         """
         try:
             tasks = self.task_repo.get_by_project(project_id)
@@ -239,77 +239,77 @@ class TaskQueueService:
             ]
             
         except Exception as e:
-            logger.error(f"获取项目任务失败: {project_id}, 错误: {e}")
+            logger.error(f"Failed to get project tasks: {project_id}, error: {e}")
             return []
     
     def cancel_task(self, task_id: str) -> Dict[str, Any]:
         """
-        取消任务
+        Cancel task
         
         Args:
-            task_id: 任务ID
+            task_id: Task ID
             
         Returns:
-            取消结果
+            Cancellation result
         """
         try:
             task = self.task_repo.get_by_id(task_id)
             if not task:
-                return {'error': '任务不存在'}
+                return {'error': 'Task does not exist'}
             
-            # 取消Celery任务
+            # Cancel Celery task
             if task.celery_task_id:
                 celery_result = AsyncResult(task.celery_task_id, app=celery_app)
                 celery_result.revoke(terminate=True)
             
-            # 更新任务状态
+            # Update task status
             task.status = TaskStatus.CANCELLED
             self.db.commit()
             
-            logger.info(f"任务已取消: {task_id}")
+            logger.info(f"Task cancelled: {task_id}")
             return {
                 'success': True,
                 'task_id': task_id,
                 'status': 'CANCELLED',
-                'message': '任务已取消'
+                'message': 'Task cancelled'
             }
             
         except Exception as e:
-            logger.error(f"取消任务失败: {task_id}, 错误: {e}")
-            return {'error': f'取消任务失败: {e}'}
+            logger.error(f"Failed to cancel task: {task_id}, error: {e}")
+            return {'error': f'Failed to cancel task: {e}'}
     
     def submit_video_clips_task(self, project_id: str, clip_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        提交视频片段提取任务
+        Submit video clip extraction task
         
         Args:
-            project_id: 项目ID
-            clip_data: 片段数据
+            project_id: Project ID
+            clip_data: Clip data
             
         Returns:
-            任务提交结果
+            Task submission result
         """
-        logger.info(f"提交视频片段提取任务: {project_id}")
+        logger.info(f"Submitting video clip extraction task: {project_id}")
         
         try:
-            # 创建并保存任务记录
+            # Create and save task record
             task = self.task_repo.create(
                 project_id=project_id,
-                name="视频片段提取",
-                description=f"提取项目 {project_id} 的视频片段",
+                name="Video clip extraction",
+                description=f"Extracting video clips for project {project_id}",
                 task_type=TaskType.VIDEO_PROCESSING,
                 status=TaskStatus.PENDING,
                 priority=2
             )
             
-            # 提交Celery任务
+            # Submit Celery task
             celery_task = extract_video_clips.delay(project_id, clip_data)
             
-            # 更新任务记录
+            # Update task record
             task.celery_task_id = celery_task.id
             self.db.commit()
             
-            logger.info(f"视频片段提取任务已提交: {task.id}, Celery任务ID: {celery_task.id}")
+            logger.info(f"Video clip extraction task submitted: {task.id}, Celery task ID: {celery_task.id}")
             
             return {
                 'success': True,
@@ -317,45 +317,45 @@ class TaskQueueService:
                 'celery_task_id': celery_task.id,
                 'clip_count': len(clip_data),
                 'status': 'PENDING',
-                'message': f'视频片段提取任务已提交，共 {len(clip_data)} 个片段'
+                'message': f'Video clip extraction task submitted, total {len(clip_data)} clips'
             }
             
         except Exception as e:
-            logger.error(f"提交视频片段提取任务失败: {project_id}, 错误: {e}")
+            logger.error(f"Failed to submit video clip extraction task: {project_id}, error: {e}")
             raise
     
     def submit_collection_generation_task(self, project_id: str, collection_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        提交合集生成任务
+        Submit collection generation task
         
         Args:
-            project_id: 项目ID
-            collection_data: 合集数据
+            project_id: Project ID
+            collection_data: Collection data
             
         Returns:
-            任务提交结果
+            Task submission result
         """
-        logger.info(f"提交合集生成任务: {project_id}")
+        logger.info(f"Submitting collection generation task: {project_id}")
         
         try:
-            # 创建并保存任务记录
+            # Create and save task record
             task = self.task_repo.create(
                 project_id=project_id,
-                name="视频合集生成",
-                description=f"生成项目 {project_id} 的视频合集",
+                name="Video collection generation",
+                description=f"Generating video collection for project {project_id}",
                 task_type=TaskType.VIDEO_PROCESSING,
                 status=TaskStatus.PENDING,
                 priority=2
             )
             
-            # 提交Celery任务
+            # Submit Celery task
             celery_task = generate_video_collections.delay(project_id, collection_data)
             
-            # 更新任务记录
+            # Update task record
             task.celery_task_id = celery_task.id
             self.db.commit()
             
-            logger.info(f"合集生成任务已提交: {task.id}, Celery任务ID: {celery_task.id}")
+            logger.info(f"Collection generation task submitted: {task.id}, Celery task ID: {celery_task.id}")
             
             return {
                 'success': True,
@@ -363,9 +363,9 @@ class TaskQueueService:
                 'celery_task_id': celery_task.id,
                 'collection_count': len(collection_data),
                 'status': 'PENDING',
-                'message': f'视频合集生成任务已提交，共 {len(collection_data)} 个合集'
+                'message': f'Video collection generation task submitted, total {len(collection_data)} collections'
             }
             
         except Exception as e:
-            logger.error(f"提交合集生成任务失败: {project_id}, 错误: {e}")
+            logger.error(f"Failed to submit collection generation task: {project_id}, error: {e}")
             raise 

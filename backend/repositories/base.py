@@ -1,6 +1,6 @@
 """
-基础Repository类
-提供通用的数据访问操作
+Base Repository class
+Provides common data access operations
 """
 
 from typing import TypeVar, Generic, Optional, List, Dict, Any, Type
@@ -8,36 +8,36 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from ..models.base import BaseModel
 
-# 定义泛型类型
+# Define generic type
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
 class BaseRepository(Generic[ModelType]):
     """
-    基础Repository类，提供通用的CRUD操作
+    Base Repository class, provides common CRUD operations
     
-    Generic[ModelType]: 泛型类型，ModelType必须是BaseModel的子类
+    Generic[ModelType]: Generic type, ModelType must be a subclass of BaseModel
     """
     
     def __init__(self, model: Type[ModelType], db: Session):
         """
-        初始化Repository
+        Initialize Repository
         
         Args:
-            model: 模型类
-            db: 数据库会话
+            model: Model class
+            db: Database session
         """
         self.model = model
         self.db = db
     
     def create(self, **kwargs) -> ModelType:
         """
-        创建记录
+        Create record
         
         Args:
-            **kwargs: 模型字段和值
+            **kwargs: Model fields and values
             
         Returns:
-            创建的模型实例
+            Created model instance
         """
         instance = self.model(**kwargs)
         self.db.add(instance)
@@ -47,39 +47,39 @@ class BaseRepository(Generic[ModelType]):
     
     def get_by_id(self, id: str) -> Optional[ModelType]:
         """
-        根据ID获取记录
+        Get record by ID
         
         Args:
-            id: 记录ID
+            id: Record ID
             
         Returns:
-            模型实例或None
+            Model instance or None
         """
         return self.db.query(self.model).filter(self.model.id == id).first()
     
     def get_all(self, skip: int = 0, limit: int = 100) -> List[ModelType]:
         """
-        获取所有记录
+        Get all records
         
         Args:
-            skip: 跳过的记录数
-            limit: 返回的记录数限制
+            skip: Number of records to skip
+            limit: Maximum number of records to return
             
         Returns:
-            模型实例列表
+            List of model instances
         """
         return self.db.query(self.model).offset(skip).limit(limit).all()
     
     def update(self, id: str, **kwargs) -> Optional[ModelType]:
         """
-        更新记录
+        Update record
         
         Args:
-            id: 记录ID
-            **kwargs: 要更新的字段和值
+            id: Record ID
+            **kwargs: Fields and values to update
             
         Returns:
-            更新后的模型实例或None
+            Updated model instance or None
         """
         instance = self.get_by_id(id)
         if instance:
@@ -92,13 +92,13 @@ class BaseRepository(Generic[ModelType]):
     
     def delete(self, id: str) -> bool:
         """
-        删除记录
+        Delete record
         
         Args:
-            id: 记录ID
+            id: Record ID
             
         Returns:
-            是否删除成功
+            Whether deletion was successful
         """
         instance = self.get_by_id(id)
         if instance:
@@ -109,34 +109,34 @@ class BaseRepository(Generic[ModelType]):
     
     def count(self) -> int:
         """
-        获取记录总数
+        Get total record count
         
         Returns:
-            记录总数
+            Total record count
         """
         return self.db.query(self.model).count()
     
     def exists(self, id: str) -> bool:
         """
-        检查记录是否存在
+        Check if record exists
         
         Args:
-            id: 记录ID
+            id: Record ID
             
         Returns:
-            是否存在
+            Whether record exists
         """
         return self.db.query(self.model).filter(self.model.id == id).first() is not None
     
     def find_by(self, **kwargs) -> List[ModelType]:
         """
-        根据条件查找记录
+        Find records by conditions
         
         Args:
-            **kwargs: 查询条件
+            **kwargs: Query conditions
             
         Returns:
-            匹配的模型实例列表
+            List of matching model instances
         """
         filters = []
         for field, value in kwargs.items():
@@ -149,13 +149,13 @@ class BaseRepository(Generic[ModelType]):
     
     def find_one_by(self, **kwargs) -> Optional[ModelType]:
         """
-        根据条件查找单条记录
+        Find single record by conditions
         
         Args:
-            **kwargs: 查询条件
+            **kwargs: Query conditions
             
         Returns:
-            匹配的模型实例或None
+            Matching model instance or None
         """
         filters = []
         for field, value in kwargs.items():
@@ -168,37 +168,37 @@ class BaseRepository(Generic[ModelType]):
     
     def find_by_condition(self, condition) -> List[ModelType]:
         """
-        根据自定义条件查找记录
+        Find records by custom condition
         
         Args:
-            condition: SQLAlchemy查询条件
+            condition: SQLAlchemy query condition
             
         Returns:
-            匹配的模型实例列表
+            List of matching model instances
         """
         return self.db.query(self.model).filter(condition).all()
     
     def find_one_by_condition(self, condition) -> Optional[ModelType]:
         """
-        根据自定义条件查找单条记录
+        Find single record by custom condition
         
         Args:
-            condition: SQLAlchemy查询条件
+            condition: SQLAlchemy query condition
             
         Returns:
-            匹配的模型实例或None
+            Matching model instance or None
         """
         return self.db.query(self.model).filter(condition).first()
     
     def bulk_create(self, instances: List[Dict[str, Any]]) -> List[ModelType]:
         """
-        批量创建记录
+        Bulk create records
         
         Args:
-            instances: 要创建的实例数据列表
+            instances: List of instance data to create
             
         Returns:
-            创建的模型实例列表
+            List of created model instances
         """
         created_instances = []
         for instance_data in instances:
@@ -208,7 +208,7 @@ class BaseRepository(Generic[ModelType]):
         
         self.db.commit()
         
-        # 刷新所有实例
+        # Refresh all instances
         for instance in created_instances:
             self.db.refresh(instance)
         
@@ -216,13 +216,13 @@ class BaseRepository(Generic[ModelType]):
     
     def bulk_update(self, instances: List[ModelType]) -> List[ModelType]:
         """
-        批量更新记录
+        Bulk update records
         
         Args:
-            instances: 要更新的实例列表
+            instances: List of instances to update
             
         Returns:
-            更新后的模型实例列表
+            List of updated model instances
         """
         for instance in instances:
             self.db.merge(instance)
@@ -232,13 +232,13 @@ class BaseRepository(Generic[ModelType]):
     
     def bulk_delete(self, ids: List[str]) -> int:
         """
-        批量删除记录
+        Bulk delete records
         
         Args:
-            ids: 要删除的记录ID列表
+            ids: List of record IDs to delete
             
         Returns:
-            删除的记录数
+            Number of deleted records
         """
         deleted_count = self.db.query(self.model).filter(
             self.model.id.in_(ids)

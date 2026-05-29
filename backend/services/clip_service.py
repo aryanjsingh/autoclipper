@@ -1,6 +1,6 @@
 """
-切片服务
-提供切片相关的业务逻辑操作
+Clip Service
+Provides clip-related business logic operations
 """
 
 from typing import Optional, List, Dict, Any

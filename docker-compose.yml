@@ -1,5 +1,5 @@
 services:
-  # Redis服务
+  # Redis Service
   redis:
     image: redis:7-alpine
     container_name: autoclip-redis
@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # 主应用服务
+  # Main Application Service
   autoclip:
     build:
       context: .
@@ -23,8 +23,7 @@ services:
     container_name: autoclip-app
     restart: unless-stopped
     ports:
-      - "8000:8000"  # 后端API
-      - "3000:3000"  # 前端界面
+      - "8000:8000"  # Backend API
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -45,7 +44,7 @@ services:
       retries: 3
       start_period: 40s
 
-  # Celery Worker服务
+  # Celery Worker Service
   celery-worker:
     build:
       context: .
@@ -69,7 +68,7 @@ services:
       autoclip:
         condition: service_healthy
 
-  # Celery Beat调度器
+  # Celery Beat Scheduler
   celery-beat:
     build:
       context: .
@@ -92,7 +91,7 @@ services:
       autoclip:
         condition: service_healthy
 
-  # Flower监控服务（可选）
+  # Flower Monitoring Service (optional)
   flower:
     build:
       context: .

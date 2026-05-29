@@ -1,5 +1,5 @@
 """
-健康检查API路由
+Health check API routes
 """
 
 from fastapi import APIRouter
@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/")
 async def health_check() -> Dict[str, Any]:
-    """健康检查端点."""
+    """Health check endpoint."""
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
@@ -21,48 +21,48 @@ async def health_check() -> Dict[str, Any]:
 
 @router.get("/video-categories")
 async def get_video_categories() -> Dict[str, Any]:
-    """获取视频分类配置."""
+    """Get video category configuration."""
     return {
         "categories": [
             {
                 "value": "knowledge",
-                "name": "知识科普",
-                "description": "科学、技术、历史、文化等知识类内容",
+                "name": "Knowledge & Science",
+                "description": "Science, technology, history, culture and other knowledge content",
                 "icon": "book",
                 "color": "#1890ff"
             },
             {
                 "value": "entertainment", 
-                "name": "娱乐休闲",
-                "description": "游戏、音乐、电影、综艺等娱乐内容",
+                "name": "Entertainment & Leisure",
+                "description": "Games, music, movies, variety shows and other entertainment content",
                 "icon": "play-circle",
                 "color": "#52c41a"
             },
             {
                 "value": "experience",
-                "name": "生活经验",
-                "description": "生活技巧、美食、旅行、手工等实用内容",
+                "name": "Life Experience",
+                "description": "Life tips, food, travel, crafts and other practical content",
                 "icon": "heart",
                 "color": "#fa8c16"
             },
             {
                 "value": "opinion",
-                "name": "观点评论",
-                "description": "时事评论、观点分享、社会话题等",
+                "name": "Opinions & Commentary",
+                "description": "Current events commentary, opinion sharing, social topics, etc.",
                 "icon": "message",
                 "color": "#722ed1"
             },
             {
                 "value": "business",
-                "name": "商业财经",
-                "description": "商业分析、财经资讯、投资理财等",
+                "name": "Business & Finance",
+                "description": "Business analysis, financial news, investment management, etc.",
                 "icon": "dollar",
                 "color": "#13c2c2"
             },
             {
                 "value": "speech",
-                "name": "演讲访谈",
-                "description": "演讲、访谈、对话等口语化内容",
+                "name": "Speeches & Interviews",
+                "description": "Speeches, interviews, conversations and other spoken content",
                 "icon": "sound",
                 "color": "#eb2f96"
             }

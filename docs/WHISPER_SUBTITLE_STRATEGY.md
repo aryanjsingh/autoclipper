@@ -1,85 +1,85 @@
-# 🎤 Whisper优先字幕生成策略
+# 🎤 Whisper-First Subtitle Generation Strategy
 
-## 📋 概述
+## 📋 Overview
 
-根据用户建议，我们已经重新设计了字幕生成策略，**优先使用Whisper模型自行生成字幕**，而不是依赖B站/YouTube平台的字幕。这一改变带来了更好的用户体验和更一致的字幕质量。
+Based on user feedback, we have redesigned the subtitle generation strategy to **prioritize using the Whisper model to generate subtitles locally**, rather than relying on Bilibili/YouTube platform subtitles. This change delivers a better user experience and more consistent subtitle quality.
 
-## 🔄 新的字幕生成流程
+## 🔄 New Subtitle Generation Flow
 
-### 1. 优先级策略
+### 1. Priority Strategy
 
 ```
-用户上传字幕文件 → Whisper生成字幕 → 平台字幕（备用）
+User-uploaded subtitle file → Whisper-generated subtitles → Platform subtitles (fallback)
 ```
 
-**详细流程：**
-1. **用户提供字幕**：如果用户上传了SRT文件，直接使用
-2. **Whisper生成**：如果没有用户字幕，优先使用Whisper生成
-3. **平台字幕备用**：如果Whisper失败，才尝试下载平台字幕
+**Detailed flow:**
+1. **User-provided subtitles**: If the user uploads an SRT file, use it directly
+2. **Whisper generation**: If no user subtitles are provided, prioritize Whisper generation
+3. **Platform subtitles as fallback**: Only attempt to download platform subtitles if Whisper fails
 
-### 2. 智能模型选择
+### 2. Intelligent Model Selection
 
-根据视频内容类型自动选择合适的Whisper模型：
+Automatically select the appropriate Whisper model based on video content type:
 
-| 内容类型 | 模型 | 特点 | 适用场景 |
+| Content Type | Model | Characteristics | Use Cases |
 |----------|------|------|----------|
-| 商业/知识 | `small` | 准确率高 | 教程、教学、科普视频 |
-| 演讲/讲座 | `medium` | 高精度 | 演讲、讲座、分享会 |
-| 娱乐内容 | `base` | 平衡性能 | 娱乐、游戏、生活视频 |
-| 默认 | `base` | 通用 | 其他类型视频 |
+| Business/Knowledge | `small` | High accuracy | Tutorials, teaching, educational videos |
+| Speech/Lecture | `medium` | High precision | Speeches, lectures, presentations |
+| Entertainment | `base` | Balanced performance | Entertainment, gaming, lifestyle videos |
+| Default | `base` | General purpose | Other video types |
 
-### 3. 语言检测策略
+### 3. Language Detection Strategy
 
-- **自动检测**：默认使用`auto`进行语言检测
-- **中文内容**：商业、知识、演讲类内容指定为`zh`
-- **多语言支持**：支持15种语言，包括中文、英文、日文等
+- **Auto-detect**: Use `auto` for language detection by default
+- **Chinese content**: Specify `zh` for business, knowledge, and speech content
+- **Multi-language support**: Supports 15 languages, including Chinese, English, Japanese, and more
 
-## 🚀 技术优势
+## 🚀 Technical Advantages
 
-### 1. 统一性和一致性
-- ✅ 所有视频使用相同的字幕生成方式
-- ✅ 格式统一，便于后续处理
-- ✅ 质量可控，不受平台限制
+### 1. Uniformity and Consistency
+- ✅ All videos use the same subtitle generation method
+- ✅ Unified format for easier downstream processing
+- ✅ Controllable quality, not limited by platform constraints
 
-### 2. 更好的编辑体验
-- ✅ Whisper生成的SRT格式更适合编辑
-- ✅ 时间戳精度更高
-- ✅ 支持词级别的时间戳（word-level timestamps）
+### 2. Better Editing Experience
+- ✅ Whisper-generated SRT format is better suited for editing
+- ✅ Higher timestamp precision
+- ✅ Supports word-level timestamps
 
-### 3. 多语言支持
-- ✅ 支持15种语言，包括中文、英文、日文等
-- ✅ 自动语言检测
-- ✅ 支持方言和口音
+### 3. Multi-language Support
+- ✅ Supports 15 languages, including Chinese, English, Japanese, and more
+- ✅ Automatic language detection
+- ✅ Supports dialects and accents
 
-### 4. 技术优势
-- ✅ 本地运行，无需网络依赖
-- ✅ 免费使用，无API费用
-- ✅ 可配置模型大小（tiny到large）
-- ✅ 支持说话人分离
+### 4. Technical Advantages
+- ✅ Runs locally with no network dependency
+- ✅ Free to use with no API fees
+- ✅ Configurable model sizes (tiny to large)
+- ✅ Supports speaker separation
 
-## 📊 性能对比
+## 📊 Performance Comparison
 
-### Whisper vs 平台字幕
+### Whisper vs Platform Subtitles
 
-| 特性 | Whisper生成 | 平台字幕 |
+| Feature | Whisper Generation | Platform Subtitles |
 |------|-------------|----------|
-| 可用性 | 100% | 依赖平台 |
-| 格式一致性 | 高 | 低 |
-| 时间戳精度 | 高 | 中等 |
-| 多语言支持 | 15种语言 | 依赖平台 |
-| 编辑友好性 | 高 | 中等 |
-| 网络依赖 | 无 | 有 |
-| 费用 | 免费 | 免费 |
+| Availability | 100% | Platform-dependent |
+| Format consistency | High | Low |
+| Timestamp precision | High | Medium |
+| Multi-language support | 15 languages | Platform-dependent |
+| Edit-friendliness | High | Medium |
+| Network dependency | None | Required |
+| Cost | Free | Free |
 
-## 🔧 配置说明
+## 🔧 Configuration
 
-### 环境要求
+### Environment Requirements
 
 ```bash
-# 安装Whisper
+# Install Whisper
 pip install openai-whisper
 
-# 安装FFmpeg（必需）
+# Install FFmpeg (required)
 # macOS
 brew install ffmpeg
 
@@ -87,87 +87,86 @@ brew install ffmpeg
 sudo apt update && sudo apt install ffmpeg
 
 # Windows
-# 下载FFmpeg并添加到PATH
+# Download FFmpeg and add to PATH
 ```
 
-### 模型选择建议
+### Model Selection Recommendations
 
 ```python
-# 根据内容类型选择模型
+# Select model based on content type
 if content_type == "business" or content_type == "knowledge":
-    model = "small"  # 更准确，适合重要内容
+    model = "small"  # More accurate, suitable for important content
 elif content_type == "speech":
-    model = "medium"  # 高精度，适合演讲
+    model = "medium"  # High precision, suitable for speeches
 else:
-    model = "base"  # 平衡性能和速度
+    model = "base"  # Balance performance and speed
 ```
 
-## 📈 使用效果
+## 📈 Usage Results
 
-### 1. 字幕质量提升
-- 时间戳更精确
-- 文本识别更准确
-- 格式更规范
+### 1. Improved Subtitle Quality
+- More precise timestamps
+- More accurate text recognition
+- More standardized format
 
-### 2. 编辑体验改善
-- 支持词级别编辑
-- 更好的时间轴对齐
-- 统一的SRT格式
+### 2. Improved Editing Experience
+- Supports word-level editing
+- Better timeline alignment
+- Unified SRT format
 
-### 3. 处理流程简化
-- 减少平台依赖
-- 降低失败率
-- 提高处理速度
+### 3. Simplified Processing Flow
+- Reduced platform dependency
+- Lower failure rate
+- Faster processing
 
-## 🛠️ 故障排除
+## 🛠️ Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **Whisper未安装**
+1. **Whisper not installed**
    ```bash
    pip install openai-whisper
    ```
 
-2. **FFmpeg未安装**
+2. **FFmpeg not installed**
    ```bash
-   # 检查FFmpeg
+   # Check FFmpeg
    ffmpeg -version
    ```
 
-3. **模型下载失败**
+3. **Model download failed**
    ```bash
-   # 手动下载模型
+   # Download model manually
    whisper --model base --help
    ```
 
-4. **内存不足**
-   - 使用更小的模型（tiny/base）
-   - 增加系统内存
-   - 分批处理长视频
+4. **Insufficient memory**
+   - Use a smaller model (tiny/base)
+   - Increase system memory
+   - Process long videos in segments
 
-### 性能优化
+### Performance Optimization
 
-1. **模型选择**
-   - 短视频：使用`tiny`或`base`
-   - 长视频：使用`base`或`small`
-   - 重要内容：使用`medium`或`large`
+1. **Model selection**
+   - Short videos: use `tiny` or `base`
+   - Long videos: use `base` or `small`
+   - Important content: use `medium` or `large`
 
-2. **语言指定**
-   - 已知语言：直接指定语言代码
-   - 未知语言：使用`auto`自动检测
+2. **Language specification**
+   - Known language: specify the language code directly
+   - Unknown language: use `auto` for automatic detection
 
-3. **批处理**
-   - 多个视频可以并行处理
-   - 使用队列管理处理任务
+3. **Batch processing**
+   - Multiple videos can be processed in parallel
+   - Use a queue to manage processing tasks
 
-## 📝 总结
+## 📝 Summary
 
-使用Whisper优先生成字幕的策略带来了显著的优势：
+The Whisper-first subtitle generation strategy provides significant advantages:
 
-1. **更好的用户体验**：统一的字幕质量，更少的失败情况
-2. **更强的技术能力**：支持多语言，高精度时间戳
-3. **更简单的维护**：减少对第三方平台的依赖
-4. **更低的成本**：免费使用，无需API费用
+1. **Better user experience**: Consistent subtitle quality with fewer failures
+2. **Stronger technical capabilities**: Multi-language support and high-precision timestamps
+3. **Simpler maintenance**: Reduced dependency on third-party platforms
+4. **Lower cost**: Free to use with no API fees
 
-这一策略特别适合需要高质量字幕编辑的场景，为后续的视频处理流程提供了更好的基础。
-
+This strategy is especially well suited for scenarios requiring high-quality subtitle editing, providing a stronger foundation for subsequent video processing workflows.

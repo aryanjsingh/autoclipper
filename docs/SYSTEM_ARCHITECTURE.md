@@ -1,181 +1,181 @@
-# AutoClip 系统架构说明
+# AutoClip System Architecture
 
-## 🏗️ 系统整体架构
+## 🏗️ Overall System Architecture
 
-AutoClip 是一个基于 Python + React 的视频自动切片和合集生成系统，采用前后端分离架构。
+AutoClip is an automatic video clipping and collection generation system built with Python + React, using a front-end/back-end separation architecture.
 
-### **架构组件**
+### **Architecture Components**
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   前端 (React)   │    │   后端 (FastAPI) │    │   文件系统      │
+│ Frontend (React)│    │ Backend (FastAPI)│   │ File System     │
 │                 │    │                 │    │                 │
-│ - 项目管理      │◄──►│ - API 服务      │◄──►│ - 项目文件      │
-│ - 视频预览      │    │ - 业务逻辑      │    │ - 输出文件      │
-│ - 状态监控      │    │ - 数据处理      │    │ - 元数据        │
+│ - Project mgmt  │◄──►│ - API services  │◄──►│ - Project files │
+│ - Video preview │    │ - Business logic│    │ - Output files  │
+│ - Status monitor│    │ - Data processing│   │ - Metadata      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │
                        ┌─────────────────┐
-                       │   数据库 (SQLite) │
+                       │ Database (SQLite)│
                        │                 │
-                       │ - 项目信息      │
-                       │ - 切片元数据    │
-                       │ - 合集元数据    │
-                       │ - 任务状态      │
+                       │ - Project info  │
+                       │ - Clip metadata │
+                       │ - Collection meta│
+                       │ - Task status   │
                        └─────────────────┘
 ```
 
-## 📁 数据存储架构
+## 📁 Data Storage Architecture
 
-### **1. 数据库层 (SQLite)**
+### **1. Database Layer (SQLite)**
 
-**核心表结构：**
-- `projects`: 项目基本信息
-- `clips`: 切片元数据
-- `collections`: 合集元数据
-- `tasks`: 处理任务状态
-- `bilibili_accounts`: B站账号信息
-- `upload_records`: 文件上传记录
+**Core table structure:**
+- `projects`: basic project information
+- `clips`: clip metadata
+- `collections`: collection metadata
+- `tasks`: processing task status
+- `bilibili_accounts`: Bilibili account information
+- `upload_records`: file upload records
 
-**数据关系：**
+**Data relationships:**
 ```
 projects (1) ──► (N) clips
 projects (1) ──► (N) collections
 projects (1) ──► (N) tasks
 ```
 
-### **2. 文件系统层**
+### **2. File System Layer**
 
-**目录结构：**
+**Directory structure:**
 ```
 data/
-├── projects/                    # 项目原始文件
-│   └── {project_id}/           # 每个项目一个目录
-│       ├── raw/                # 原始视频文件
-│       ├── step1_outline/      # 大纲生成结果
-│       ├── step2_timeline/     # 时间轴分析
-│       ├── step3_scoring/      # 内容评分
-│       ├── step4_title/        # 标题生成
-│       ├── step5_clustering/   # 内容聚类
-│       └── step6_video/        # 视频生成
-│           ├── clips_metadata.json    # 切片元数据
-│           └── collections_metadata.json # 合集元数据
-├── output/                      # 最终输出文件
-│   ├── clips/                  # 切片视频文件
-│   │   └── {project_id}/       # 按项目组织
-│   ├── collections/            # 合集视频文件
-│   │   └── {project_id}/       # 按项目组织
-│   └── metadata/               # 全局元数据
-├── temp/                       # 临时文件
-├── cache/                      # 缓存文件
-├── uploads/                    # 上传文件
-└── backups/                    # 数据库备份
+├── projects/                    # Original project files
+│   └── {project_id}/           # One directory per project
+│       ├── raw/                # Original video files
+│       ├── step1_outline/      # Outline generation results
+│       ├── step2_timeline/     # Timeline analysis
+│       ├── step3_scoring/      # Content scoring
+│       ├── step4_title/        # Title generation
+│       ├── step5_clustering/   # Content clustering
+│       └── step6_video/        # Video generation
+│           ├── clips_metadata.json    # Clip metadata
+│           └── collections_metadata.json # Collection metadata
+├── output/                      # Final output files
+│   ├── clips/                  # Clip video files
+│   │   └── {project_id}/       # Organized by project
+│   ├── collections/            # Collection video files
+│   │   └── {project_id}/       # Organized by project
+│   └── metadata/               # Global metadata
+├── temp/                       # Temporary files
+├── cache/                      # Cache files
+├── uploads/                    # Uploaded files
+└── backups/                    # Database backups
 ```
 
-## 🔄 数据流程
+## 🔄 Data Flow
 
-### **1. 项目创建流程**
+### **1. Project Creation Flow**
 
 ```
-用户上传视频 → 创建项目记录 → 存储原始文件 → 开始处理流程
+User uploads video → Create project record → Store original file → Start processing pipeline
      ↓
-数据库: projects 表新增记录
-文件系统: data/projects/{project_id}/raw/ 存储视频
+Database: new row in projects table
+File system: video stored in data/projects/{project_id}/raw/
 ```
 
-### **2. 视频处理流程**
+### **2. Video Processing Flow**
 
 ```
-原始视频 → 字幕提取 → 内容分析 → 切片生成 → 合集生成 → 最终输出
+Original video → Subtitle extraction → Content analysis → Clip generation → Collection generation → Final output
     ↓           ↓         ↓         ↓         ↓         ↓
 step1_outline → step2_timeline → step3_scoring → step4_title → step5_clustering → step6_video
 ```
 
-### **3. 数据同步流程**
+### **3. Data Synchronization Flow**
 
 ```
-文件系统处理完成 → 元数据生成 → 同步到数据库 → 前端显示
+File system processing complete → Metadata generated → Sync to database → Frontend display
         ↓              ↓           ↓           ↓
-   clips_metadata.json → 解析元数据 → 写入clips表 → API返回
-collections_metadata.json → 解析元数据 → 写入collections表 → API返回
+   clips_metadata.json → Parse metadata → Write to clips table → API response
+collections_metadata.json → Parse metadata → Write to collections table → API response
 ```
 
-## 🔧 关键技术实现
+## 🔧 Key Technical Implementation
 
-### **1. 数据同步机制**
+### **1. Data Synchronization Mechanism**
 
-- **自动同步**: 处理完成后自动同步元数据到数据库
-- **手动同步**: 提供同步脚本处理历史数据
-- **增量同步**: 只同步新增或修改的数据
+- **Automatic sync**: Automatically sync metadata to the database after processing completes
+- **Manual sync**: Provides sync scripts for historical data
+- **Incremental sync**: Only new or modified data is synchronized
 
-### **2. 路径管理**
+### **2. Path Management**
 
-- **统一路径管理器**: `backend/core/unified_paths.py`
-- **动态路径检测**: 自动检测最佳输出路径
-- **路径验证**: 定期检查路径配置一致性
+- **Unified path manager**: `backend/core/unified_paths.py`
+- **Dynamic path detection**: Automatically detect the best output path
+- **Path verification**: Periodically check path configuration consistency
 
-### **3. 状态管理**
+### **3. Status Management**
 
-- **项目状态**: pending → processing → completed
-- **任务状态**: pending → running → completed/failed
-- **实时更新**: WebSocket + 轮询机制
+- **Project status**: pending → processing → completed
+- **Task status**: pending → running → completed/failed
+- **Real-time updates**: WebSocket + polling mechanism
 
-## 🚨 常见问题和解决方案
+## 🚨 Common Issues and Solutions
 
-### **1. 数据不一致问题**
+### **1. Data Inconsistency**
 
-**现象**: 文件系统有数据，但数据库中没有
-**原因**: 数据同步失败或未执行
-**解决**: 运行 `scripts/sync_complete_metadata.py`
+**Symptom**: Data exists in the file system but not in the database  
+**Cause**: Data sync failed or was never run  
+**Solution**: Run `scripts/sync_complete_metadata.py`
 
-### **2. 路径混乱问题**
+### **2. Path Confusion**
 
-**现象**: 文件分散在多个目录
-**原因**: 硬编码路径与配置路径冲突
-**解决**: 使用统一路径管理器
+**Symptom**: Files scattered across multiple directories  
+**Cause**: Hardcoded paths conflict with configured paths  
+**Solution**: Use the unified path manager
 
-### **3. 前端显示异常**
+### **3. Abnormal Frontend Display**
 
-**现象**: 后端API正常，前端显示异常
-**原因**: 前端缓存或状态管理问题
-**解决**: 清除浏览器缓存，重启前端服务
+**Symptom**: Backend API is normal but frontend display is wrong  
+**Cause**: Frontend caching or state management issues  
+**Solution**: Clear browser cache and restart the frontend service
 
-## 📋 维护和监控
+## 📋 Maintenance and Monitoring
 
-### **1. 定期检查**
+### **1. Regular Checks**
 
-- **数据一致性**: 检查文件系统与数据库的一致性
-- **路径配置**: 验证路径配置的正确性
-- **存储空间**: 监控磁盘空间使用情况
+- **Data consistency**: Verify file system and database consistency
+- **Path configuration**: Verify path configuration correctness
+- **Storage space**: Monitor disk usage
 
-### **2. 备份策略**
+### **2. Backup Strategy**
 
-- **数据库备份**: 定期备份 SQLite 数据库
-- **文件备份**: 重要项目文件的备份
-- **配置备份**: 系统配置文件的备份
+- **Database backup**: Regular SQLite database backups
+- **File backup**: Backup important project files
+- **Configuration backup**: Backup system configuration files
 
-### **3. 日志监控**
+### **3. Log Monitoring**
 
-- **应用日志**: 监控应用运行状态
-- **错误日志**: 及时发现问题
-- **性能日志**: 监控系统性能
+- **Application logs**: Monitor application runtime status
+- **Error logs**: Detect problems early
+- **Performance logs**: Monitor system performance
 
-## 🚀 最佳实践
+## 🚀 Best Practices
 
-### **1. 数据管理**
+### **1. Data Management**
 
-- 定期运行数据同步脚本
-- 及时清理临时文件和缓存
-- 保持文件系统结构清晰
+- Run data sync scripts regularly
+- Clean temporary files and cache promptly
+- Keep the file system structure clear
 
-### **2. 开发流程**
+### **2. Development Workflow**
 
-- 新功能开发前先清理测试数据
-- 使用统一的路径配置
-- 及时更新文档和注释
+- Clean test data before developing new features
+- Use unified path configuration
+- Keep documentation and comments up to date
 
-### **3. 部署维护**
+### **3. Deployment and Operations**
 
-- 生产环境定期备份数据
-- 监控系统资源使用情况
-- 及时更新依赖和修复安全漏洞
+- Back up production data regularly
+- Monitor system resource usage
+- Update dependencies and security patches promptly

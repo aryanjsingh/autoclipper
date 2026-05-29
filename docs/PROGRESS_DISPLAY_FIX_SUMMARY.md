@@ -1,59 +1,64 @@
-# 前端项目卡片进度显示问题修复总结
+# Summary of Fixes for Frontend Project Card Progress Display
 
-## 问题描述
+## Problem Description
 
-用户反馈：**前端项目卡片上的进度没有正常显示进展，在处理过程中还是一直显示0，然后成功后显示成功状态**
+User feedback: **Progress on the frontend project card does not display normally. It still shows 0 during processing, then shows success after completion.**
 
-## 问题分析
+## Problem Analysis
 
-经过深入分析，发现了以下关键问题：
+After in-depth analysis, the following key issues were found:
 
-### 1. 前端组件初始化问题
-- `InlineProgressBar`组件没有使用传入的`currentStep`和`totalSteps`作为初始值
-- 始终从0开始显示，忽略了项目已有的进度状态
+### 1. Frontend Component Initialization
 
-### 2. 后端进度更新不完整
-- 流水线执行过程中只更新了任务状态，没有同步更新项目状态
-- 缺少`current_step`和`total_steps`字段的更新
-- WebSocket消息中缺少详细的步骤信息
+- The `InlineProgressBar` component does not use the passed `currentStep` and `totalSteps` as initial values
+- Always starts displaying from 0, ignoring the project's existing progress state
 
-### 3. 状态同步机制缺陷
-- 前端组件没有监听props变化
-- 项目状态更新后，前端组件没有重新渲染
+### 2. Incomplete Backend Progress Updates
 
-## 修复方案
+- During pipeline execution, only task status is updated; project status is not updated at the same time
+- Missing updates to `current_step` and `total_steps` fields
+- WebSocket messages lack detailed step information
 
-### 1. 前端组件修复 ✅
+### 3. State Synchronization Defects
 
-#### 文件：`frontend/src/components/InlineProgressBar.tsx`
+- Frontend components do not watch props changes
+- Frontend components do not re-render after project status updates
 
-**问题1：初始状态设置**
+## Fixes
+
+### 1. Frontend Component Fixes ✅
+
+#### File: `frontend/src/components/InlineProgressBar.tsx`
+
+**Issue 1: Initial state**
+
 ```typescript
-// 修复前：始终从0开始
+// Before fix: always starts from 0
 const [progressData, setProgressData] = useState<ProgressData>({
   progress: 0,
   currentStep: currentStep,
   totalSteps: totalSteps,
-  stepName: '初始化中...',
+  stepName: 'Initializing...',
   stepDetails: ''
 });
 
-// 修复后：使用传入的props作为初始值
+// After fix: use incoming props as initial values
 const [progressData, setProgressData] = useState<ProgressData>({
   progress: currentStep > 0 ? Math.round((currentStep / totalSteps) * 100) : 0,
   currentStep: currentStep,
   totalSteps: totalSteps,
-  stepName: currentStep > 0 ? getStepName(currentStep) : '初始化中...',
+  stepName: currentStep > 0 ? getStepName(currentStep) : 'Initializing...',
   stepDetails: ''
 });
 ```
 
-**问题2：Props变化监听**
+**Issue 2: Watch props changes**
+
 ```typescript
-// 新增：监听props变化，更新进度数据
+// Added: watch props changes and update progress data
 useEffect(() => {
   const newProgress = currentStep > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
-  const newStepName = currentStep > 0 ? getStepName(currentStep) : '初始化中...';
+  const newStepName = currentStep > 0 ? getStepName(currentStep) : 'Initializing...';
   
   setProgressData(prev => ({
     ...prev,
@@ -65,32 +70,34 @@ useEffect(() => {
 }, [currentStep, totalSteps]);
 ```
 
-### 2. 后端进度更新修复 ✅
+### 2. Backend Progress Update Fixes ✅
 
-#### 文件：`backend/services/processing_orchestrator.py`
+#### File: `backend/services/processing_orchestrator.py`
 
-**问题1：任务状态更新方法增强**
+**Issue 1: Enhanced task status update method**
+
 ```python
 def _update_task_status(self, status: TaskStatus, progress: Optional[float] = None, 
                        error_message: Optional[str] = None, result: Optional[Dict] = None,
                        current_step: Optional[int] = None):
-    """更新任务状态"""
-    # 更新任务状态
+    """Update task status"""
+    # Update task status
     if progress is not None:
         self.task_repo.update_task_progress(self.task_id, progress)
     
-    # 更新项目状态
+    # Update project status
     if current_step is not None:
         self._update_project_status(current_step, progress)
     
-    # 发送WebSocket实时进度更新
+    # Send WebSocket real-time progress updates
     self._send_realtime_progress_update(status, progress, error_message, current_step)
 ```
 
-**问题2：项目状态同步更新**
+**Issue 2: Synchronous project status update**
+
 ```python
 def _update_project_status(self, current_step: int, progress: Optional[float] = None):
-    """更新项目状态"""
+    """Update project status"""
     try:
         from ..services.project_service import ProjectService
         from ..core.database import SessionLocal
@@ -100,7 +107,7 @@ def _update_project_status(self, current_step: int, progress: Optional[float] = 
             project_service = ProjectService(db)
             project = project_service.get(self.project_id)
             if project:
-                # 更新项目状态
+                # Update project status
                 update_data = {
                     "current_step": current_step,
                     "total_steps": 6,
@@ -111,17 +118,18 @@ def _update_project_status(self, current_step: int, progress: Optional[float] = 
                 
                 project_service.update(self.project_id, **update_data)
                 db.commit()
-                logger.info(f"项目 {self.project_id} 状态已更新: 步骤 {current_step}/6, 进度 {progress}%")
+                logger.info(f"Project {self.project_id} status updated: step {current_step}/6, progress {progress}%")
         finally:
             db.close()
     except Exception as e:
-        logger.error(f"更新项目状态失败: {e}")
+        logger.error(f"Failed to update project status: {e}")
 ```
 
-**问题3：步骤编号映射**
+**Issue 3: Step number mapping**
+
 ```python
 def _get_step_number(self, step: ProcessingStep) -> int:
-    """获取步骤编号"""
+    """Get step number"""
     step_number_map = {
         ProcessingStep.STEP1_OUTLINE: 1,
         ProcessingStep.STEP2_TIMELINE: 2,
@@ -133,23 +141,25 @@ def _get_step_number(self, step: ProcessingStep) -> int:
     return step_number_map.get(step, 0)
 ```
 
-**问题4：流水线执行进度更新**
+**Issue 4: Pipeline execution progress update**
+
 ```python
-# 修复前：只更新进度百分比
+# Before fix: only update progress percentage
 progress = ((i + 1) / total_steps) * 100
 self._update_task_status(TaskStatus.RUNNING, progress=progress)
 
-# 修复后：同时更新步骤信息
+# After fix: also update step information
 step_number = self._get_step_number(step)
 progress = ((i + 1) / total_steps) * 100
 self._update_task_status(TaskStatus.RUNNING, progress=progress, current_step=step_number)
 ```
 
-### 3. WebSocket消息增强 ✅
+### 3. WebSocket Message Enhancement ✅
 
-#### 文件：`backend/services/websocket_notification_service.py`
+#### File: `backend/services/websocket_notification_service.py`
 
-**消息格式优化**
+**Message format optimization**
+
 ```python
 notification = {
     'type': 'task_progress_update',
@@ -157,104 +167,117 @@ notification = {
     'project_id': project_id,
     'status': 'running',
     'progress': progress,
-    'current_step': current_step,      # 新增：当前步骤编号
-    'total_steps': total_steps,        # 新增：总步骤数
-    'step_name': step_name,            # 新增：步骤名称
-    'message': message,                # 新增：详细消息
+    'current_step': current_step,  # New: current step number
+    'total_steps': total_steps,    # New: total steps
+    'step_name': step_name,        # New: step name
+    'message': message,            # New: detailed message
     'timestamp': datetime.utcnow().isoformat()
 }
 ```
 
-## 测试验证
+## Test Verification
 
-### 1. WebSocket功能测试 ✅
+### 1. WebSocket Function Test ✅
 
-创建了测试脚本 `scripts/test_progress_fix.py`，验证：
-- ✅ WebSocket连接正常
-- ✅ 进度消息发送成功
-- ✅ 消息格式包含完整步骤信息
-- ✅ 主题订阅功能正常
+Created test script `scripts/test_progress_fix.py`, verified:
 
-### 2. 测试结果
+- ✅ WebSocket connection works
+- ✅ Progress messages sent successfully
+- ✅ Message format includes complete step information
+- ✅ Topic subscription works
+
+### 2. Test Results
 
 ```
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 10% - 大纲提取
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 30% - 时间定位
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 50% - 内容评分
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 70% - 标题生成
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 85% - 主题聚类
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 95% - 视频切割
-INFO: 处理进度通知已发送: test-project-fix-123 - test-task-fix-456 - 100% - 处理完成
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 10% - Outline extraction
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 30% - Timeline positioning
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 50% - Content scoring
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 70% - Title generation
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 85% - Topic clustering
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 95% - Video cutting
+INFO: Processing progress notification sent: test-project-fix-123 - test-task-fix-456 - 100% - Processing completed
 ```
 
-## 修复效果
+## Fix Effects
 
-### 1. 前端显示改进
-- **初始状态正确**：组件加载时显示正确的进度和步骤信息
-- **实时更新**：WebSocket消息实时更新进度条显示
-- **状态同步**：项目状态变化时，前端组件自动更新
+### 1. Frontend Display Improvements
 
-### 2. 后端状态管理
-- **完整更新**：任务状态和项目状态同步更新
-- **步骤跟踪**：准确记录当前执行步骤
-- **进度映射**：正确的进度百分比计算
+- **Correct initial state**: Shows correct progress and step info when the component loads
+- **Real-time updates**: Progress bar updates from WebSocket messages
+- **Status sync**: Frontend components update when project status changes
 
-### 3. 用户体验提升
-- **实时反馈**：用户可以看到详细的处理进度
-- **步骤信息**：显示当前执行的步骤名称
-- **进度可视化**：进度条实时反映处理状态
+### 2. Backend State Management
 
-## 技术要点
+- **Full updates**: Task and project status updated together
+- **Step tracking**: Accurately records current execution step
+- **Progress mapping**: Correct progress percentage calculation
 
-### 1. 状态同步机制
-- 前端组件监听props变化
-- 后端同步更新任务和项目状态
-- WebSocket实时推送状态变化
+### 3. User Experience Improvements
 
-### 2. 进度映射逻辑
-- 步骤编号：1-6对应6个处理步骤
-- 进度百分比：基于步骤完成情况计算
-- 步骤名称：中文化的步骤描述
+- **Real-time feedback**: Users see detailed processing progress
+- **Step information**: Shows name of the current step
+- **Progress visualization**: Progress bar reflects processing status in real time
 
-### 3. 错误处理
-- 完善的异常捕获和日志记录
-- 状态更新失败时的降级处理
-- WebSocket连接异常时的重连机制
+## Technical Points
 
-## 部署说明
+### 1. State Synchronization
 
-### 1. 前端部署
-- 确保组件正确导入
-- 验证WebSocket连接配置
-- 测试不同浏览器的兼容性
+- Frontend components watch props changes
+- Backend synchronously updates task and project status
+- WebSocket pushes status changes in real time
 
-### 2. 后端部署
-- 确保数据库表结构支持新字段
-- 验证WebSocket服务正常运行
-- 监控进度更新日志
+### 2. Progress Mapping Logic
 
-### 3. 测试验证
-- 启动项目处理任务
-- 观察进度条实时更新
-- 验证步骤信息正确显示
-- 检查WebSocket连接状态
+- Step numbers 1–6 map to 6 processing steps
+- Progress percentage calculated from step completion
+- Step names: localized step descriptions
 
-## 总结
+### 3. Error Handling
 
-✅ **问题已完全解决**：
-- 前端项目卡片现在能正确显示实时进度
-- 处理过程中不再一直显示0
-- 步骤信息实时更新
-- 成功状态正确显示
+- Complete exception capture and logging
+- Graceful degradation when status update fails
+- WebSocket reconnection on connection issues
 
-**关键改进**：
-1. 前端组件初始化和状态监听
-2. 后端任务和项目状态同步更新
-3. WebSocket消息格式增强
-4. 完善的错误处理和日志记录
+## Deployment Instructions
 
-用户现在可以看到：
-- **实时进度更新**：从0%到100%的完整进度
-- **详细步骤信息**：当前执行的步骤名称
-- **状态同步**：前后端状态完全一致
-- **视觉反馈**：进度条和步骤信息的动态更新
+### 1. Frontend Deployment
+
+- Ensure components are imported correctly
+- Verify WebSocket connection configuration
+- Test browser compatibility
+
+### 2. Backend Deployment
+
+- Ensure database schema supports new fields
+- Verify WebSocket service is running
+- Monitor progress update logs
+
+### 3. Test Verification
+
+- Start project processing tasks
+- Watch progress bar update in real time
+- Verify step information displays correctly
+- Check WebSocket connection status
+
+## Summary
+
+✅ **Problem fully resolved**:
+
+- Frontend project cards now show real-time progress correctly
+- No longer stuck at 0% during processing
+- Step information updates in real time
+- Success status displays correctly
+
+**Key improvements**:
+
+1. Frontend component initialization and status watching
+2. Synchronous backend task and project status updates
+3. WebSocket message format enhancement
+4. Complete error handling and logging
+
+Users can now see:
+
+- **Live progress updates**: Full progress from 0% to 100%
+- **Detailed step information**: Name of the current step
+- **Status synchronization**: Frontend and backend states stay in sync
+- **Visual feedback**: Dynamic progress bar and step information

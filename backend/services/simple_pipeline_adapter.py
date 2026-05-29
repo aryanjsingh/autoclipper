@@ -1,5 +1,5 @@
 """
-简化的流水线适配器 - 集成新的进度系统
+Simplified pipeline adapter - integrates with the new progress system
 """
 
 import logging
@@ -36,20 +36,20 @@ _PROGRESS_EN = {
 }
 
 _PROGRESS_ZH = {
-    "INGEST_READY": "素材准备完成",
-    "SUBTITLE_START": "开始字幕处理",
-    "SUBTITLE_AI": "正在使用AI生成字幕...",
-    "SUBTITLE_DONE": "字幕处理完成",
-    "ANALYZE_START": "开始内容分析",
-    "ANALYZE_TIMELINE": "时间线提取完成",
-    "ANALYZE_DONE": "内容分析完成",
-    "HIGHLIGHT_START": "开始片段定位",
-    "HIGHLIGHT_TITLES": "标题生成完成",
-    "HIGHLIGHT_DONE": "片段定位完成",
-    "EXPORT_START": "开始视频导出",
-    "EXPORT_DONE": "视频导出完成",
-    "DONE_OK": "处理完成",
-    "DONE_FAIL": "处理失败",
+    "INGEST_READY": "Source files ready",
+    "SUBTITLE_START": "Processing subtitles",
+    "SUBTITLE_AI": "Generating subtitles with AI...",
+    "SUBTITLE_DONE": "Subtitles ready",
+    "ANALYZE_START": "Analyzing content",
+    "ANALYZE_TIMELINE": "Timeline extraction complete",
+    "ANALYZE_DONE": "Content analysis complete",
+    "HIGHLIGHT_START": "Finding highlight clips",
+    "HIGHLIGHT_TITLES": "Titles generated",
+    "HIGHLIGHT_DONE": "Highlight selection complete",
+    "EXPORT_START": "Exporting videos",
+    "EXPORT_DONE": "Export complete",
+    "DONE_OK": "Processing complete",
+    "DONE_FAIL": "Processing failed",
 }
 
 
@@ -73,7 +73,7 @@ def _load_project_category(project_id: str) -> str:
 
 
 class SimplePipelineAdapter:
-    """简化的流水线适配器，使用固定阶段进度系统"""
+    """Simplified pipeline adapter using a fixed-stage progress system"""
     
     def __init__(self, project_id: str, task_id: str):
         self.project_id = project_id
@@ -81,34 +81,34 @@ class SimplePipelineAdapter:
         
     async def _generate_subtitle_automatically(self, video_path: str, metadata_dir: Path) -> Path:
         """
-        自动生成字幕文件
+        Automatically generate subtitle files
         
         Args:
-            video_path: 视频文件路径
-            metadata_dir: 元数据目录
+            video_path: Video file path
+            metadata_dir: Metadata directory
             
         Returns:
-            生成的SRT文件路径，如果失败返回None
+            Path to the generated SRT file, or None if failed
         """
         try:
-            logger.info(f"开始为视频 {video_path} 自动生成字幕")
+            logger.info(f"Starting automatic subtitle generation for video {video_path}")
             
-            # 更新进度
+            # Update progress
             from backend.services.simple_progress import emit_progress
             emit_progress(self.project_id, "SUBTITLE", _progress_msg("SUBTITLE_AI"), subpercent=25)
             
-            # 尝试使用bcut-asr
+            # Try using bcut-asr
             try:
                 from backend.utils.speech_recognizer import generate_subtitle_for_video
                 from pathlib import Path
                 
                 video_file_path = Path(video_path)
                 if not video_file_path.exists():
-                    logger.error(f"视频文件不存在: {video_path}")
+                    logger.error(f"Video file does not exist: {video_path}")
                     return None
                 
-                # 使用bcut-asr生成字幕
-                logger.info("尝试使用bcut-asr生成字幕")
+                # Generate subtitles using bcut-asr
+                logger.info("Attempting to generate subtitles using bcut-asr")
                 output_path = metadata_dir / f"{video_file_path.stem}.srt"
                 srt_path = generate_subtitle_for_video(
                     video_file_path,
@@ -119,18 +119,18 @@ class SimplePipelineAdapter:
                 )
                 
                 if srt_path and srt_path.exists():
-                    logger.info(f"bcut-asr生成字幕成功: {srt_path}")
+                    logger.info(f"bcut-asr subtitle generation successful: {srt_path}")
                     emit_progress(self.project_id, "SUBTITLE", _progress_msg("SUBTITLE_DONE"), subpercent=40)
                     return srt_path
                 else:
-                    logger.warning("bcut-asr生成字幕失败")
+                    logger.warning("bcut-asr subtitle generation failed")
                     
             except Exception as e:
-                logger.warning(f"bcut-asr生成字幕失败: {e}")
+                logger.warning(f"bcut-asr subtitle generation failed: {e}")
             
-            # 如果bcut-asr失败，尝试使用Whisper本地模型
+            # If bcut-asr fails, try using the Whisper local model
             try:
-                logger.info("尝试使用Whisper本地模型生成字幕")
+                logger.info("Attempting to generate subtitles using Whisper local model")
                 output_path = metadata_dir / f"{Path(video_path).stem}.srt"
                 srt_path = generate_subtitle_for_video(
                     Path(video_path),
@@ -141,80 +141,80 @@ class SimplePipelineAdapter:
                 )
                 
                 if srt_path and srt_path.exists():
-                    logger.info(f"Whisper生成字幕成功: {srt_path}")
+                    logger.info(f"Whisper subtitle generation successful: {srt_path}")
                     emit_progress(self.project_id, "SUBTITLE", _progress_msg("SUBTITLE_DONE"), subpercent=40)
                     return srt_path
                 else:
-                    logger.warning("Whisper生成字幕失败")
+                    logger.warning("Whisper subtitle generation failed")
                     
             except Exception as e:
-                logger.warning(f"Whisper生成字幕失败: {e}")
+                logger.warning(f"Whisper subtitle generation failed: {e}")
             
-            logger.error("所有ASR方法都失败了")
+            logger.error("All ASR methods failed")
             return None
             
         except Exception as e:
-            logger.error(f"自动生成字幕过程中发生错误: {e}")
+            logger.error(f"Error during automatic subtitle generation: {e}")
             return None
         
     async def process_project_sync(self, input_video_path: str, input_srt_path: str) -> Dict[str, Any]:
         """
-        同步处理项目 - 使用简化的进度系统
+        Synchronously process a project - uses simplified progress system
         
         Args:
-            input_video_path: 输入视频路径
-            input_srt_path: 输入SRT路径
+            input_video_path: Input video path
+            input_srt_path: Input SRT path
             
         Returns:
-            处理结果
+            Processing result
         """
-        logger.info(f"开始处理项目: {self.project_id}")
+        logger.info(f"Starting project processing: {self.project_id}")
         video_category = _load_project_category(self.project_id)
         prompt_files = get_prompt_files(video_category)
         logger.info("Using prompt files for category=%s language=en=%s", video_category, is_english())
 
         try:
-            # 清除之前的进度数据
+            # Clear previous progress data
             clear_progress(self.project_id)
             
-            # 创建必要的目录结构 - 使用正确的路径
+            # Create necessary directory structure - use correct paths
             from backend.core.path_utils import get_project_directory
             project_dir = get_project_directory(self.project_id)
             metadata_dir = project_dir / "metadata"
             output_dir = project_dir / "output"
             metadata_dir.mkdir(parents=True, exist_ok=True)
             output_dir.mkdir(parents=True, exist_ok=True)
-            # 项目内专属输出子目录
+            # Project-specific output subdirectories
             clips_output_dir = output_dir / "clips"
             collections_output_dir = output_dir / "collections"
             clips_output_dir.mkdir(parents=True, exist_ok=True)
             collections_output_dir.mkdir(parents=True, exist_ok=True)
             
-            # 阶段1: 素材准备
+            # Stage 1: Source preparation
             emit_progress(self.project_id, "INGEST", _progress_msg("INGEST_READY"))
             
-            # 阶段2: 字幕处理
+            # Stage 2: Subtitle processing
             emit_progress(self.project_id, "SUBTITLE", _progress_msg("SUBTITLE_START"))
             
-            # Step 1: 大纲提取
-            logger.info("执行Step 1: 大纲提取")
+            # Step 1: Outline extraction
+            logger.info("Executing Step 1: Outline extraction")
             if input_srt_path and Path(input_srt_path).exists():
-                logger.info(f"使用现有SRT文件: {input_srt_path}")
+                logger.info(f"Using existing SRT file: {input_srt_path}")
                 outlines = run_step1_outline(
                     Path(input_srt_path), metadata_dir=metadata_dir, prompt_files=prompt_files
                 )
             else:
-                logger.warning("没有SRT文件，尝试自动生成字幕")
-                # 尝试自动生成字幕
+                logger.warning("No SRT file found, attempting automatic subtitle generation")
+                # Try automatic subtitle generation
                 srt_path = await self._generate_subtitle_automatically(input_video_path, metadata_dir)
                 if srt_path and srt_path.exists():
-                    logger.info(f"自动生成字幕成功: {srt_path}")
+                    logger.info(f"Automatic subtitle generation successful: {srt_path}")
                     outlines = run_step1_outline(
                         srt_path, metadata_dir=metadata_dir, prompt_files=prompt_files
                     )
                 else:
-                    logger.warning("自动生成字幕失败，创建空大纲")
-                    # 创建一个空的大纲文件
+                    logger.warning("Automatic subtitle generation failed, creating empty outline")
+                    # Create an empty outline file
                     outlines = []
                     outline_file = metadata_dir / "step1_outline.json"
                     import json
@@ -222,12 +222,12 @@ class SimplePipelineAdapter:
                         json.dump(outlines, f, ensure_ascii=False, indent=2)
             emit_progress(self.project_id, "SUBTITLE", _progress_msg("SUBTITLE_DONE"), subpercent=50)
             
-            # 阶段3: 内容分析
+            # Stage 3: Content analysis
             emit_progress(self.project_id, "ANALYZE", _progress_msg("ANALYZE_START"))
             
-            # Step 2: 时间线提取
-            logger.info("执行Step 2: 时间线提取")
-            if outlines:  # 只有当有大纲时才执行后续步骤
+            # Step 2: Timeline extraction
+            logger.info("Executing Step 2: Timeline extraction")
+            if outlines:  # Only execute subsequent steps if there are outlines
                 timeline_data = run_step2_timeline(
                     metadata_dir / "step1_outline.json",
                     metadata_dir=metadata_dir,
@@ -235,8 +235,8 @@ class SimplePipelineAdapter:
                 )
                 emit_progress(self.project_id, "ANALYZE", _progress_msg("ANALYZE_TIMELINE"), subpercent=50)
                 
-                # Step 3: 内容评分
-                logger.info("执行Step 3: 内容评分")
+                # Step 3: Content scoring
+                logger.info("Executing Step 3: Content scoring")
                 scored_clips = run_step3_scoring(
                     metadata_dir / "step2_timeline.json",
                     metadata_dir=metadata_dir,
@@ -244,8 +244,8 @@ class SimplePipelineAdapter:
                 )
                 emit_progress(self.project_id, "ANALYZE", _progress_msg("ANALYZE_DONE"), subpercent=100)
             else:
-                logger.warning("没有大纲数据，跳过时间线提取和内容评分")
-                # 创建空的时间线和评分文件
+                logger.warning("No outline data, skipping timeline extraction and content scoring")
+                # Create empty timeline and scoring files
                 timeline_file = metadata_dir / "step2_timeline.json"
                 scored_file = metadata_dir / "step3_high_score_clips.json"
                 import json
@@ -253,17 +253,17 @@ class SimplePipelineAdapter:
                     json.dump([], f, ensure_ascii=False, indent=2)
                 with open(scored_file, 'w', encoding='utf-8') as f:
                     json.dump([], f, ensure_ascii=False, indent=2)
-                # 初始化空变量
+                # Initialize empty variables
                 timeline_data = []
                 scored_clips = []
                 emit_progress(self.project_id, "ANALYZE", _progress_msg("ANALYZE_DONE"), subpercent=100)
             
-            # 阶段4: 片段定位
+            # Stage 4: Highlight selection
             emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_START"))
             
-            # Step 4: 标题生成
-            logger.info("执行Step 4: 标题生成")
-            if outlines:  # 只有当有大纲时才执行后续步骤
+            # Step 4: Title generation
+            logger.info("Executing Step 4: Title generation")
+            if outlines:  # Only execute subsequent steps if there are outlines
                 titled_clips = run_step4_title(
                     metadata_dir / "step3_high_score_clips.json",
                     metadata_dir=str(metadata_dir),
@@ -271,8 +271,8 @@ class SimplePipelineAdapter:
                 )
                 emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_TITLES"), subpercent=40)
                 
-                # Step 5: 主题聚类
-                logger.info("执行Step 5: 主题聚类")
+                # Step 5: Topic clustering
+                logger.info("Executing Step 5: Topic clustering")
                 collections = run_step5_clustering(
                     metadata_dir / "step4_titles.json",
                     metadata_dir=str(metadata_dir),
@@ -280,11 +280,11 @@ class SimplePipelineAdapter:
                 )
                 emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_DONE"), subpercent=100)
                 
-                # 阶段5: 视频导出
+                # Stage 5: Video export
                 emit_progress(self.project_id, "EXPORT", _progress_msg("EXPORT_START"))
                 
-                # Step 6: 视频切割
-                logger.info("执行Step 6: 视频切割")
+                # Step 6: Video cutting
+                logger.info("Executing Step 6: Video cutting")
                 video_result = run_step6_video(
                     metadata_dir / "step4_titles.json",
                     metadata_dir / "step5_collections.json",
@@ -295,8 +295,8 @@ class SimplePipelineAdapter:
                     metadata_dir=str(metadata_dir)
                 )
             else:
-                logger.warning("没有大纲数据，跳过标题生成、主题聚类和视频切割")
-                # 创建空的标题和合集文件
+                logger.warning("No outline data, skipping title generation, topic clustering, and video cutting")
+                # Create empty title and collection files
                 titles_file = metadata_dir / "step4_titles.json"
                 collections_file = metadata_dir / "step5_collections.json"
                 import json
@@ -304,7 +304,7 @@ class SimplePipelineAdapter:
                     json.dump([], f, ensure_ascii=False, indent=2)
                 with open(collections_file, 'w', encoding='utf-8') as f:
                     json.dump([], f, ensure_ascii=False, indent=2)
-                # 初始化空变量
+                # Initialize empty variables
                 titled_clips = []
                 collections = []
                 emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_DONE"), subpercent=100)
@@ -312,10 +312,10 @@ class SimplePipelineAdapter:
                 video_result = {"status": "skipped", "message": "No content to process"}
             emit_progress(self.project_id, "EXPORT", _progress_msg("EXPORT_DONE"), subpercent=100)
             
-            # 阶段6: 处理完成
+            # Stage 6: Processing complete
             emit_progress(self.project_id, "DONE", _progress_msg("DONE_OK"))
             
-            # 自动同步数据到数据库
+            # Automatically sync data to database
             try:
                 from backend.services.data_sync_service import DataSyncService
                 from backend.core.database import SessionLocal
@@ -325,15 +325,15 @@ class SimplePipelineAdapter:
                     sync_service = DataSyncService(db)
                     sync_result = sync_service.sync_project_from_filesystem(self.project_id, project_dir)
                     if sync_result.get("success"):
-                        logger.info(f"项目 {self.project_id} 数据同步成功: {sync_result}")
+                        logger.info(f"Project {self.project_id} data sync successful: {sync_result}")
                     else:
-                        logger.error(f"项目 {self.project_id} 数据同步失败: {sync_result}")
+                        logger.error(f"Project {self.project_id} data sync failed: {sync_result}")
                 finally:
                     db.close()
             except Exception as e:
-                logger.error(f"数据同步失败: {e}")
+                logger.error(f"Data sync failed: {e}")
             
-            logger.info(f"项目处理完成: {self.project_id}")
+            logger.info(f"Project processing complete: {self.project_id}")
             return {
                 "status": "succeeded",
                 "project_id": self.project_id,
@@ -349,10 +349,10 @@ class SimplePipelineAdapter:
             }
             
         except Exception as e:
-            error_msg = f"Pipeline failed: {str(e)}" if is_english() else f"流水线处理失败: {str(e)}"
+            error_msg = f"Pipeline processing failed: {str(e)}"
             logger.error(error_msg)
             
-            # 发送失败状态
+            # Send failure status
             emit_progress(self.project_id, "DONE", f"{_progress_msg('DONE_FAIL')}: {error_msg}")
             
             return {
@@ -364,5 +364,5 @@ class SimplePipelineAdapter:
 
 
 def create_simple_pipeline_adapter(project_id: str, task_id: str) -> SimplePipelineAdapter:
-    """创建简化的流水线适配器实例"""
+    """Create a simplified pipeline adapter instance"""
     return SimplePipelineAdapter(project_id, task_id)

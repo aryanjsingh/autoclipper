@@ -1,99 +1,107 @@
-# 🔄 AI自动切片工具 - 项目重构计划
+# 🔄 AI automatic clipping tool — project refactor plan
 
-## 🎯 重构策略：渐进式重构
+## 🎯 Refactoring strategy: progressive refactoring
 
-### 为什么选择渐进式重构？
+### Why progressive refactoring?
 
-**优势：**
-- ✅ **风险可控** - 逐步改造，避免一次性大改动
-- ✅ **功能保持** - 现有功能不会中断
-- ✅ **学习成本低** - 团队可以逐步适应新架构
-- ✅ **快速验证** - 每个阶段都能看到效果
-- ✅ **回滚容易** - 如果出现问题可以快速回滚
+**Advantages:**
 
-## 📋 重构实施计划
+- ✅ **Controlled risk** — Incremental changes instead of one big bang
+- ✅ **Feature continuity** — Existing behavior stays available
+- ✅ **Lower learning curve** — Team adapts gradually
+- ✅ **Fast feedback** — Validate results at each stage
+- ✅ **Easy rollback** — Revert quickly if something breaks
 
-### 第一阶段：项目结构重组 (1周)
+## 📋 Refactoring implementation plan
 
-#### 目标
-重新组织项目结构，为后续重构打下基础。
+### Phase 1: Project restructuring (1 week)
 
-#### 具体操作
+#### Goal
 
-**1. 创建新的项目结构**
+Reorganize the project layout and lay groundwork for later refactors.
+
+#### Steps
+
+**1. Create new project structure**
+
 ```bash
-# 在项目根目录执行
+# Run from project root
 mkdir -p refactor-backup
-cp -r * refactor-backup/  # 备份当前项目
+cp -r * refactor-backup/  # Back up current project
 
-# 创建新的目录结构
+# Create new directory layout
 mkdir -p {backend,frontend,shared,docs,scripts,tests}
 ```
 
-**2. 新的项目结构**
+**2. Target layout**
+
 ```
 autoclips-refactored/
-├── backend/                    # 后端服务
-│   ├── app/                   # FastAPI应用
-│   ├── core/                  # 核心模块
-│   ├── services/              # 业务服务
-│   ├── models/                # 数据模型
-│   ├── api/                   # API路由
-│   └── utils/                 # 工具函数
-├── frontend/                   # 前端应用
-│   ├── src/                   # React源码
-│   ├── public/                # 静态资源
-│   └── dist/                  # 构建输出
-├── shared/                     # 共享代码
-│   ├── types/                 # 类型定义
-│   ├── constants/             # 常量定义
-│   └── utils/                 # 共享工具
-├── docs/                       # 文档
-├── scripts/                    # 脚本工具
-├── tests/                      # 测试文件
-├── data/                       # 数据文件
-├── logs/                       # 日志文件
-└── requirements/               # 依赖管理
+├── backend/                    # Backend services
+│   ├── app/                   # FastAPI application
+│   ├── core/                  # Core modules
+│   ├── services/              # Business services
+│   ├── models/                # Data models
+│   ├── api/                   # API routes
+│   └── utils/                 # Utilities
+├── frontend/                   # Frontend application
+│   ├── src/                   # React source
+│   ├── public/                # Static assets
+│   └── dist/                  # Build output
+├── shared/                     # Shared code
+│   ├── types/                 # Type definitions
+│   ├── constants/             # Constants
+│   └── utils/                 # Shared utilities
+├── docs/                       # Documentation
+├── scripts/                    # Scripts
+├── tests/                      # Tests
+├── data/                       # Data files
+├── logs/                       # Logs
+└── requirements/               # Dependency manifests
 ```
 
-**3. 迁移现有代码**
+**3. Migrate existing code**
+
 ```bash
-# 迁移后端代码
+# Migrate backend code
 cp -r src/* backend/
 cp -r pipeline backend/
 cp -r utils backend/
 
-# 迁移前端代码
+# Migrate frontend code
 cp -r frontend/* frontend/
 
-# 迁移配置文件
+# Migrate configuration
 cp requirements.txt requirements/
 cp backend_requirements.txt requirements/
 ```
 
-**4. 清理冗余文件**
+**4. Remove redundant files**
+
 ```bash
-# 删除重复的API文件
+# Remove duplicate API modules
 rm -f src/api.py simple_api.py
 
-# 删除实验性文件
+# Remove experimental files
 rm -f test_*.py
 rm -f basic_bilibili_downloader.py
 ```
 
-### 第二阶段：依赖管理统一 (3-5天)
+### Phase 2: Unified dependency management (3–5 days)
 
-#### 目标
-统一依赖管理，使用现代化的包管理工具。
+#### Goal
 
-#### 具体操作
+Centralize dependencies with modern package management.
 
-**1. 创建pyproject.toml**
+#### Steps
+
+**1. Create pyproject.toml**
+
 ```toml
 [tool.poetry]
 name = "auto-clips"
 version = "1.0.0"
-description = "AI自动切片工具"
+description = "AI automatic clipping tool"
 authors = ["Your Name <your.email@example.com>"]
 
 [tool.poetry.dependencies]
@@ -125,7 +133,8 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
 
-**2. 创建package.json (前端)**
+**2. Create package.json (frontend)**
+
 ```json
 {
   "name": "auto-clips-frontend",
@@ -156,25 +165,28 @@ build-backend = "poetry.core.masonry.api"
 }
 ```
 
-**3. 安装依赖**
+**3. Install dependencies**
+
 ```bash
-# 后端依赖
+# Backend
 cd backend
 poetry install
 
-# 前端依赖
+# Frontend
 cd ../frontend
 npm install
 ```
 
-### 第三阶段：后端架构重构 (2-3周)
+### Phase 3: Backend architecture refactor (2–3 weeks)
 
-#### 目标
-重构后端架构，采用现代化的设计模式。
+#### Goal
 
-#### 具体操作
+Modernize backend structure and design patterns.
 
-**1. 创建新的后端结构**
+#### Steps
+
+**1. New backend entry point**
+
 ```python
 # backend/app/main.py
 from fastapi import FastAPI
@@ -184,11 +196,11 @@ from app.core.config import settings as app_settings
 
 app = FastAPI(
     title="AutoClips API",
-    description="AI自动切片工具后端API",
+    description="AI automatic clipping tool backend API",
     version="1.0.0"
 )
 
-# CORS配置
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=app_settings.ALLOWED_ORIGINS,
@@ -197,7 +209,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 注册路由
+# Register routes
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
 app.include_router(processing.router, prefix="/api/v1/processing", tags=["processing"])
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
@@ -208,34 +220,35 @@ async def root():
     return {"message": "AutoClips API", "version": "1.0.0"}
 ```
 
-**2. 重构核心模块**
+**2. Core configuration module**
+
 ```python
 # backend/core/config.py
 from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
-    # API配置
+    # API configuration
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "AutoClips"
     
-    # 安全配置
+    # Security
     SECRET_KEY: str = "your-secret-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     
-    # CORS配置
+    # CORS
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8080",
     ]
     
-    # 数据库配置
+    # Database
     DATABASE_URL: str = "sqlite:///./autoclips.db"
     
-    # Redis配置
+    # Redis
     REDIS_URL: str = "redis://localhost:6379"
     
-    # 文件存储配置
+    # File storage
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 1024 * 1024 * 100  # 100MB
     
@@ -245,7 +258,8 @@ class Settings(BaseSettings):
 settings = Settings()
 ```
 
-**3. 重构服务层**
+**3. Service layer**
+
 ```python
 # backend/services/project_service.py
 from typing import List, Optional
@@ -293,14 +307,16 @@ class ProjectService:
         return True
 ```
 
-### 第四阶段：前端架构重构 (2-3周)
+### Phase 4: Frontend architecture refactor (2–3 weeks)
 
-#### 目标
-重构前端架构，采用现代化的React开发模式。
+#### Goal
 
-#### 具体操作
+Modernize the React frontend structure.
 
-**1. 重构组件结构**
+#### Steps
+
+**1. Component structure**
+
 ```typescript
 // frontend/src/components/layout/AppLayout.tsx
 import React from 'react';
@@ -327,22 +343,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     {
       key: '/',
       icon: <HomeOutlined />,
-      label: '首页',
+      label: 'Home',
     },
     {
       key: '/projects',
       icon: <ProjectOutlined />,
-      label: '项目管理',
+      label: 'Project Management',
     },
     {
       key: '/history',
       icon: <HistoryOutlined />,
-      label: '处理历史',
+      label: 'Processing history',
     },
     {
       key: '/settings',
       icon: <SettingOutlined />,
-      label: '设置',
+      label: 'Settings',
     },
   ];
 
@@ -378,7 +394,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 };
 ```
 
-**2. 重构状态管理**
+**2. State management**
+
 ```typescript
 // frontend/src/store/projectStore.ts
 import { create } from 'zustand';
@@ -416,7 +433,7 @@ export const useProjectStore = create<ProjectState>()(
           set({ projects, loading: false });
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : '获取项目失败',
+            error: error instanceof Error ? error.message : 'Failed to fetch projects',
             loading: false 
           });
         }
@@ -433,7 +450,7 @@ export const useProjectStore = create<ProjectState>()(
           return project;
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : '创建项目失败',
+            error: error instanceof Error ? error.message : 'Failed to create project',
             loading: false 
           });
           throw error;
@@ -452,7 +469,7 @@ export const useProjectStore = create<ProjectState>()(
           }));
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : '更新项目失败',
+            error: error instanceof Error ? error.message : 'Failed to update project',
             loading: false 
           });
         }
@@ -468,7 +485,7 @@ export const useProjectStore = create<ProjectState>()(
           }));
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : '删除项目失败',
+            error: error instanceof Error ? error.message : 'Failed to delete project',
             loading: false 
           });
         }
@@ -485,7 +502,7 @@ export const useProjectStore = create<ProjectState>()(
           set({ loading: false });
         } catch (error) {
           set({ 
-            error: error instanceof Error ? error.message : '开始处理失败',
+            error: error instanceof Error ? error.message : 'Failed to start processing',
             loading: false 
           });
         }
@@ -498,7 +515,8 @@ export const useProjectStore = create<ProjectState>()(
 );
 ```
 
-**3. 重构API服务**
+**3. API service**
+
 ```typescript
 // frontend/src/services/api.ts
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
@@ -510,7 +528,7 @@ class ApiService {
   constructor() {
     this.api = axios.create({
       baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1',
-      timeout: 300000, // 5分钟超时
+      timeout: 300000, // 5 minutes
       headers: {
         'Content-Type': 'application/json',
       },
@@ -520,10 +538,9 @@ class ApiService {
   }
 
   private setupInterceptors() {
-    // 请求拦截器
+    // Request interceptor
     this.api.interceptors.request.use(
       (config) => {
-        // 添加认证token
         const token = localStorage.getItem('auth_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -535,15 +552,13 @@ class ApiService {
       }
     );
 
-    // 响应拦截器
+    // Response interceptor
     this.api.interceptors.response.use(
       (response: AxiosResponse) => {
         return response.data;
       },
       (error) => {
-        // 统一错误处理
         if (error.response?.status === 401) {
-          // 处理认证错误
           localStorage.removeItem('auth_token');
           window.location.href = '/login';
         }
@@ -552,7 +567,6 @@ class ApiService {
     );
   }
 
-  // 项目相关API
   async getProjects(): Promise<Project[]> {
     return this.api.get('/projects');
   }
@@ -573,7 +587,6 @@ class ApiService {
     return this.api.delete(`/projects/${id}`);
   }
 
-  // 处理相关API
   async startProcessing(projectId: string): Promise<void> {
     return this.api.post(`/projects/${projectId}/process`);
   }
@@ -582,7 +595,6 @@ class ApiService {
     return this.api.get(`/projects/${projectId}/status`);
   }
 
-  // 文件上传API
   async uploadFiles(files: File[], projectId: string): Promise<void> {
     const formData = new FormData();
     files.forEach(file => {
@@ -601,14 +613,16 @@ class ApiService {
 export const apiService = new ApiService();
 ```
 
-### 第五阶段：数据库集成 (1-2周)
+### Phase 5: Database integration (1–2 weeks)
 
-#### 目标
-集成数据库，实现数据持久化。
+#### Goal
 
-#### 具体操作
+Add persistent storage with a proper data model.
 
-**1. 数据库模型设计**
+#### Steps
+
+**1. Database models**
+
 ```python
 # backend/models/base.py
 from sqlalchemy.ext.declarative import declarative_base
@@ -645,12 +659,13 @@ class Project(Base, TimestampMixin):
     video_category = Column(String(50), default="default")
     metadata = Column(JSON)
     
-    # 关联关系
+    # Relationships
     clips = relationship("Clip", back_populates="project")
     collections = relationship("Collection", back_populates="project")
 ```
 
-**2. 数据库配置**
+**2. Database configuration**
+
 ```python
 # backend/core/database.py
 from sqlalchemy import create_engine
@@ -673,14 +688,16 @@ def get_db():
         db.close()
 ```
 
-### 第六阶段：测试和优化 (1-2周)
+### Phase 6: Testing and optimization (1–2 weeks)
 
-#### 目标
-完善测试覆盖，优化性能。
+#### Goal
 
-#### 具体操作
+Increase test coverage and optimize performance.
 
-**1. 单元测试**
+#### Steps
+
+**1. Unit tests**
+
 ```python
 # tests/test_project_service.py
 import pytest
@@ -701,8 +718,8 @@ class TestProjectService:
     def test_create_project(self, project_service, mock_db):
         # Arrange
         project_data = ProjectCreate(
-            name="测试项目",
-            description="这是一个测试项目"
+            name="Test project",
+            description="This is a test project"
         )
         mock_project = Project(
             id="test-id",
@@ -723,7 +740,8 @@ class TestProjectService:
         mock_db.commit.assert_called_once()
 ```
 
-**2. 集成测试**
+**2. Integration tests**
+
 ```python
 # tests/test_api.py
 from fastapi.testclient import TestClient
@@ -735,169 +753,179 @@ def test_create_project():
     response = client.post(
         "/api/v1/projects/",
         json={
-            "name": "测试项目",
-            "description": "这是一个测试项目"
+            "name": "Test project",
+            "description": "This is a test project"
         }
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "测试项目"
+    assert data["name"] == "Test project"
 ```
 
-## 🔧 重构工具和脚本
+## 🔧 Refactoring tools and scripts
 
-### 1. 重构辅助脚本
+### 1. Refactor helper script
+
 ```bash
 #!/bin/bash
 # scripts/refactor.sh
 
-echo "🔄 开始项目重构..."
+echo "🔄 Starting project refactor..."
 
-# 备份当前项目
-echo "📦 备份当前项目..."
+# Back up current project
+echo "📦 Backing up current project..."
 mkdir -p backup/$(date +%Y%m%d_%H%M%S)
 cp -r * backup/$(date +%Y%m%d_%H%M%S)/
 
-# 创建新目录结构
-echo "📁 创建新目录结构..."
+# Create new directory structure
+echo "📁 Creating new directory structure..."
 mkdir -p {backend,frontend,shared,docs,scripts,tests}
 
-# 迁移代码
-echo "📋 迁移现有代码..."
+# Migrate code
+echo "📋 Migrating existing code..."
 cp -r src/* backend/
 cp -r pipeline backend/
 cp -r utils backend/
 cp -r frontend/* frontend/
 
-# 清理冗余文件
-echo "🧹 清理冗余文件..."
+# Clean up redundant files
+echo "🧹 Cleaning up redundant files..."
 rm -f src/api.py simple_api.py
 rm -f test_*.py
 rm -f basic_bilibili_downloader.py
 
-echo "✅ 重构完成！"
+echo "✅ Refactor complete!"
 ```
 
-### 2. 开发环境脚本
+### 2. Development environment script
+
 ```bash
 #!/bin/bash
 # scripts/dev.sh
 
-echo "🚀 启动开发环境..."
+echo "🚀 Starting development environment..."
 
-# 检查依赖
+# Check dependencies
 if ! command -v poetry &> /dev/null; then
-    echo "❌ Poetry未安装，请先安装Poetry"
+    echo "❌ Poetry is not installed; install Poetry first"
     exit 1
 fi
 
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js未安装，请先安装Node.js"
+    echo "❌ Node.js is not installed; install Node.js first"
     exit 1
 fi
 
-# 安装后端依赖
-echo "📦 安装后端依赖..."
+# Install backend dependencies
+echo "📦 Installing backend dependencies..."
 cd backend
 poetry install
 cd ..
 
-# 安装前端依赖
-echo "📦 安装前端依赖..."
+# Install frontend dependencies
+echo "📦 Installing frontend dependencies..."
 cd frontend
 npm install
 cd ..
 
-# 启动后端服务
-echo "🔧 启动后端服务..."
+# Start backend
+echo "🔧 Starting backend..."
 cd backend
 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 cd ..
 
-# 启动前端服务
-echo "🎨 启动前端服务..."
+# Start frontend
+echo "🎨 Starting frontend..."
 cd frontend
 npm run dev &
 FRONTEND_PID=$!
 cd ..
 
-echo "✅ 开发环境启动完成！"
-echo "📱 前端地址: http://localhost:3000"
-echo "🔌 后端API: http://localhost:8000"
-echo "📚 API文档: http://localhost:8000/docs"
+echo "✅ Development environment started!"
+echo "📱 Frontend: http://localhost:3000"
+echo "🔌 Backend API: http://localhost:8000"
+echo "📚 API docs: http://localhost:8000/docs"
 
-# 等待用户中断
-trap 'echo "\n🛑 正在停止服务..."; kill $BACKEND_PID $FRONTEND_PID; exit' INT
+trap 'echo "\n🛑 Stopping services..."; kill $BACKEND_PID $FRONTEND_PID; exit' INT
 wait
 ```
 
-## 📊 重构检查清单
+## 📊 Refactoring checklist
 
-### 第一阶段检查清单
-- [ ] 项目结构重组完成
-- [ ] 冗余文件清理完成
-- [ ] 代码迁移完成
-- [ ] 基础功能测试通过
+### Phase 1
 
-### 第二阶段检查清单
-- [ ] Poetry配置完成
-- [ ] 依赖安装成功
-- [ ] 包管理工具统一
-- [ ] 开发环境正常
+- [ ] Project structure reorganized
+- [ ] Redundant files removed
+- [ ] Code migrated
+- [ ] Basic functionality verified
 
-### 第三阶段检查清单
-- [ ] 后端架构重构完成
-- [ ] API接口重新设计
-- [ ] 服务层重构完成
-- [ ] 错误处理完善
+### Phase 2
 
-### 第四阶段检查清单
-- [ ] 前端架构重构完成
-- [ ] 组件重新设计
-- [ ] 状态管理优化
-- [ ] API服务重构
+- [ ] Poetry configuration complete
+- [ ] Dependencies installed
+- [ ] Package management unified
+- [ ] Development environment works
 
-### 第五阶段检查清单
-- [ ] 数据库模型设计完成
-- [ ] 数据库迁移完成
-- [ ] 数据持久化正常
-- [ ] 性能优化完成
+### Phase 3
 
-### 第六阶段检查清单
-- [ ] 单元测试覆盖
-- [ ] 集成测试完成
-- [ ] 性能测试通过
-- [ ] 文档更新完成
+- [ ] Backend architecture refactored
+- [ ] API redesigned
+- [ ] Service layer refactored
+- [ ] Error handling improved
 
-## 🎯 重构收益
+### Phase 4
 
-### 技术收益
-1. **架构清晰** - 模块化设计，职责分离
-2. **代码质量** - 现代化开发实践
-3. **可维护性** - 易于理解和修改
-4. **可扩展性** - 支持功能扩展
+- [ ] Frontend architecture refactored
+- [ ] Components redesigned
+- [ ] State management optimized
+- [ ] API client refactored
 
-### 开发收益
-1. **开发效率** - 更好的开发体验
-2. **调试便利** - 清晰的错误信息
-3. **测试覆盖** - 完善的测试体系
-4. **部署简单** - 标准化的部署流程
+### Phase 5
 
-### 用户体验收益
-1. **响应速度** - 优化的性能表现
-2. **稳定性** - 更可靠的系统
-3. **功能完整** - 更好的功能体验
-4. **错误处理** - 友好的错误提示
+- [ ] Database models designed
+- [ ] Migrations applied
+- [ ] Persistence working
+- [ ] Performance optimized
+
+### Phase 6
+
+- [ ] Unit test coverage
+- [ ] Integration tests complete
+- [ ] Performance tests passing
+- [ ] Documentation updated
+
+## 🎯 Refactoring benefits
+
+### Technical
+
+1. **Clear architecture** — Modular design, separation of concerns
+2. **Code quality** — Modern development practices
+3. **Maintainability** — Easier to understand and change
+4. **Scalability** — Room for new features
+
+### Development
+
+1. **Velocity** — Better developer experience
+2. **Debugging** — Clearer error messages
+3. **Testing** — Solid test foundation
+4. **Deployment** — Standardized process
+
+### User experience
+
+1. **Responsiveness** — Better performance
+2. **Stability** — More reliable system
+3. **Features** — Richer product experience
+4. **Errors** — Friendly error messages
 
 ---
 
-## 🚀 开始重构
+## 🚀 Getting started
 
-1. **备份项目** - 确保当前代码安全
-2. **创建分支** - 在Git中创建重构分支
-3. **按阶段执行** - 按照计划逐步执行
-4. **持续测试** - 每个阶段都要测试
-5. **及时提交** - 定期提交代码
+1. **Back up the project** — Protect current code
+2. **Create a branch** — Use a dedicated Git branch
+3. **Execute phase by phase** — Follow the plan in order
+4. **Test continuously** — Validate at each stage
+5. **Commit regularly** — Small, frequent commits
 
-这个渐进式重构方案能够确保项目在重构过程中保持稳定，同时逐步提升代码质量和架构水平。 
+This progressive refactor keeps the project stable while improving code quality and architecture over time.

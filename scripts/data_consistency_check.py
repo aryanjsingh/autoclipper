@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-数据一致性检查和清理脚本
-检查并修复数据库与文件系统之间的不一致问题
+Data Consistency Check and Cleanup Script
+Checks and fixes inconsistencies between database and file system
 """
 
 import sys
@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Set
 
-# 添加项目根目录到Python路径
+# Add project root directory to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -24,7 +24,7 @@ from backend.models.task import Task, TaskStatus
 from backend.models.clip import Clip
 from backend.models.collection import Collection
 
-# 配置日志
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataConsistencyChecker:
-    """数据一致性检查器"""
+    """Data consistency checker"""
     
     def __init__(self, db_path: str = None):
         self.db_path = db_path or str(project_root / "data" / "autoclip.db")
@@ -41,25 +41,25 @@ class DataConsistencyChecker:
         self.projects_dir = self.data_dir / "projects"
         
     def check_consistency(self) -> Dict[str, Any]:
-        """检查数据一致性"""
-        logger.info("🔍 开始数据一致性检查...")
+        """Check data consistency"""
+        logger.info("Starting data consistency check...")
         
         issues = []
         warnings = []
         
-        # 1. 检查项目数据一致性
+        # 1. Check project data consistency
         project_issues = self._check_project_consistency()
         issues.extend(project_issues)
         
-        # 2. 检查任务数据一致性
+        # 2. Check task data consistency
         task_issues = self._check_task_consistency()
         issues.extend(task_issues)
         
-        # 3. 检查文件系统一致性
+        # 3. Check file system consistency
         file_issues = self._check_filesystem_consistency()
         issues.extend(file_issues)
         
-        # 4. 检查孤立数据
+        # 4. Check orphaned data
         orphaned_data = self._check_orphaned_data()
         warnings.extend(orphaned_data)
         
@@ -73,49 +73,49 @@ class DataConsistencyChecker:
         }
     
     def _check_project_consistency(self) -> List[Dict[str, Any]]:
-        """检查项目数据一致性"""
+        """Check project data consistency"""
         issues = []
         
         try:
-            # 获取数据库中的项目
+            # Get projects from database
             db = SessionLocal()
             try:
                 db_projects = db.query(Project).all()
                 db_project_ids = {p.id for p in db_projects}
                 
-                # 获取文件系统中的项目目录
+                # Get project directories from file system
                 fs_project_ids = set()
                 if self.projects_dir.exists():
                     for project_dir in self.projects_dir.iterdir():
                         if project_dir.is_dir() and not project_dir.name.startswith('.'):
                             fs_project_ids.add(project_dir.name)
                 
-                # 检查孤立文件
+                # Check orphaned files
                 orphaned_files = fs_project_ids - db_project_ids
                 if orphaned_files:
                     issues.append({
                         "type": "orphaned_files",
                         "severity": "warning",
-                        "message": f"发现 {len(orphaned_files)} 个孤立项目文件",
+                        "message": f"Found {len(orphaned_files)} orphaned project files",
                         "details": list(orphaned_files)
                     })
                 
-                # 检查缺失文件
+                # Check missing files
                 missing_files = db_project_ids - fs_project_ids
                 if missing_files:
                     issues.append({
                         "type": "missing_files",
                         "severity": "error",
-                        "message": f"发现 {len(missing_files)} 个项目的文件缺失",
+                        "message": f"Found {len(missing_files)} projects with missing files",
                         "details": list(missing_files)
                     })
                 
-                # 检查异常项目目录
+                # Check invalid project directories
                 if (self.projects_dir / "None").exists():
                     issues.append({
                         "type": "invalid_directory",
                         "severity": "warning",
-                        "message": "发现无效的项目目录 'None'",
+                        "message": "Found invalid project directory 'None'",
                         "details": ["None"]
                     })
                 
@@ -126,20 +126,20 @@ class DataConsistencyChecker:
             issues.append({
                 "type": "check_error",
                 "severity": "error",
-                "message": f"检查项目一致性时发生错误: {str(e)}",
+                "message": f"Error checking project consistency: {str(e)}",
                 "details": []
             })
         
         return issues
     
     def _check_task_consistency(self) -> List[Dict[str, Any]]:
-        """检查任务数据一致性"""
+        """Check task data consistency"""
         issues = []
         
         try:
             db = SessionLocal()
             try:
-                # 检查长时间运行的异常任务
+                # Check long-running abnormal tasks
                 from datetime import timedelta
                 cutoff_time = datetime.utcnow() - timedelta(hours=24)
                 
@@ -152,11 +152,11 @@ class DataConsistencyChecker:
                     issues.append({
                         "type": "long_running_tasks",
                         "severity": "warning",
-                        "message": f"发现 {len(long_running_tasks)} 个长时间运行的任务",
+                        "message": f"Found {len(long_running_tasks)} long-running tasks",
                         "details": [{"id": t.id, "name": t.name, "created_at": t.created_at.isoformat()} for t in long_running_tasks]
                     })
                 
-                # 检查孤立任务
+                # Check orphaned tasks
                 all_tasks = db.query(Task).all()
                 all_project_ids = {p.id for p in db.query(Project).all()}
                 
@@ -169,7 +169,7 @@ class DataConsistencyChecker:
                     issues.append({
                         "type": "orphaned_tasks",
                         "severity": "error",
-                        "message": f"发现 {len(orphaned_tasks)} 个孤立任务",
+                        "message": f"Found {len(orphaned_tasks)} orphaned tasks",
                         "details": [{"id": t.id, "name": t.name, "project_id": t.project_id} for t in orphaned_tasks]
                     })
                 
@@ -180,22 +180,22 @@ class DataConsistencyChecker:
             issues.append({
                 "type": "check_error",
                 "severity": "error",
-                "message": f"检查任务一致性时发生错误: {str(e)}",
+                "message": f"Error checking task consistency: {str(e)}",
                 "details": []
             })
         
         return issues
     
     def _check_filesystem_consistency(self) -> List[Dict[str, Any]]:
-        """检查文件系统一致性"""
+        """Check file system consistency"""
         issues = []
         
         try:
-            # 检查项目目录结构
+            # Check project directory structure
             if self.projects_dir.exists():
                 for project_dir in self.projects_dir.iterdir():
                     if project_dir.is_dir() and not project_dir.name.startswith('.'):
-                        # 检查必要的目录结构
+                        # Check required directory structure
                         required_dirs = ["raw", "processing", "output"]
                         missing_dirs = []
                         
@@ -207,11 +207,11 @@ class DataConsistencyChecker:
                             issues.append({
                                 "type": "missing_directories",
                                 "severity": "warning",
-                                "message": f"项目 {project_dir.name} 缺少目录: {', '.join(missing_dirs)}",
+                                "message": f"Project {project_dir.name} is missing directories: {', '.join(missing_dirs)}",
                                 "details": {"project_id": project_dir.name, "missing_dirs": missing_dirs}
                             })
                         
-                        # 检查重复的元数据文件
+                        # Check duplicate metadata files
                         metadata_files = [
                             "clips_metadata.json",
                             "collections_metadata.json",
@@ -231,7 +231,7 @@ class DataConsistencyChecker:
                             issues.append({
                                 "type": "duplicate_metadata",
                                 "severity": "info",
-                                "message": f"项目 {project_dir.name} 存在重复元数据文件",
+                                "message": f"Project {project_dir.name} has duplicate metadata files",
                                 "details": {"project_id": project_dir.name, "duplicate_files": duplicate_files}
                             })
                 
@@ -239,20 +239,20 @@ class DataConsistencyChecker:
             issues.append({
                 "type": "check_error",
                 "severity": "error",
-                "message": f"检查文件系统一致性时发生错误: {str(e)}",
+                "message": f"Error checking file system consistency: {str(e)}",
                 "details": []
             })
         
         return issues
     
     def _check_orphaned_data(self) -> List[Dict[str, Any]]:
-        """检查孤立数据"""
+        """Check orphaned data"""
         warnings = []
         
         try:
             db = SessionLocal()
             try:
-                # 检查孤立的切片数据
+                # Check orphaned clip data
                 all_clips = db.query(Clip).all()
                 all_project_ids = {p.id for p in db.query(Project).all()}
                 
@@ -260,17 +260,17 @@ class DataConsistencyChecker:
                 if orphaned_clips:
                     warnings.append({
                         "type": "orphaned_clips",
-                        "message": f"发现 {len(orphaned_clips)} 个孤立切片",
+                        "message": f"Found {len(orphaned_clips)} orphaned clips",
                         "count": len(orphaned_clips)
                     })
                 
-                # 检查孤立的合集数据
+                # Check orphaned collection data
                 all_collections = db.query(Collection).all()
                 orphaned_collections = [col for col in all_collections if col.project_id not in all_project_ids]
                 if orphaned_collections:
                     warnings.append({
                         "type": "orphaned_collections",
-                        "message": f"发现 {len(orphaned_collections)} 个孤立合集",
+                        "message": f"Found {len(orphaned_collections)} orphaned collections",
                         "count": len(orphaned_collections)
                     })
                 
@@ -280,14 +280,14 @@ class DataConsistencyChecker:
         except Exception as e:
             warnings.append({
                 "type": "check_error",
-                "message": f"检查孤立数据时发生错误: {str(e)}"
+                "message": f"Error checking orphaned data: {str(e)}"
             })
         
         return warnings
     
     def fix_issues(self, issues: List[Dict[str, Any]], dry_run: bool = True) -> Dict[str, Any]:
-        """修复发现的问题"""
-        logger.info(f"🔧 开始修复问题 (dry_run={dry_run})")
+        """Fix discovered issues"""
+        logger.info(f"Starting to fix issues (dry_run={dry_run})")
         
         fixed_count = 0
         failed_count = 0
@@ -320,10 +320,10 @@ class DataConsistencyChecker:
                         failed_count += 1
                 
                 else:
-                    logger.warning(f"未知问题类型: {issue['type']}")
+                    logger.warning(f"Unknown issue type: {issue['type']}")
                     
             except Exception as e:
-                logger.error(f"修复问题失败: {issue['type']}, 错误: {e}")
+                logger.error(f"Failed to fix issue: {issue['type']}, error: {e}")
                 failed_count += 1
         
         return {
@@ -334,10 +334,10 @@ class DataConsistencyChecker:
         }
     
     def _fix_orphaned_files(self, orphaned_files: List[str], dry_run: bool) -> Dict[str, Any]:
-        """修复孤立文件"""
+        """Fix orphaned files"""
         try:
             if dry_run:
-                logger.info(f"🔍 模拟清理孤立文件: {orphaned_files}")
+                logger.info(f"Simulating cleanup of orphaned files: {orphaned_files}")
                 return {"success": True, "action": "dry_run", "files": orphaned_files}
             
             cleaned_count = 0
@@ -346,19 +346,19 @@ class DataConsistencyChecker:
                 if project_dir.exists():
                     shutil.rmtree(project_dir)
                     cleaned_count += 1
-                    logger.info(f"✅ 清理孤立项目目录: {project_id}")
+                    logger.info(f"Cleaned up orphaned project directory: {project_id}")
             
             return {"success": True, "action": "cleanup", "cleaned_count": cleaned_count}
             
         except Exception as e:
-            logger.error(f"清理孤立文件失败: {e}")
+            logger.error(f"Failed to clean up orphaned files: {e}")
             return {"success": False, "error": str(e)}
     
     def _fix_long_running_tasks(self, long_running_tasks: List[Dict], dry_run: bool) -> Dict[str, Any]:
-        """修复长时间运行的任务"""
+        """Fix long-running tasks"""
         try:
             if dry_run:
-                logger.info(f"🔍 模拟修复长时间运行任务: {len(long_running_tasks)} 个")
+                logger.info(f"Simulating fix for {len(long_running_tasks)} long-running tasks")
                 return {"success": True, "action": "dry_run", "tasks": long_running_tasks}
             
             db = SessionLocal()
@@ -369,10 +369,10 @@ class DataConsistencyChecker:
                     task = db.query(Task).filter(Task.id == task_id).first()
                     if task:
                         task.status = TaskStatus.FAILED
-                        task.error_message = "任务超时，已自动标记为失败"
+                        task.error_message = "Task timed out, automatically marked as failed"
                         task.updated_at = datetime.utcnow()
                         fixed_count += 1
-                        logger.info(f"✅ 修复长时间运行任务: {task_id}")
+                        logger.info(f"Fixed long-running task: {task_id}")
                 
                 db.commit()
                 return {"success": True, "action": "fix", "fixed_count": fixed_count}
@@ -381,14 +381,14 @@ class DataConsistencyChecker:
                 db.close()
                 
         except Exception as e:
-            logger.error(f"修复长时间运行任务失败: {e}")
+            logger.error(f"Failed to fix long-running tasks: {e}")
             return {"success": False, "error": str(e)}
     
     def _fix_invalid_directory(self, invalid_dirs: List[str], dry_run: bool) -> Dict[str, Any]:
-        """修复无效目录"""
+        """Fix invalid directories"""
         try:
             if dry_run:
-                logger.info(f"🔍 模拟清理无效目录: {invalid_dirs}")
+                logger.info(f"Simulating cleanup of invalid directories: {invalid_dirs}")
                 return {"success": True, "action": "dry_run", "dirs": invalid_dirs}
             
             cleaned_count = 0
@@ -397,88 +397,88 @@ class DataConsistencyChecker:
                 if invalid_dir.exists():
                     shutil.rmtree(invalid_dir)
                     cleaned_count += 1
-                    logger.info(f"✅ 清理无效目录: {dir_name}")
+                    logger.info(f"Cleaned up invalid directory: {dir_name}")
             
             return {"success": True, "action": "cleanup", "cleaned_count": cleaned_count}
             
         except Exception as e:
-            logger.error(f"清理无效目录失败: {e}")
+            logger.error(f"Failed to clean up invalid directories: {e}")
             return {"success": False, "error": str(e)}
 
 
 def main():
-    """主函数"""
-    logger.info("🚀 开始数据一致性检查和修复...")
+    """Main function"""
+    logger.info("Starting data consistency check and repair...")
     
     checker = DataConsistencyChecker()
     
-    # 1. 检查数据一致性
+    # 1. Check data consistency
     result = checker.check_consistency()
     
     print("\n" + "=" * 80)
-    print("📊 数据一致性检查结果")
+    print("Data Consistency Check Results")
     print("=" * 80)
-    print(f"检查时间: {result['timestamp']}")
-    print(f"总问题数: {result['total_issues']}")
-    print(f"总警告数: {result['total_warnings']}")
-    print(f"状态: {result['status']}")
+    print(f"Check time: {result['timestamp']}")
+    print(f"Total issues: {result['total_issues']}")
+    print(f"Total warnings: {result['total_warnings']}")
+    print(f"Status: {result['status']}")
     
     if result['issues']:
-        print("\n🚨 发现的问题:")
+        print("\nIssues found:")
         for i, issue in enumerate(result['issues'], 1):
             print(f"{i}. [{issue['severity'].upper()}] {issue['message']}")
             if issue.get('details'):
-                print(f"   详情: {issue['details']}")
+                print(f"   Details: {issue['details']}")
     
     if result['warnings']:
-        print("\n⚠️  警告:")
+        print("\nWarnings:")
         for i, warning in enumerate(result['warnings'], 1):
             print(f"{i}. {warning['message']}")
     
-    # 2. 如果有问题，询问是否修复
+    # 2. If there are issues, ask whether to fix them
     if result['total_issues'] > 0:
         print("\n" + "=" * 60)
-        print("🔧 修复选项:")
-        print("1. 模拟修复 (dry run) - 查看修复效果但不实际执行")
-        print("2. 执行修复 - 实际修复发现的问题")
-        print("3. 退出")
+        print("Repair Options:")
+        print("1. Dry run - Preview repair effects without executing")
+        print("2. Execute repair - Actually fix discovered issues")
+        print("3. Exit")
         
         while True:
-            choice = input("\n请选择操作 (1/2/3): ").strip()
+            choice = input("\nSelect operation (1/2/3): ").strip()
             if choice in ['1', '2', '3']:
                 break
-            print("❌ 无效选择，请输入 1、2 或 3")
+            print("Invalid choice, please enter 1, 2, or 3")
         
         if choice == '3':
-            logger.info("👋 用户取消修复")
+            logger.info("User cancelled repair")
             return
         
         dry_run = (choice == '1')
         
-        # 执行修复
+        # Execute repair
         fix_result = checker.fix_issues(result['issues'], dry_run)
         
         print("\n" + "=" * 60)
         if dry_run:
-            print("🔍 模拟修复结果:")
+            print("Repair Simulation Results:")
         else:
-            print("✅ 修复完成:")
+            print("Repair complete:")
         
-        print(f"修复成功: {fix_result['fixed_count']}")
-        print(f"修复失败: {fix_result['failed_count']}")
+        print(f"Successfully repaired: {fix_result['fixed_count']}")
+        print(f"Failed to repair: {fix_result['failed_count']}")
         
         if fix_result['fix_results']:
-            print("\n📋 修复详情:")
+            print("\nRepair Details:")
             for i, fix_result_item in enumerate(fix_result['fix_results'], 1):
-                status = "✅" if fix_result_item['success'] else "❌"
+                status = "OK" if fix_result_item['success'] else "FAIL"
                 print(f"{i}. {status} {fix_result_item.get('action', 'unknown')}")
                 if not fix_result_item['success']:
-                    print(f"   错误: {fix_result_item.get('error', 'unknown')}")
+                    print(f"   Error: {fix_result_item.get('error', 'unknown')}")
     
     else:
-        print("\n🎉 数据一致性检查通过，无需修复！")
+        print("\nData consistency check passed, no repairs needed!")
     
-    logger.info("🎉 数据一致性检查和修复完成!")
+    logger.info("Data consistency check and repair complete!")
 
 
 if __name__ == "__main__":

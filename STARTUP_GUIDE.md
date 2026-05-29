@@ -1,274 +1,274 @@
-# AutoClip 系统启动指南
+# AutoClip System Startup Guide
 
-## 📋 概述
+## 📋 Overview
 
-AutoClip 是一个基于AI的视频切片处理系统，采用前后端分离架构。本指南将帮助您快速启动和运行整个系统。
+AutoClip is an AI-powered video clipping processing system with a frontend-backend separation architecture. This guide will help you quickly start and run the entire system.
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 一键启动（推荐）
+### 1. One-Click Startup (Recommended)
 
 ```bash
-# 完整启动（包含详细检查和健康监控）
+# Full startup (includes detailed checks and health monitoring)
 ./start_autoclip.sh
 
-# 快速启动（开发环境，跳过详细检查）
+# Quick startup (development environment, skips detailed checks)
 ./quick_start.sh
 ```
 
-### 2. 系统管理
+### 2. System Management
 
 ```bash
-# 检查系统状态
+# Check system status
 ./status_autoclip.sh
 
-# 停止所有服务
+# Stop all services
 ./stop_autoclip.sh
 ```
 
-## 📊 系统架构
+## 📊 System Architecture
 
-### 后端服务
-- **FastAPI**: RESTful API 和 WebSocket 支持
-- **Celery**: 异步任务队列
-- **Redis**: 消息代理和缓存
-- **SQLite**: 数据存储
+### Backend Services
+- **FastAPI**: RESTful API and WebSocket support
+- **Celery**: Asynchronous task queue
+- **Redis**: Message broker and cache
+- **SQLite**: Data storage
 
-### 前端服务
-- **React**: 用户界面
-- **Vite**: 开发服务器
-- **TypeScript**: 类型安全
+### Frontend Services
+- **React**: User interface
+- **Vite**: Development server
+- **TypeScript**: Type safety
 
-## 🔧 环境要求
+## 🔧 Environment Requirements
 
-### 系统要求
-- macOS 或 Linux
+### System Requirements
+- macOS or Linux
 - Python 3.8+
 - Node.js 16+
-- Redis 服务器
+- Redis server
 
-### 依赖安装
+### Dependency Installation
 
 ```bash
-# 1. 创建虚拟环境
+# 1. Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# 2. 安装Python依赖
+# 2. Install Python dependencies
 pip install -r requirements.txt
 
-# 3. 安装前端依赖
+# 3. Install frontend dependencies
 cd frontend
 npm install
 cd ..
 
-# 4. 安装Redis（macOS）
+# 4. Install Redis (macOS)
 brew install redis
 brew services start redis
 
-# 5. 配置环境变量
+# 5. Configure environment variables
 cp env.example .env
-# 编辑 .env 文件，填入必要的配置
+# Edit .env file and fill in necessary configurations
 ```
 
-## 📝 配置文件
+## 📝 Configuration Files
 
-### 环境变量 (.env)
+### Environment Variables (.env)
 
 ```bash
-# 数据库配置
+# Database configuration
 DATABASE_URL=sqlite:///./data/autoclip.db
 
-# Redis配置
+# Redis configuration
 REDIS_URL=redis://localhost:6379/0
 
-# API配置
+# API configuration
 API_DASHSCOPE_API_KEY=your_api_key_here
 API_MODEL_NAME=qwen-plus
 
-# 日志配置
+# Logging configuration
 LOG_LEVEL=INFO
 ENVIRONMENT=development
 DEBUG=true
 ```
 
-## 🌐 服务端口
+## 🌐 Service Ports
 
-| 服务 | 端口 | 描述 |
-|------|------|------|
-| 前端界面 | 3000 | React 开发服务器 |
-| 后端API | 8000 | FastAPI 服务器 |
-| Redis | 6379 | 消息代理 |
-| API文档 | 8000/docs | Swagger UI |
+| Service | Port | Description |
+|---------|------|-------------|
+| Frontend Interface | 3000 | React development server |
+| Backend API | 8000 | FastAPI server |
+| Redis | 6379 | Message broker |
+| API Documentation | 8000/docs | Swagger UI |
 
-## 📁 目录结构
+## 📁 Directory Structure
 
 ```
 autoclip/
-├── backend/                 # 后端代码
-│   ├── api/                # API路由
-│   ├── core/               # 核心配置
-│   ├── models/             # 数据模型
-│   ├── services/           # 业务逻辑
-│   └── tasks/              # Celery任务
-├── frontend/               # 前端代码
-│   ├── src/                # 源代码
-│   └── public/             # 静态资源
-├── data/                   # 数据存储
-│   ├── projects/           # 项目数据
-│   └── uploads/            # 上传文件
-├── logs/                   # 日志文件
-├── scripts/                # 工具脚本
-└── *.sh                    # 启动脚本
+├── backend/                 # Backend code
+│   ├── api/                # API routes
+│   ├── core/               # Core configuration
+│   ├── models/             # Data models
+│   ├── services/           # Business logic
+│   └── tasks/              # Celery tasks
+├── frontend/               # Frontend code
+│   ├── src/                # Source code
+│   └── public/             # Static resources
+├── data/                   # Data storage
+│   ├── projects/           # Project data
+│   └── uploads/            # Uploaded files
+├── logs/                   # Log files
+├── scripts/                # Utility scripts
+└── *.sh                    # Startup scripts
 ```
 
-## 🔍 故障排除
+## 🔍 Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **端口被占用**
+1. **Port Occupied**
    ```bash
-   # 检查端口占用
+   # Check port usage
    lsof -i :8000
    lsof -i :3000
    
-   # 停止占用进程
+   # Stop occupying processes
    kill -9 <PID>
    ```
 
-2. **Redis连接失败**
+2. **Redis Connection Failed**
    ```bash
-   # 检查Redis状态
+   # Check Redis status
    redis-cli ping
    
-   # 启动Redis
+   # Start Redis
    brew services start redis  # macOS
    systemctl start redis      # Linux
    ```
 
-3. **Python依赖问题**
+3. **Python Dependency Issues**
    ```bash
-   # 重新安装依赖
+   # Reinstall dependencies
    pip install -r requirements.txt --force-reinstall
    ```
 
-4. **前端依赖问题**
+4. **Frontend Dependency Issues**
    ```bash
-   # 清理并重新安装
+   # Clean and reinstall
    cd frontend
    rm -rf node_modules package-lock.json
    npm install
    ```
 
-### 日志查看
+### Log Viewing
 
 ```bash
-# 查看所有日志
+# View all logs
 tail -f logs/*.log
 
-# 查看特定服务日志
+# View specific service logs
 tail -f logs/backend.log
 tail -f logs/frontend.log
 tail -f logs/celery.log
 ```
 
-### 系统状态检查
+### System Status Check
 
 ```bash
-# 详细状态检查
+# Detailed status check
 ./status_autoclip.sh
 
-# 手动检查服务
+# Manual service check
 curl http://localhost:8000/api/v1/health/
 curl http://localhost:3000/
 redis-cli ping
 ```
 
-## 🛠️ 开发模式
+## 🛠️ Development Mode
 
-### 后端开发
+### Backend Development
 
 ```bash
-# 激活虚拟环境
+# Activate virtual environment
 source venv/bin/activate
 
-# 设置Python路径
+# Set Python path
 export PYTHONPATH="${PWD}:${PYTHONPATH}"
 
-# 启动后端（开发模式）
+# Start backend (development mode)
 python -m uvicorn backend.main:app --reload --port 8000
 ```
 
-### 前端开发
+### Frontend Development
 
 ```bash
-# 进入前端目录
+# Enter frontend directory
 cd frontend
 
-# 启动开发服务器
+# Start development server
 npm run dev
 ```
 
 ### Celery Worker
 
 ```bash
-# 启动Worker
+# Start Worker
 celery -A backend.core.celery_app worker --loglevel=info
 
-# 启动Beat调度器
+# Start Beat scheduler
 celery -A backend.core.celery_app beat --loglevel=info
 
-# 启动Flower监控
+# Start Flower monitoring
 celery -A backend.core.celery_app flower --port=5555
 ```
 
-## 📈 性能优化
+## 📈 Performance Optimization
 
-### 生产环境配置
+### Production Environment Configuration
 
-1. **数据库优化**
-   - 使用PostgreSQL替代SQLite
-   - 配置连接池
-   - 启用查询缓存
+1. **Database Optimization**
+   - Use PostgreSQL instead of SQLite
+   - Configure connection pooling
+   - Enable query caching
 
-2. **Redis优化**
-   - 配置内存限制
-   - 启用持久化
-   - 设置过期策略
+2. **Redis Optimization**
+   - Configure memory limits
+   - Enable persistence
+   - Set expiration policies
 
-3. **Celery优化**
-   - 调整并发数
-   - 配置任务路由
-   - 启用结果后端
+3. **Celery Optimization**
+   - Adjust concurrency
+   - Configure task routing
+   - Enable result backend
 
-## 🔒 安全配置
+## 🔒 Security Configuration
 
-### 生产环境安全
+### Production Environment Security
 
-1. **环境变量**
-   - 使用强密码
-   - 定期轮换密钥
-   - 限制API访问
+1. **Environment Variables**
+   - Use strong passwords
+   - Regularly rotate keys
+   - Limit API access
 
-2. **网络安全**
-   - 配置防火墙
-   - 使用HTTPS
-   - 限制CORS
+2. **Network Security**
+   - Configure firewall
+   - Use HTTPS
+   - Limit CORS
 
-3. **数据安全**
-   - 定期备份
-   - 加密敏感数据
-   - 访问控制
+3. **Data Security**
+   - Regular backups
+   - Encrypt sensitive data
+   - Access control
 
-## 📞 支持
+## 📞 Support
 
-如果遇到问题，请：
+If you encounter problems, please:
 
-1. 查看日志文件
-2. 运行状态检查脚本
-3. 检查环境配置
-4. 参考故障排除部分
+1. View log files
+2. Run status check script
+3. Check environment configuration
+4. Refer to the troubleshooting section
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 MIT 许可证。
+This project is licensed under the MIT License.

@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 """
-安装多模型提供商依赖脚本
+Install Multi-Model Provider Dependencies Script
 """
 import subprocess
 import sys
 import os
 
 def install_package(package):
-    """安装Python包"""
+    """Install Python package"""
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        print(f"✅ 成功安装 {package}")
+        print(f"Successfully installed {package}")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ 安装 {package} 失败: {e}")
+        print(f"Failed to install {package}: {e}")
         return False
 
 def main():
-    """主函数"""
-    print("🚀 开始安装多模型提供商依赖...")
+    """Main function"""
+    print("Starting multi-model provider dependency installation...")
     
-    # 需要安装的包
+    # Packages to install
     packages = [
         "openai>=1.0.0",           # OpenAI
         "google-generativeai>=0.3.0",  # Google Gemini
-        "requests>=2.25.0",        # 硅基流动 (HTTP请求)
-        "dashscope>=1.10.0",       # 阿里通义千问 (如果还没有安装)
+        "requests>=2.25.0",        # SiliconFlow (HTTP requests)
+        "dashscope>=1.10.0",       # Alibaba Tongyi Qianwen (if not already installed)
     ]
     
     success_count = 0
@@ -35,18 +35,18 @@ def main():
         if install_package(package):
             success_count += 1
     
-    print(f"\n📊 安装结果: {success_count}/{total_count} 个包安装成功")
+    print(f"\nInstallation results: {success_count}/{total_count} packages installed successfully")
     
     if success_count == total_count:
-        print("🎉 所有依赖安装完成！现在可以使用多模型提供商功能了。")
-        print("\n📝 使用说明:")
-        print("1. 启动系统: python backend/main.py")
-        print("2. 访问设置页面配置API密钥")
-        print("3. 选择您喜欢的AI模型提供商")
-        print("4. 开始使用AI自动切片功能")
+        print("All dependencies installed! You can now use multi-model provider features.")
+        print("\nUsage instructions:")
+        print("1. Start system: python backend/main.py")
+        print("2. Visit settings page to configure API keys")
+        print("3. Select your preferred AI model provider")
+        print("4. Start using AI auto-clipping features")
     else:
-        print("⚠️  部分依赖安装失败，请检查网络连接或手动安装失败的包。")
-        print("手动安装命令:")
+        print("Some dependencies failed to install. Please check your network connection or manually install the failed packages.")
+        print("Manual install commands:")
         for package in packages:
             print(f"  pip install {package}")
 

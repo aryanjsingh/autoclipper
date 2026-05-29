@@ -1,6 +1,6 @@
 """
-进度消息适配器
-将富消息转换为简消息，实现向下兼容
+Progress message adapter
+Converts rich messages to simple messages for backward compatibility
 """
 
 import json
@@ -11,20 +11,20 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 class ProgressMessageAdapter:
-    """进度消息适配器"""
+    """Progress message adapter"""
     
     @staticmethod
     def to_simple(msg: dict) -> dict:
         """
-        将富消息转换为简消息
+        Convert rich message to simple message
         
         Args:
-            msg: 富消息字典
+            msg: Rich message dictionary
             
         Returns:
-            简消息字典
+            Simple message dictionary
         """
-        # 状态映射
+        # Status mapping
         status_map = {
             "PROGRESS": "running", 
             "RUNNING": "running",
@@ -35,31 +35,31 @@ class ProgressMessageAdapter:
             "CANCELLED": "failed"
         }
         
-        # 提取项目ID
+        # Extract project ID
         project_id = msg.get("project_id") or msg.get("projectId")
         
-        # 提取进度值 - 支持新的统一格式
+        # Extract progress value - supports new unified format
         progress = msg.get("progress", 0) or msg.get("percent", 0)
         if isinstance(progress, (int, float)):
             progress = int(round(float(progress)))
         else:
             progress = 0
         
-        # 提取步骤名称
+        # Extract step name
         step_name = (
             msg.get("step_name") or 
             msg.get("phase") or 
             msg.get("current_step") or 
             msg.get("message") or
-            "处理中"
+            "Processing"
         )
         
-        # 提取状态
+        # Extract status
         status = msg.get("status", "running")
         if isinstance(status, str):
             status = status_map.get(status.upper(), "running")
         
-        # 构建简消息
+        # Build simple message
         simple_msg = {
             "type": "task_progress_update",
             "project_id": project_id,
@@ -69,33 +69,33 @@ class ProgressMessageAdapter:
             "timestamp": datetime.utcnow().isoformat()
         }
         
-        # 可选字段
+        # Optional fields
         if "task_id" in msg:
             simple_msg["task_id"] = msg["task_id"]
         
         if "message" in msg:
             simple_msg["message"] = msg["message"]
         
-        logger.debug(f"消息适配: 富消息 -> 简消息: {simple_msg}")
+        logger.debug(f"Message adapted: rich -> simple: {simple_msg}")
         return simple_msg
     
     @staticmethod
     def is_progress_message(msg: dict) -> bool:
         """
-        判断是否为进度消息
+        Determine if this is a progress message
         
         Args:
-            msg: 消息字典
+            msg: Message dictionary
             
         Returns:
-            是否为进度消息
+            Whether it is a progress message
         """
         progress_types = [
             "task_progress_update",
             "task_update", 
             "project_update",
             "progress_update",
-            "project_progress"  # 新增统一格式
+            "project_progress"  # New unified format
         ]
         
         msg_type = msg.get("type", "")
@@ -104,13 +104,13 @@ class ProgressMessageAdapter:
     @staticmethod
     def extract_project_id(msg: dict) -> Optional[str]:
         """
-        从消息中提取项目ID
+        Extract project ID from message
         
         Args:
-            msg: 消息字典
+            msg: Message dictionary
             
         Returns:
-            项目ID或None
+            Project ID or None
         """
         return msg.get("project_id") or msg.get("projectId")
     
@@ -119,28 +119,28 @@ class ProgressMessageAdapter:
                        last_timestamp: float, current_timestamp: float,
                        min_interval: float = 0.2) -> bool:
         """
-        判断是否应该节流发送
+        Determine if sending should be throttled
         
         Args:
-            last_progress: 上次进度
-            current_progress: 当前进度
-            last_timestamp: 上次时间戳
-            current_timestamp: 当前时间戳
-            min_interval: 最小间隔(秒)
+            last_progress: Last progress value
+            current_progress: Current progress value
+            last_timestamp: Last timestamp
+            current_timestamp: Current timestamp
+            min_interval: Minimum interval (seconds)
             
         Returns:
-            是否应该节流
+            Whether sending should be throttled
         """
-        # 时间间隔检查
+        # Time interval check
         if current_timestamp - last_timestamp < min_interval:
             return True
         
-        # 进度回退检查 - 避免UI回闪
+        # Progress regression check - avoid UI flashing back
         if current_progress < last_progress:
-            logger.debug(f"进度回退，使用上次进度: {current_progress} -> {last_progress}")
+            logger.debug(f"Progress regressed, using last progress: {current_progress} -> {last_progress}")
             return True
         
         return False
 
-# 全局适配器实例
+# Global adapter instance
 progress_adapter = ProgressMessageAdapter()

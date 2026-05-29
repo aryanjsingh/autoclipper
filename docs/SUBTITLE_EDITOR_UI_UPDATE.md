@@ -1,157 +1,158 @@
-# 字幕编辑器UI更新说明
+# Subtitle Editor UI Update
 
-## 概述
+## Overview
 
-根据附件图片的设计参考，我们对字幕编辑器进行了全面的UI重新设计，采用了现代化的三栏布局和丰富的交互效果。
+Based on the design reference, we conducted a comprehensive UI redesign of the subtitle editor, adopting a modern three-column layout and rich interactive effects.
 
-## 主要更新
+## Major Updates
 
-### 1. 布局重新设计
+### 1. Layout Redesign
 
-**三栏布局结构：**
-- **左侧栏（300px）**：字幕列表
-- **中间栏（250px）**：样式选择和编辑工具
-- **右侧栏（自适应）**：视频播放器
+**Three-column layout structure:**
+- **Left column (300px)**: Subtitle list
+- **Middle column (250px)**: Style selection and editing tools
+- **Right sidebar (adaptive)**: Video player
 
-### 2. 字幕列表优化
+### 2. Subtitle List Optimization
 
-**功能特性：**
-- 显示时间轴和持续时间
-- 支持点击跳转到对应时间点
-- 当前播放位置高亮显示
-- 右键菜单支持多种操作
-- 流畅的悬停动画效果
+**Features:**
+- Show timeline and duration
+- Supports clicking to jump to the corresponding time point
+- Current playback position highlighted
+- Right-click menu supports multiple operations
+- Smooth hover animation effects
 
-**右键菜单功能：**
-- 关联素材
-- 重置
-- 隐藏字幕
-- 删除片段
-- 高亮
+**Right-click menu functions:**
+- Related materials
+- Reset
+- Closed captions
+- Delete segment
+- Highlight
 
-### 3. 样式选择区
+### 3. Style Selection Area
 
-**样式模板：**
-- 默认文字样式
-- 渐变文字样式
-- 悬停动画效果
-- 时间轴显示
+**Style templates:**
+- Default text style
+- Gradient text style
+- Hover animation effect
+- Timeline display
 
-**创建项目按钮：**
-- 渐变背景设计
-- 悬停动画效果
-- 时间轴信息显示
+**Create project button:**
+- Gradient background design
+- Hover animation effect
+- Timeline information display
 
-**编辑工具：**
-- 删除选中内容
-- 撤销/重做操作
-- 保存编辑
-- 显示/隐藏已删除内容
+**Editing tools:**
+- Delete selected content
+- Undo/redo operations
+- Save edits
+- Show/hide deleted content
 
-### 4. 视频播放器
+### 4. Video Player
 
-**播放控制：**
-- 播放/暂停按钮
-- 时间显示
-- 进度条控制
-- 全屏支持
+**Playback controls:**
+- Play/pause button
+- Time display
+- Progress bar control
+- Full screen support
 
-**字幕预览：**
-- 实时字幕显示
-- 当前播放位置同步
+**Subtitle preview:**
+- Live subtitle display
+- Current playback position synchronization
 
-### 5. 交互体验优化
+### 5. Interactive Experience Optimization
 
-**动画效果：**
-- 字幕段悬停效果
-- 样式模板悬停动画
-- 按钮悬停效果
-- 模态框进入动画
-- 右键菜单动画
+**Animation effects:**
+- Subtitle hover effect
+- Style template hover animation
+- Button hover effect
+- Modal enter animation
+- Right-click menu animation
 
-**视觉反馈：**
-- 当前播放位置高亮
-- 选中状态显示
-- 删除状态标识
-- 悬停状态反馈
+**Visual feedback:**
+- Current playing position highlighted
+- Selected state display
+- Delete state indicator
+- Hover state feedback
 
-## 技术实现
+## Technical Implementation
 
-### 组件结构
+### Component Structure
+
 ```
 SubtitleEditor
-├── 左侧字幕列表 (SubtitleList)
-├── 中间样式选择 (StylePanel)
-└── 右侧视频播放器 (VideoPlayer)
+├── Left subtitle list (SubtitleList)
+├── Middle style panel (StylePanel)
+└── Right video player (VideoPlayer)
 ```
 
-### 状态管理
-- 播放状态管理
-- 选中内容管理
-- 编辑历史管理
-- 右键菜单状态
+### State Management
+- Playback state management
+- Selection state management
+- Edit history management
+- Right-click menu state
 
-### 样式系统
-- 深色主题设计
-- 现代化UI组件
-- 流畅的动画过渡
-- 响应式布局
+### Style System
+- Dark theme design
+- Modern UI components
+- Smooth animated transitions
+- Responsive layout
 
-## 使用方法
+## How to Use
 
-### 基本操作
-1. **打开编辑器**：点击"打开字幕编辑器"按钮
-2. **播放控制**：使用播放器控制栏
-3. **字幕编辑**：点击字幕段或单词进行选择
-4. **右键操作**：右键点击字幕段打开菜单
-5. **样式应用**：选择样式模板
-6. **保存编辑**：点击保存按钮
+### Basic Operations
+1. **Open editor**: Click the "Open Subtitle Editor" button
+2. **Playback controls**: Use the player control bar
+3. **Subtitle editing**: Click a subtitle segment or word to select
+4. **Right-click operation**: Right-click a subtitle segment to open the menu
+5. **Style application**: Select a style template
+6. **Save edits**: Click the Save button
 
-### 快捷键
-- `Ctrl/Cmd + 点击`：多选单词
-- `右键`：打开上下文菜单
-- `点击字幕段`：跳转到对应时间
+### Shortcuts
+- `Ctrl/Cmd + click`: Multi-select words
+- `Right click`: Open context menu
+- `Click subtitle segment`: Jump to corresponding time
 
-## 设计原则
+## Design Principles
 
-### 用户体验
-- 直观的操作流程
-- 清晰的视觉反馈
-- 流畅的动画效果
-- 一致的设计语言
+### User Experience
+- Intuitive operation flow
+- Clear visual feedback
+- Smooth animation effects
+- Consistent design language
 
-### 功能完整性
-- 完整的编辑功能
-- 历史记录管理
-- 多种操作方式
-- 实时预览效果
+### Functional Completeness
+- Complete editing capabilities
+- History management
+- Various operation methods
+- Real-time preview effect
 
-### 性能优化
-- 高效的渲染机制
-- 流畅的动画性能
-- 响应式交互
-- 内存管理优化
+### Performance Optimization
+- Efficient rendering mechanism
+- Smooth animation performance
+- Responsive interaction
+- Memory management optimization
 
-## 未来规划
+## Future Plans
 
-### 功能扩展
-- 更多样式模板
-- 高级编辑功能
-- 批量操作支持
-- 快捷键配置
+### Feature Extension
+- More style templates
+- Advanced editing features
+- Batch operation support
+- Keyboard shortcut configuration
 
-### 性能优化
-- 虚拟滚动
-- 懒加载优化
-- 缓存机制
-- 渲染优化
+### Performance Optimization
+- Virtual scrolling
+- Lazy loading optimization
+- Caching mechanism
+- Rendering optimization
 
-### 用户体验
-- 更多动画效果
-- 自定义主题
-- 操作提示
-- 帮助文档
+### User Experience
+- More animation effects
+- Custom themes
+- Operation tips
+- Help documentation
 
-## 总结
+## Summary
 
-新的字幕编辑器UI设计充分参考了现代视频编辑软件的设计理念，提供了更加专业和易用的编辑体验。通过三栏布局、丰富的交互效果和完整的功能支持，为用户提供了高效的字幕编辑解决方案。
+The new subtitle editor UI design references modern video editing software, providing a more professional and easy-to-use editing experience. Through the three-column layout, rich interactive effects, and complete functional support, it offers users an efficient subtitle editing solution.

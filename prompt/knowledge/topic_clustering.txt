@@ -1,0 +1,28 @@
+You are a video content planning expert. Please perform topic clustering on the following video clip titles and summaries, and generate a collection recommendation for each group.
+
+Requirements are as follows:
+1. Each collection should contain at least 2 clips and at most 5 clips;
+2. When clustering, fully consider the following theme keywords:
+   - Investment & Finance: investment, finance, stocks, funds, stock trading, making money, returns, price changes, unwinding positions, retail investors, A-shares, Beijing Stock Exchange, etc.
+   - Career Growth: workplace, work, skills, learning, Japanese, board secretary, comeback, education, etc.
+   - Social Observation: social phenomena, online chaos, garbage sorting, platform mechanisms, streamer industry, etc.
+   - Cultural Differences: culture, differences, Europe, America, Japan, Korea, diet, language, body odor, etc.
+   - Live Streaming Interaction: live streaming, interaction, danmaku, fans, captain, tips, co-streaming, etc.
+   - Emotional Relationships: romance, emotions, socializing, pickup, relationships, psychology, etc.
+   - Healthy Living: health, exercise, running, diet, milk, lifestyle, etc.
+   - Creative Platforms: creation, platform, Bilibili, Xiaohongshu, photography, content operations, etc.
+
+3. Each collection includes:
+   - Collection title (within 10 characters, accurately reflecting the theme)
+   - Collection summary (no more than 50 characters, explaining the collection's value and highlights)
+   - List of included clip titles (sorted by theme relevance)
+
+4. Clustering Principles:
+   - Prioritize theme relevance, ensuring clips within the same collection have highly consistent themes
+   - Consider content quality and scores, prioritizing high-scoring clips
+   - Avoid forcing clips of different themes into the same category
+   - If there are many clips for a theme, multiple sub-collections can be created
+
+Please output in JSON format with field names: collection_title, collection_summary, clips.
+
+Below is the video clip list:

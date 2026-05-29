@@ -1,6 +1,6 @@
 """
-任务服务
-提供任务相关的业务逻辑操作
+Task Service
+Provides task-related business logic operations
 """
 
 from typing import List, Optional, Dict, Any

@@ -1,74 +1,74 @@
-# 🎬 字幕下载故障排除指南
+# 🎬 Subtitle Download Troubleshooting Guide
 
-## 📋 概述
+## 📋 Overview
 
-本指南帮助用户解决B站和YouTube视频字幕下载失败的问题。字幕下载失败是用户反馈最多的问题之一，主要涉及以下几个方面：
+This guide helps users solve problems with failed video subtitle downloads on Bilibili and YouTube. Failed subtitle downloads are one of the most common issues reported by users, mainly involving:
 
-1. **B站字幕需要登录**
-2. **YouTube字幕格式不兼容**
-3. **语音识别备用方案配置问题**
-4. **网络连接和权限问题**
+1. **Bilibili subtitles require login**
+2. **YouTube subtitle format incompatibility**
+3. **Speech recognition backup configuration issues**
+4. **Network connection and permission issues**
 
-## 🔍 问题诊断
+## 🔍 Problem Diagnosis
 
-### 使用诊断工具
+### Use Diagnostic Tools
 
-我们提供了专门的诊断工具来帮助排查问题：
+We provide specialized diagnostic tools to help troubleshoot issues:
 
 ```bash
-# 检查语音识别设置
+# Check speech recognition setup
 python scripts/debug_subtitle_download.py --check-speech
 
-# 诊断B站字幕下载
+# Diagnose Bilibili subtitle download
 python scripts/debug_subtitle_download.py https://www.bilibili.com/video/BV1xx411c7mu chrome
 
-# 诊断YouTube字幕下载
+# Diagnose YouTube subtitle download
 python scripts/debug_subtitle_download.py https://www.youtube.com/watch?v=dQw4w9WgXcQ chrome
 ```
 
-### 常见错误信息
+### Common Error Messages
 
-#### B站相关错误
+#### Bilibili-Related Errors
 
 1. **"Subtitles are only available when logged in"**
-   - **原因**: B站的字幕（特别是AI字幕）需要登录才能下载
-   - **解决方案**: 
-     - 在浏览器中登录B站账号
-     - 选择对应的浏览器（Chrome、Firefox、Safari等）
-     - 确保浏览器中有B站的登录状态
+   - **Reason**: Bilibili subtitles (especially AI subtitles) require login to download
+   - **Solution**:
+     - Log in to your Bilibili account in the browser
+     - Select the corresponding browser (Chrome, Firefox, Safari, etc.)
+     - Ensure you have an active Bilibili login session in the browser
 
-2. **"未找到字幕文件"**
-   - **原因**: 视频可能没有字幕或字幕下载失败
-   - **解决方案**: 
-     - 检查视频是否有字幕（在B站网页上查看）
-     - 尝试不同的字幕语言
-     - 使用语音识别生成字幕
+2. **"Subtitle file not found"**
+   - **Cause**: The video may have no subtitles or subtitle download failed
+   - **Solution**:
+     - Check whether the video has subtitles (on the Bilibili page)
+     - Try different subtitle languages
+     - Generate subtitles using speech recognition
 
-#### YouTube相关错误
+#### YouTube-Related Errors
 
 1. **"No subtitles available"**
-   - **原因**: 视频没有字幕或自动生成字幕
-   - **解决方案**: 
-     - 检查视频是否有字幕轨道
-     - 尝试下载自动生成的字幕
-     - 使用语音识别生成字幕
+   - **Cause**: The video has no subtitles or only auto-generated subtitles
+   - **Solution**:
+     - Check if the video has a subtitle track
+     - Try downloading auto-generated subtitles
+     - Generate subtitles using speech recognition
 
 2. **"VTT format not supported"**
-   - **原因**: YouTube下载的是VTT格式字幕，需要转换为SRT
-   - **解决方案**: 系统会自动转换，如果失败请检查文件权限
+   - **Reason**: YouTube downloads subtitles in VTT format; conversion to SRT is required
+   - **Solution**: The system converts automatically; if it fails, check file permissions
 
-#### 语音识别相关错误
+#### Speech Recognition-Related Errors
 
 1. **"whisper: command not found"**
-   - **原因**: 未安装Whisper语音识别工具
-   - **解决方案**: 
+   - **Cause**: Whisper speech recognition tool is not installed
+   - **Solution**:
      ```bash
      pip install openai-whisper
      ```
 
 2. **"ffmpeg: command not found"**
-   - **原因**: 未安装ffmpeg
-   - **解决方案**: 
+   - **Cause**: ffmpeg is not installed
+   - **Solution**:
      ```bash
      # macOS
      brew install ffmpeg
@@ -77,36 +77,39 @@ python scripts/debug_subtitle_download.py https://www.youtube.com/watch?v=dQw4w9
      sudo apt update && sudo apt install ffmpeg
      
      # Windows
-     # 下载ffmpeg并添加到PATH环境变量
+     # Download ffmpeg and add it to the PATH environment variable
      ```
 
-3. **"语音识别超时"**
-   - **原因**: 视频太长或系统性能不足
-   - **解决方案**: 
-     - 使用更小的Whisper模型（tiny、base）
-     - 增加超时时间
-     - 检查系统内存和CPU使用情况
+3. **"Speech recognition timeout"**
+   - **Cause**: Video is too long or system performance is insufficient
+   - **Solution**:
+     - Use smaller Whisper models (tiny, base)
+     - Increase timeout
+     - Check system memory and CPU usage
 
-## 🛠️ 解决方案
+## 🛠️ Solutions
 
-### 1. B站字幕下载优化
+### 1. Bilibili Subtitle Download Optimization
 
-#### 登录配置
+#### Login Configuration
+
 ```python
-# 确保在浏览器中登录B站
-# 选择正确的浏览器
-browser = "chrome"  # 或 "firefox", "safari"
+# Ensure you are logged in to Bilibili in the browser
+# Select the correct browser
+browser = "chrome"  # or "firefox", "safari"
 ```
 
-#### 多种字幕策略
-系统会自动尝试以下策略：
-1. **AI字幕优先**: 尝试下载AI生成的中文字幕
-2. **多语言策略**: 尝试中文、英文等多种语言
-3. **无cookies策略**: 尝试不使用cookies下载公开字幕
+#### Multiple Subtitle Strategies
 
-#### 手动配置
+The system automatically tries the following strategies:
+1. **AI subtitles priority**: Try to download AI-generated Chinese subtitles
+2. **Multi-language strategy**: Try Chinese, English, and other languages
+3. **No-cookies policy**: Try downloading public subtitles without cookies
+
+#### Manual Configuration
+
 ```python
-# 在下载时指定字幕语言
+# Specify subtitle languages when downloading
 ydl_opts = {
     'subtitleslangs': ['ai-zh', 'zh-Hans', 'zh', 'en'],
     'writeautomaticsub': True,
@@ -114,188 +117,204 @@ ydl_opts = {
 }
 ```
 
-### 2. YouTube字幕下载优化
+### 2. YouTube Subtitle Download Optimization
 
-#### 字幕格式支持
+#### Subtitle Format Support
+
 ```python
-# 支持多种字幕格式
+# Support multiple subtitle formats
 formats = ['srt', 'vtt', 'json3']
 languages = ['en', 'zh-Hans', 'zh', 'ja', 'ko']
 ```
 
-#### 自动格式转换
-系统会自动将VTT格式转换为SRT格式：
+#### Automatic Format Conversion
+
+The system automatically converts VTT format to SRT format:
+
 ```python
-# VTT到SRT转换
+# VTT to SRT conversion
 async def _convert_vtt_to_srt(vtt_path: str, srt_path: str):
-    # 自动转换时间格式和字幕结构
+    # Automatically convert time format and subtitle structure
 ```
 
-### 3. 语音识别备用方案
+### 3. Speech Recognition Alternatives
 
-#### 安装Whisper
+#### Install Whisper
+
 ```bash
-# 安装Whisper
+# Install Whisper
 pip install openai-whisper
 
-# 验证安装
+# Verify installation
 whisper --help
 ```
 
-#### 模型选择
+#### Model Selection
+
 ```python
-# 根据需求选择模型
+# Choose model based on needs
 models = {
-    "tiny": "39MB, 最快，准确率较低",
-    "base": "74MB, 较快，准确率中等（推荐）",
-    "small": "244MB, 中等速度，准确率较高",
-    "medium": "769MB, 较慢，准确率很高",
-    "large": "1550MB, 最慢，准确率最高"
+    "tiny": "39MB, fastest, lower accuracy",
+    "base": "74MB, faster, medium accuracy (recommended)",
+    "small": "244MB, medium speed, higher accuracy",
+    "medium": "769MB, slower, very high accuracy",
+    "large": "1550MB, slowest, highest accuracy"
 }
 ```
 
-#### 语言配置
+#### Language Configuration
+
 ```python
-# 指定语言提高准确率
+# Specify language to improve accuracy
 languages = {
-    "zh": "中文",
-    "en": "英文",
-    "ja": "日文",
-    "ko": "韩文",
-    "auto": "自动检测"
+    "zh": "Chinese",
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "auto": "Auto-detect"
 }
 ```
 
-## 📊 性能优化建议
+## 📊 Performance Optimization Suggestions
 
-### 1. 网络优化
-- 使用稳定的网络连接
-- 避免在高峰时段下载
-- 考虑使用代理或VPN
+### 1. Network Optimization
+- Use a stable internet connection
+- Avoid downloading during peak hours
+- Consider using a proxy or VPN
 
-### 2. 系统优化
-- 确保有足够的磁盘空间
-- 关闭不必要的应用程序
-- 使用SSD硬盘提高I/O性能
+### 2. System Optimization
+- Ensure sufficient disk space
+- Close unnecessary applications
+- Use SSD storage to improve I/O performance
 
-### 3. 配置优化
+### 3. Configuration Optimization
+
 ```python
-# 优化下载配置
+# Optimize download configuration
 ydl_opts = {
-    'format': 'best[ext=mp4]/best',  # 选择最佳质量
+    'format': 'best[ext=mp4]/best',  # Select best quality
     'writesubtitles': True,
     'writeautomaticsub': True,
     'subtitleslangs': ['ai-zh', 'zh-Hans', 'en'],
     'subtitlesformat': 'srt',
     'noplaylist': True,
     'quiet': True,
-    'no_warnings': False,  # 显示警告信息
+    'no_warnings': False,  # Show warning messages
 }
 ```
 
-## 🔧 高级故障排除
+## 🔧 Advanced Troubleshooting
 
-### 1. 检查yt-dlp版本
+### 1. Check yt-dlp Version
+
 ```bash
-# 更新到最新版本
+# Update to latest version
 pip install --upgrade yt-dlp
 
-# 检查版本
+# Check version
 yt-dlp --version
 ```
 
-### 2. 检查浏览器cookies
+### 2. Check Browser Cookies
+
 ```bash
-# 确保浏览器中有正确的cookies
-# 在浏览器中访问B站/YouTube并登录
-# 检查cookies是否有效
+# Ensure the browser has valid cookies
+# Visit Bilibili/YouTube in the browser and log in
+# Verify cookies are valid
 ```
 
-### 3. 测试网络连接
+### 3. Test Network Connection
+
 ```bash
-# 测试网络连接
+# Test network connection
 ping www.bilibili.com
 ping www.youtube.com
 
-# 测试DNS解析
+# Test DNS resolution
 nslookup www.bilibili.com
 nslookup www.youtube.com
 ```
 
-### 4. 检查文件权限
+### 4. Check File Permissions
+
 ```bash
-# 检查下载目录权限
+# Check download directory permissions
 ls -la /path/to/download/directory
 
-# 确保有写入权限
+# Ensure write permission
 chmod 755 /path/to/download/directory
 ```
 
-## 📞 获取帮助
+## 📞 Get Help
 
-### 1. 查看日志
+### 1. View Logs
+
 ```bash
-# 查看详细日志
+# View detailed logs
 tail -f backend.log
 
-# 查看错误日志
+# View error logs
 grep "ERROR" backend.log
 ```
 
-### 2. 使用诊断工具
+### 2. Use Diagnostic Tools
+
 ```bash
-# 完整诊断
+# Full diagnosis
 python scripts/debug_subtitle_download.py <url> <browser>
 
-# 检查语音识别
+# Check speech recognition
 python scripts/debug_subtitle_download.py --check-speech
 ```
 
-### 3. 常见问题FAQ
+### 3. FAQ
 
-**Q: 为什么B站字幕下载总是失败？**
-A: B站的字幕需要登录才能下载，请确保在浏览器中登录B站账号并选择正确的浏览器。
+**Q: Why do Bilibili subtitle downloads always fail?**
 
-**Q: YouTube字幕下载失败怎么办？**
-A: 尝试以下步骤：
-1. 检查视频是否有字幕
-2. 尝试不同的字幕语言
-3. 使用语音识别生成字幕
+A: Bilibili subtitles often require login to download. Log in to your Bilibili account in the browser and select the correct browser.
 
-**Q: 语音识别很慢怎么办？**
-A: 可以：
-1. 使用更小的模型（tiny或base）
-2. 增加超时时间
-3. 检查系统性能
+**Q: What should I do if YouTube subtitle download fails?**
 
-**Q: 如何提高字幕下载成功率？**
-A: 建议：
-1. 确保网络连接稳定
-2. 使用最新版本的yt-dlp
-3. 正确配置浏览器cookies
-4. 安装Whisper作为备用方案
+A: Try the following:
+1. Check if the video has subtitles
+2. Try different subtitle languages
+3. Generate subtitles using speech recognition
 
-## 🎯 最佳实践
+**Q: What should I do if speech recognition is very slow?**
 
-### 1. 日常使用建议
-- 优先使用B站/YouTube原生字幕
-- 配置语音识别作为备用方案
-- 定期更新yt-dlp和Whisper
-- 保持浏览器登录状态
+A:
+1. Use a smaller model (tiny or base)
+2. Increase timeout
+3. Check system performance
 
-### 2. 批量处理建议
-- 分批处理大量视频
-- 监控系统资源使用
-- 设置合理的超时时间
-- 保存诊断结果以便分析
+**Q: How to improve subtitle download success rate?**
 
-### 3. 错误处理建议
-- 记录详细的错误信息
-- 使用诊断工具分析问题
-- 尝试多种解决方案
-- 及时反馈问题给开发团队
+A: Suggestions:
+1. Ensure stable network connection
+2. Use the latest version of yt-dlp
+3. Configure browser cookies correctly
+4. Install Whisper as a backup
+
+## 🎯 Best Practices
+
+### 1. Daily Use Suggestions
+- Prefer Bilibili/YouTube native subtitles
+- Configure speech recognition as a backup
+- Regularly update yt-dlp and Whisper
+- Keep your browser logged in
+
+### 2. Batch Processing Suggestions
+- Process large numbers of videos in batches
+- Monitor system resource usage
+- Set reasonable timeouts
+- Save diagnostic results for analysis
+
+### 3. Error Handling Suggestions
+- Log detailed error information
+- Use diagnostic tools to analyze problems
+- Try multiple solutions
+- Provide timely feedback to the development team
 
 ---
 
-通过以上指南，您应该能够解决大部分字幕下载问题。如果问题仍然存在，请使用诊断工具生成详细报告，并联系技术支持团队。
-
+With the above guide, you should be able to resolve most subtitle download issues. If the problem persists, use the diagnostic tool to generate a detailed report and contact the technical support team.

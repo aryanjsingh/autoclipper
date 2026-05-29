@@ -1,25 +1,25 @@
 #!/bin/bash
-# bcut-asr 手动安装脚本
+# bcut-asr manual installation script
 
-echo "开始安装 bcut-asr..."
+echo "Starting bcut-asr installation..."
 
-# 检查 Python 版本
+# Check Python version
 python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-echo "Python 版本: $python_version"
+echo "Python version: $python_version"
 
 if [[ $(echo "$python_version < 3.10" | bc -l) -eq 1 ]]; then
-    echo "错误: 需要 Python 3.10 或更高版本"
+    echo "Error: Python 3.10 or higher is required"
     exit 1
 fi
 
-# 安装 ffmpeg
-echo "安装 ffmpeg..."
+# Install ffmpeg
+echo "Installing ffmpeg..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
     if command -v brew &> /dev/null; then
         brew install ffmpeg
     else
-        echo "请先安装 Homebrew: https://brew.sh/"
+        echo "Please install Homebrew first: https://brew.sh/"
         exit 1
     fi
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -27,18 +27,18 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     sudo apt update
     sudo apt install -y ffmpeg
 else
-    echo "请手动安装 ffmpeg"
+    echo "Please install ffmpeg manually"
 fi
 
-# 克隆并安装 bcut-asr
-echo "克隆 bcut-asr 仓库..."
+# Clone and install bcut-asr
+echo "Cloning bcut-asr repository..."
 git clone https://github.com/SocialSisterYi/bcut-asr.git
 cd bcut-asr
 
-echo "安装 bcut-asr..."
+echo "Installing bcut-asr..."
 pip install .
 
-echo "验证安装..."
-python3 -c "import bcut_asr; print('bcut-asr 安装成功')"
+echo "Verifying installation..."
+python3 -c "import bcut_asr; print('bcut-asr installed successfully')"
 
-echo "安装完成！"
+echo "Installation completed!"

@@ -1,6 +1,6 @@
 """
-语音识别API端点
-提供语音识别配置管理和状态查询功能
+Speech recognition API endpoint
+Provides speech recognition configuration management and status query functionality
 """
 import logging
 from typing import Dict, List, Optional, Any
@@ -18,11 +18,11 @@ from ...utils.speech_recognizer import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/speech-recognition", tags=["语音识别"])
+router = APIRouter(prefix="/speech-recognition", tags=["Speech Recognition"])
 
 
 class SpeechRecognitionStatus(BaseModel):
-    """语音识别状态"""
+    """Speech recognition status"""
     available_methods: Dict[str, bool]
     supported_languages: List[str]
     whisper_models: List[str]
@@ -33,7 +33,7 @@ class SpeechRecognitionStatus(BaseModel):
 
 
 class SpeechRecognitionRequest(BaseModel):
-    """语音识别请求"""
+    """Speech recognition request"""
     method: str
     language: str = "auto"
     model: str = "base"
@@ -46,15 +46,15 @@ class SpeechRecognitionRequest(BaseModel):
 
 @router.get("/status", response_model=SpeechRecognitionStatus)
 async def get_speech_recognition_status():
-    """获取语音识别状态"""
+    """Get speech recognition status"""
     try:
         available_methods = get_available_speech_recognition_methods()
         supported_languages = get_supported_languages()
         whisper_models = get_whisper_models()
         
-        # 默认配置
+        # Default configuration
         default_config = SpeechRecognitionConfig().__dict__
-        # 转换枚举为字符串
+        # Convert enums to strings
         default_config["method"] = default_config["method"].value
         default_config["language"] = default_config["language"].value
         
@@ -65,170 +65,170 @@ async def get_speech_recognition_status():
             default_config=default_config
         )
     except Exception as e:
-        logger.error(f"获取语音识别状态失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取语音识别状态失败: {e}")
+        logger.error(f"Failed to get speech recognition status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get speech recognition status: {e}")
 
 
 @router.get("/methods")
 async def get_available_methods():
-    """获取可用的语音识别方法"""
+    """Get available speech recognition methods"""
     try:
         return get_available_speech_recognition_methods()
     except Exception as e:
-        logger.error(f"获取可用方法失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取可用方法失败: {e}")
+        logger.error(f"Failed to get available methods: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get available methods: {e}")
 
 
 @router.get("/languages")
 async def get_supported_languages_list():
-    """获取支持的语言列表"""
+    """Get list of supported languages"""
     try:
         return get_supported_languages()
     except Exception as e:
-        logger.error(f"获取支持语言失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取支持语言失败: {e}")
+        logger.error(f"Failed to get supported languages: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get supported languages: {e}")
 
 
 @router.get("/whisper-models")
 async def get_whisper_models_list():
-    """获取可用的Whisper模型列表"""
+    """Get list of available Whisper models"""
     try:
         return get_whisper_models()
     except Exception as e:
-        logger.error(f"获取Whisper模型失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取Whisper模型失败: {e}")
+        logger.error(f"Failed to get Whisper models: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get Whisper models: {e}")
 
 
 @router.post("/test")
 async def test_speech_recognition(request: SpeechRecognitionRequest):
-    """测试语音识别配置"""
+    """Test speech recognition configuration"""
     try:
-        # 验证方法是否可用
+        # Validate method availability
         available_methods = get_available_speech_recognition_methods()
         if not available_methods.get(request.method, False):
             raise HTTPException(
                 status_code=400, 
-                detail=f"语音识别方法 '{request.method}' 不可用"
+                detail=f"Speech recognition method '{request.method}' is not available"
             )
         
-        # 验证语言是否支持
+        # Validate language support
         supported_languages = get_supported_languages()
         if request.language not in supported_languages:
             raise HTTPException(
                 status_code=400,
-                detail=f"不支持的语言: {request.language}"
+                detail=f"Unsupported language: {request.language}"
             )
         
-        # 验证Whisper模型（如果使用whisper）
+        # Validate Whisper model (if using whisper)
         if request.method == "whisper_local":
             whisper_models = get_whisper_models()
             if request.model not in whisper_models:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"不支持的Whisper模型: {request.model}"
+                    detail=f"Unsupported Whisper model: {request.model}"
                 )
         
         return {
             "status": "success",
-            "message": "语音识别配置验证通过",
+            "message": "Speech recognition configuration validation passed",
             "config": request.dict()
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"测试语音识别配置失败: {e}")
-        raise HTTPException(status_code=500, detail=f"测试语音识别配置失败: {e}")
+        logger.error(f"Failed to test speech recognition configuration: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to test speech recognition configuration: {e}")
 
 
 @router.get("/install-guide")
-async def get_install_guide(method: str = Query(..., description="语音识别方法")):
-    """获取安装指南"""
+async def get_install_guide(method: str = Query(..., description="Speech recognition method")):
+    """Get installation guide"""
     guides = {
         "whisper_local": {
-            "title": "本地Whisper安装指南",
-            "description": "安装本地Whisper语音识别工具",
+            "title": "Local Whisper Installation Guide",
+            "description": "Install local Whisper speech recognition tool",
             "steps": [
-                "1. 安装Python依赖: pip install openai-whisper",
-                "2. 安装系统依赖:",
+                "1. Install Python dependencies: pip install openai-whisper",
+                "2. Install system dependencies:",
                 "   - Ubuntu/Debian: sudo apt install ffmpeg",
                 "   - macOS: brew install ffmpeg",
-                "   - Windows: 下载ffmpeg并添加到PATH",
-                "3. 验证安装: whisper --help",
-                "4. 可选：安装PyTorch GPU支持以提高性能"
+                "   - Windows: Download ffmpeg and add to PATH",
+                "3. Verify installation: whisper --help",
+                "4. Optional: Install PyTorch GPU support for better performance"
             ],
             "notes": [
-                "Whisper支持多种模型大小：tiny(39MB), base(74MB), small(244MB), medium(769MB), large(1550MB)",
-                "模型越大，准确率越高，但处理速度越慢",
-                "首次使用时会自动下载模型文件"
+                "Whisper supports multiple model sizes: tiny(39MB), base(74MB), small(244MB), medium(769MB), large(1550MB)",
+                "Larger models have higher accuracy but slower processing speed",
+                "Model files will be automatically downloaded on first use"
             ]
         },
         "openai_api": {
-            "title": "OpenAI API配置指南",
-            "description": "配置OpenAI API语音识别",
+            "title": "OpenAI API Configuration Guide",
+            "description": "Configure OpenAI API speech recognition",
             "steps": [
-                "1. 注册OpenAI账户并获取API密钥",
-                "2. 设置环境变量: export OPENAI_API_KEY='your-api-key'",
-                "3. 或在配置文件中设置API密钥"
+                "1. Register OpenAI account and get API key",
+                "2. Set environment variable: export OPENAI_API_KEY='your-api-key'",
+                "3. Or set API key in configuration file"
             ],
             "notes": [
-                "需要网络连接",
-                "有API调用费用",
-                "准确率较高"
+                "Requires network connection",
+                "Has API call costs",
+                "Higher accuracy"
             ]
         },
         "azure_speech": {
-            "title": "Azure Speech Services配置指南",
-            "description": "配置Azure Speech Services",
+            "title": "Azure Speech Services Configuration Guide",
+            "description": "Configure Azure Speech Services",
             "steps": [
-                "1. 创建Azure账户并开通Speech Services",
-                "2. 获取API密钥和区域信息",
-                "3. 设置环境变量:",
+                "1. Create Azure account and enable Speech Services",
+                "2. Get API key and region information",
+                "3. Set environment variables:",
                 "   export AZURE_SPEECH_KEY='your-api-key'",
                 "   export AZURE_SPEECH_REGION='your-region'"
             ],
             "notes": [
-                "需要Azure账户",
-                "有API调用费用",
-                "支持多种语言和功能"
+                "Requires Azure account",
+                "Has API call costs",
+                "Supports multiple languages and features"
             ]
         },
         "google_speech": {
-            "title": "Google Speech-to-Text配置指南",
-            "description": "配置Google Speech-to-Text",
+            "title": "Google Speech-to-Text Configuration Guide",
+            "description": "Configure Google Speech-to-Text",
             "steps": [
-                "1. 创建Google Cloud项目",
-                "2. 启用Speech-to-Text API",
-                "3. 创建服务账户并下载凭证文件",
-                "4. 设置环境变量: export GOOGLE_APPLICATION_CREDENTIALS='path/to/credentials.json'"
+                "1. Create Google Cloud project",
+                "2. Enable Speech-to-Text API",
+                "3. Create service account and download credentials file",
+                "4. Set environment variable: export GOOGLE_APPLICATION_CREDENTIALS='path/to/credentials.json'"
             ],
             "notes": [
-                "需要Google Cloud账户",
-                "有API调用费用",
-                "支持多种语言和高级功能"
+                "Requires Google Cloud account",
+                "Has API call costs",
+                "Supports multiple languages and advanced features"
             ]
         },
         "aliyun_speech": {
-            "title": "阿里云语音识别配置指南",
-            "description": "配置阿里云语音识别",
+            "title": "Alibaba Cloud Speech Recognition Configuration Guide",
+            "description": "Configure Alibaba Cloud speech recognition",
             "steps": [
-                "1. 注册阿里云账户",
-                "2. 开通智能语音交互服务",
-                "3. 创建AccessKey和AppKey",
-                "4. 设置环境变量:",
+                "1. Register Alibaba Cloud account",
+                "2. Enable intelligent speech interaction service",
+                "3. Create AccessKey and AppKey",
+                "4. Set environment variables:",
                 "   export ALIYUN_ACCESS_KEY_ID='your-access-key'",
                 "   export ALIYUN_ACCESS_KEY_SECRET='your-secret-key'",
                 "   export ALIYUN_SPEECH_APP_KEY='your-app-key'"
             ],
             "notes": [
-                "需要阿里云账户",
-                "有API调用费用",
-                "支持中文识别效果较好"
+                "Requires Alibaba Cloud account",
+                "Has API call costs",
+                "Better Chinese recognition performance"
             ]
         }
     }
     
     if method not in guides:
-        raise HTTPException(status_code=400, detail=f"不支持的语音识别方法: {method}")
+        raise HTTPException(status_code=400, detail=f"Unsupported speech recognition method: {method}")
     
     return guides[method]

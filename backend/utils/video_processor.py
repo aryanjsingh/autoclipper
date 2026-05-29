@@ -1,5 +1,5 @@
 """
-视频处理工具
+Video processing utility
 """
 import subprocess
 import json
@@ -8,11 +8,11 @@ import re
 from typing import List, Dict, Optional
 from pathlib import Path
 
-# 修复导入问题
+# Fix import issues
 try:
     from ..core.shared_config import CLIPS_DIR, COLLECTIONS_DIR
 except ImportError:
-    # 如果相对导入失败，尝试绝对导入
+    # If relative import fails, try absolute import
     import sys
     from pathlib import Path
     backend_path = Path(__file__).parent.parent
@@ -23,14 +23,14 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class VideoProcessor:
-    """视频处理工具类"""
+    """Video processing utility class"""
     
     def __init__(self, clips_dir: Optional[str] = None, collections_dir: Optional[str] = None):
-        # 强制使用传入的项目特定路径，不使用全局路径作为后备
+        # Force use of passed project-specific path, do not use global path as fallback
         if not clips_dir:
-            raise ValueError("clips_dir 参数是必需的，不能使用全局路径")
+            raise ValueError("clips_dir parameter is required, cannot use global path")
         if not collections_dir:
-            raise ValueError("collections_dir 参数是必需的，不能使用全局路径")
+            raise ValueError("collections_dir parameter is required, cannot use global path")
         
         self.clips_dir = Path(clips_dir)
         self.collections_dir = Path(collections_dir)
@@ -38,27 +38,27 @@ class VideoProcessor:
     @staticmethod
     def sanitize_filename(filename: str) -> str:
         """
-        清理文件名，移除或替换不合法的字符
+        Clean filename, remove or replace illegal characters
         
         Args:
-            filename: 原始文件名
+            filename: Original filename
             
         Returns:
-            清理后的文件名
+            Cleaned filename
         """
-        # 移除或替换不合法的字符
-        # Windows和Unix系统都不允许的字符: < > : " | ? * \ /
-        # 替换为下划线
+        # Remove or replace illegal characters
+        # Characters not allowed on both Windows and Unix systems: < > : " | ? * \ /
+        # Replace with underscore
         sanitized = re.sub(r'[<>:"|?*\\/]', '_', filename)
         
-        # 移除前后空格和点
+        # Remove leading/trailing spaces and dots
         sanitized = sanitized.strip(' .')
         
-        # 限制长度，避免文件名过长
+        # Limit length to avoid overly long filenames
         if len(sanitized) > 100:
             sanitized = sanitized[:100]
         
-        # 确保文件名不为空
+        # Ensure filename is not empty
         if not sanitized:
             sanitized = "untitled"
             
@@ -67,27 +67,27 @@ class VideoProcessor:
     @staticmethod
     def convert_srt_time_to_ffmpeg_time(srt_time: str) -> str:
         """
-        将SRT时间格式转换为FFmpeg时间格式
+        Convert SRT time format to FFmpeg time format
         
         Args:
-            srt_time: SRT时间格式 (如 "00:00:06,140" 或 "00:00:06.140")
+            srt_time: SRT time format (e.g., "00:00:06,140" or "00:00:06.140")
             
         Returns:
-            FFmpeg时间格式 (如 "00:00:06.140")
+            FFmpeg time format (e.g., "00:00:06.140")
         """
-        # 将逗号替换为点
+        # Replace comma with dot
         return srt_time.replace(',', '.')
     
     @staticmethod
     def convert_seconds_to_ffmpeg_time(seconds: float) -> str:
         """
-        将秒数转换为FFmpeg时间格式
+        Convert seconds to FFmpeg time format
         
         Args:
-            seconds: 秒数
+            seconds: Seconds
             
         Returns:
-            FFmpeg时间格式 (如 "00:00:06.140")
+            FFmpeg time format (e.g., "00:00:06.140")
         """
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
@@ -99,16 +99,16 @@ class VideoProcessor:
     @staticmethod
     def convert_ffmpeg_time_to_seconds(time_str: str) -> float:
         """
-        将FFmpeg时间格式转换为秒数
+        Convert FFmpeg time format to seconds
         
         Args:
-            time_str: FFmpeg时间格式 (如 "00:00:06.140")
+            time_str: FFmpeg time format (e.g., "00:00:06.140")
             
         Returns:
-            秒数
+            Seconds
         """
         try:
-            # 处理毫秒部分
+            # Handle milliseconds part
             if '.' in time_str:
                 time_part, ms_part = time_str.split('.')
                 milliseconds = int(ms_part)
@@ -116,207 +116,207 @@ class VideoProcessor:
                 time_part = time_str
                 milliseconds = 0
             
-            # 解析时分秒
+            # Parse hours, minutes, seconds
             h, m, s = map(int, time_part.split(':'))
             
             return h * 3600 + m * 60 + s + milliseconds / 1000
         except Exception as e:
-            logger.error(f"时间格式转换失败: {time_str}, 错误: {e}")
+            logger.error(f"Time format conversion failed: {time_str}, error: {e}")
             return 0.0
     
     @staticmethod
     def extract_clip(input_video: Path, output_path: Path, 
                     start_time: str, end_time: str) -> bool:
         """
-        从视频中提取指定时间段的片段
+        Extract a segment from video at specified time range
         
         Args:
-            input_video: 输入视频路径
-            output_path: 输出视频路径
-            start_time: 开始时间 (格式: "00:01:25,140")
-            end_time: 结束时间 (格式: "00:02:53,500")
+            input_video: Input video path
+            output_path: Output video path
+            start_time: Start time (format: "00:01:25,140")
+            end_time: End time (format: "00:02:53,500")
             
         Returns:
-            是否成功
+            Whether successful
         """
         try:
-            # 确保输出目录存在
+            # Ensure output directory exists
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # 转换时间格式：从SRT格式转换为FFmpeg格式
+            # Convert time format: from SRT format to FFmpeg format
             ffmpeg_start_time = VideoProcessor.convert_srt_time_to_ffmpeg_time(start_time)
             ffmpeg_end_time = VideoProcessor.convert_srt_time_to_ffmpeg_time(end_time)
             
-            # 计算持续时间
+            # Calculate duration
             start_seconds = VideoProcessor.convert_ffmpeg_time_to_seconds(ffmpeg_start_time)
             end_seconds = VideoProcessor.convert_ffmpeg_time_to_seconds(ffmpeg_end_time)
             duration = end_seconds - start_seconds
             
-            # 构建优化的FFmpeg命令
-            # 使用 -ss 在输入前进行精确定位，使用 -t 指定持续时间
+            # Build optimized FFmpeg command
+            # Use -ss before input for precise positioning, use -t to specify duration
             cmd = [
                 'ffmpeg',
-                '-ss', ffmpeg_start_time,  # 在输入前定位，更精确
+                '-ss', ffmpeg_start_time,  # Position before input, more precise
                 '-i', str(input_video),
-                '-t', str(duration),  # 使用持续时间而不是绝对结束时间
-                '-c:v', 'copy',  # 复制视频流
-                '-c:a', 'copy',  # 复制音频流
+                '-t', str(duration),  # Use duration instead of absolute end time
+                '-c:v', 'copy',  # Copy video stream
+                '-c:a', 'copy',  # Copy audio stream
                 '-avoid_negative_ts', 'make_zero',
-                '-y',  # 覆盖输出文件
+                '-y',  # Overwrite output file
                 str(output_path)
             ]
             
-            # 执行命令
+            # Execute command
             result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore')
             
             if result.returncode == 0:
-                logger.info(f"成功提取视频片段: {output_path} ({ffmpeg_start_time} -> {ffmpeg_end_time}, 时长: {duration:.2f}秒)")
+                logger.info(f"Successfully extracted video clip: {output_path} ({ffmpeg_start_time} -> {ffmpeg_end_time}, duration: {duration:.2f} seconds)")
                 return True
             else:
-                logger.error(f"提取视频片段失败: {result.stderr}")
+                logger.error(f"Failed to extract video clip: {result.stderr}")
                 return False
                 
         except Exception as e:
-            logger.error(f"视频处理异常: {str(e)}")
+            logger.error(f"Video processing exception: {str(e)}")
             return False
     
     @staticmethod
     def create_collection(clips_list: List[Path], output_path: Path) -> bool:
         """
-        将多个视频片段拼接成合集
+        Concatenate multiple video clips into a collection
         
         Args:
-            clips_list: 视频片段路径列表
-            output_path: 输出合集路径
+            clips_list: List of video clip paths
+            output_path: Output collection path
             
         Returns:
-            是否成功
+            Whether successful
         """
         try:
-            # 验证输入参数
+            # Validate input parameters
             if not clips_list:
-                logger.error("clips_list为空，无法创建合集")
+                logger.error("clips_list is empty, cannot create collection")
                 return False
             
-            # 验证所有视频文件是否存在
+            # Validate all video files exist
             valid_clips = []
             for clip_path in clips_list:
                 if not clip_path.exists():
-                    logger.warning(f"视频文件不存在，跳过: {clip_path}")
+                    logger.warning(f"Video file does not exist, skipping: {clip_path}")
                     continue
                 valid_clips.append(clip_path)
             
             if not valid_clips:
-                logger.error("没有有效的视频文件，无法创建合集")
+                logger.error("No valid video files, cannot create collection")
                 return False
             
-            # 确保输出目录存在
+            # Ensure output directory exists
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # 创建concat文件
+            # Create concat file
             concat_file = output_path.parent / "concat_list.txt"
             
             with open(concat_file, 'w', encoding='utf-8') as f:
                 for clip_path in valid_clips:
-                    # 使用绝对路径并转义单引号
+                    # Use absolute path and escape single quotes
                     abs_path = clip_path.absolute()
                     escaped_path = str(abs_path).replace("'", "'\"'\"'")
                     f.write(f"file '{escaped_path}'\n")
             
-            # 验证concat文件内容
+            # Validate concat file content
             if concat_file.stat().st_size == 0:
-                logger.error("concat文件为空，无法创建合集")
+                logger.error("Concat file is empty, cannot create collection")
                 concat_file.unlink(missing_ok=True)
                 return False
             
-            # 构建FFmpeg命令 - 使用H.264编码确保兼容性
+            # Build FFmpeg command - Use H.264 encoding for compatibility
             cmd = [
                 'ffmpeg',
                 '-f', 'concat',
                 '-safe', '0',
                 '-i', str(concat_file),
-                '-c:v', 'libx264',  # 使用H.264视频编码
-                '-preset', 'ultrafast',  # 使用最快的编码预设
-                '-crf', '28',  # 稍微降低质量以加快编码速度
-                '-c:a', 'aac',  # 使用AAC音频编码
-                '-b:a', '128k',  # 音频比特率
-                '-movflags', '+faststart',  # 优化网络播放
+                '-c:v', 'libx264',  # Use H.264 video encoding
+                '-preset', 'ultrafast',  # Use fastest encoding preset
+                '-crf', '28',  # Slightly reduce quality for faster encoding
+                '-c:a', 'aac',  # Use AAC audio encoding
+                '-b:a', '128k',  # Audio bitrate
+                '-movflags', '+faststart',  # Optimize for web playback
                 '-y',
                 str(output_path)
             ]
             
-            logger.info(f"执行FFmpeg命令: {' '.join(cmd)}")
+            logger.info(f"Executing FFmpeg command: {' '.join(cmd)}")
             
-            # 执行命令
+            # Execute command
             result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore')
             
-            # 清理临时文件
+            # Clean up temporary file
             concat_file.unlink(missing_ok=True)
             
             if result.returncode == 0:
-                logger.info(f"成功创建合集: {output_path}")
+                logger.info(f"Successfully created collection: {output_path}")
                 return True
             else:
-                logger.error(f"创建合集失败: {result.stderr}")
+                logger.error(f"Failed to create collection: {result.stderr}")
                 logger.error(f"FFmpeg stdout: {result.stdout}")
                 return False
                 
         except Exception as e:
-            logger.error(f"视频拼接异常: {str(e)}")
+            logger.error(f"Video concatenation exception: {str(e)}")
             return False
     
     @staticmethod
     def extract_thumbnail(video_path: Path, output_path: Path, time_offset: int = 5) -> bool:
         """
-        从视频中提取缩略图
+        Extract thumbnail from video
         
         Args:
-            video_path: 视频文件路径
-            output_path: 输出缩略图路径
-            time_offset: 提取时间点（秒）
+            video_path: Video file path
+            output_path: Output thumbnail path
+            time_offset: Extraction time point (seconds)
             
         Returns:
-            是否成功
+            Whether successful
         """
         try:
-            # 确保输出目录存在
+            # Ensure output directory exists
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # 构建FFmpeg命令
+            # Build FFmpeg command
             cmd = [
                 'ffmpeg',
                 '-i', str(video_path),
                 '-ss', str(time_offset),
                 '-vframes', '1',
-                '-q:v', '2',  # 高质量
-                '-y',  # 覆盖输出文件
+                '-q:v', '2',  # High quality
+                '-y',  # Overwrite output file
                 str(output_path)
             ]
             
-            # 执行命令
+            # Execute command
             result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore')
             
             if result.returncode == 0 and output_path.exists():
-                logger.info(f"成功提取缩略图: {output_path}")
+                logger.info(f"Successfully extracted thumbnail: {output_path}")
                 return True
             else:
-                logger.error(f"提取缩略图失败: {result.stderr}")
+                logger.error(f"Failed to extract thumbnail: {result.stderr}")
                 return False
                 
         except Exception as e:
-            logger.error(f"提取缩略图异常: {str(e)}")
+            logger.error(f"Extract thumbnail exception: {str(e)}")
             return False
     
     @staticmethod
     def get_video_info(video_path: Path) -> Dict:
         """
-        获取视频信息
+        Get video information
         
         Args:
-            video_path: 视频文件路径
+            video_path: Video file path
             
         Returns:
-            视频信息字典
+            Video information dictionary
         """
         try:
             cmd = [
@@ -339,94 +339,94 @@ class VideoProcessor:
                     'streams': info['streams']
                 }
             else:
-                logger.error(f"获取视频信息失败: {result.stderr}")
+                logger.error(f"Failed to get video info: {result.stderr}")
                 return {}
                 
         except Exception as e:
-            logger.error(f"获取视频信息异常: {str(e)}")
+            logger.error(f"Get video info exception: {str(e)}")
             return {}
     
     def batch_extract_clips(self, input_video: Path, clips_data: List[Dict]) -> List[Path]:
         """
-        批量提取视频片段
+        Batch extract video clips
         
         Args:
-            input_video: 输入视频路径
-            clips_data: 片段数据列表，每个元素包含id、title、start_time、end_time
+            input_video: Input video path
+            clips_data: List of clip data, each element contains id, title, start_time, end_time
             
         Returns:
-            成功提取的片段路径列表
+            List of successfully extracted clip paths
         """
         successful_clips = []
         
         for clip_data in clips_data:
             clip_id = clip_data['id']
-            title = clip_data.get('title', f"片段_{clip_id}")
+            title = clip_data.get('title', f"clip_{clip_id}")
             start_time = clip_data['start_time']
             end_time = clip_data['end_time']
             
-            # 处理时间格式 - 如果是秒数，转换为SRT格式
+            # Handle time format - if seconds, convert to SRT format
             if isinstance(start_time, (int, float)):
                 start_time = VideoProcessor.convert_seconds_to_ffmpeg_time(start_time)
             if isinstance(end_time, (int, float)):
                 end_time = VideoProcessor.convert_seconds_to_ffmpeg_time(end_time)
             
-            # 使用标题作为文件名，并清理不合法的字符
-            # 在文件名中包含clip_id，便于后续合集拼接时查找
+            # Use title as filename and clean illegal characters
+            # Include clip_id in filename for easy lookup during collection concatenation
             safe_title = VideoProcessor.sanitize_filename(title)
             output_path = self.clips_dir / f"{clip_id}_{safe_title}.mp4"
             
-            logger.info(f"提取切片 {clip_id}: {start_time} -> {end_time}, 输出: {output_path}")
+            logger.info(f"Extracting clip {clip_id}: {start_time} -> {end_time}, output: {output_path}")
             
             if VideoProcessor.extract_clip(input_video, output_path, start_time, end_time):
                 successful_clips.append(output_path)
-                logger.info(f"切片 {clip_id} 提取成功")
+                logger.info(f"Clip {clip_id} extraction succeeded")
             else:
-                logger.error(f"切片 {clip_id} 提取失败")
+                logger.error(f"Clip {clip_id} extraction failed")
         
         return successful_clips
     
     def create_collections_from_metadata(self, collections_data: List[Dict]) -> List[Path]:
         """
-        根据元数据创建合集
+        Create collections based on metadata
         
         Args:
-            collections_data: 合集数据列表
+            collections_data: List of collection data
             
         Returns:
-            成功创建的合集路径列表
+            List of successfully created collection paths
         """
         successful_collections = []
         
         for collection_data in collections_data:
             collection_id = collection_data['id']
-            collection_title = collection_data.get('collection_title', f'合集_{collection_id}')
+            collection_title = collection_data.get('collection_title', f'collection_{collection_id}')
             clip_ids = collection_data['clip_ids']
             
-            # 构建片段路径列表
+            # Build clip path list
             clips_list = []
             for clip_id in clip_ids:
-                # 查找对应的切片文件
-                # 新的文件名格式是: {clip_id}_{title}.mp4
+                # Find corresponding clip file
+                # New filename format is: {clip_id}_{title}.mp4
                 clip_path = self.clips_dir / f"{clip_id}_*.mp4"
                 found_clips = list(self.clips_dir.glob(f"{clip_id}_*.mp4"))
                 
                 if found_clips:
-                    found_clip = found_clips[0]  # 取第一个匹配的文件
+                    found_clip = found_clips[0]  # Take first matching file
                     clips_list.append(found_clip)
-                    logger.info(f"找到合集 {collection_id} 的切片: {found_clip.name}")
+                    logger.info(f"Found clip for collection {collection_id}: {found_clip.name}")
                 else:
-                    logger.warning(f"未找到合集 {collection_id} 的切片 {clip_id}")
+                    logger.warning(f"Clip {clip_id} not found for collection {collection_id}")
             
             if clips_list:
-                # 使用collection_title作为文件名，并清理不合法的字符
+                # Use collection_title as filename and clean illegal characters
                 safe_title = VideoProcessor.sanitize_filename(collection_title)
                 output_path = self.collections_dir / f"{safe_title}.mp4"
                 
                 if VideoProcessor.create_collection(clips_list, output_path):
                     successful_collections.append(output_path)
-                    logger.info(f"成功创建合集 {collection_id}: {output_path}")
+                    logger.info(f"Successfully created collection {collection_id}: {output_path}")
             else:
-                logger.warning(f"合集 {collection_id} 没有找到任何有效的切片文件")
+                logger.warning(f"Collection {collection_id} has no valid clip files found")
         
         return successful_collections
