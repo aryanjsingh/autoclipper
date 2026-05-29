@@ -78,55 +78,74 @@ class ClipScorer:
     
     def _get_llm_evaluation(self, clips: List[Dict]) -> List[Dict]:
         """
-        Use LLM for batch evaluation, adding final_score and recommend_reason to each clip
+        Use LLM for batch evaluation, adding final_score and recommend_reason to each clip.
+        Results are matched back to clips by `id` (robust to reordering or omissions),
+        falling back to positional order only when ids are unavailable.
         """
         try:
-            # Input data for LLM doesn't need all fields, only necessary ones
+            # Send each clip's id so we can match the scores back precisely.
             input_for_llm = [
                 {
-                    "outline": clip.get('outline'), 
+                    "id": clip.get('id'),
+                    "outline": clip.get('outline'),
                     "content": clip.get('content'),
                     "start_time": clip.get('start_time'),
                     "end_time": clip.get('end_time'),
                 } for clip in clips
             ]
-            
+
             response = self.llm_client.call_with_retry(self.recommendation_prompt, input_for_llm)
             parsed_list = self.llm_client.parse_json_response(response)
-            
-            if not isinstance(parsed_list, list) or len(parsed_list) != len(clips):
-                logger.error(f"LLM returned score count doesn't match input. Input: {len(clips)}, Output: {len(parsed_list)}")
-                return []
-                
-            # Merge score results back into original clips data
-            for original_clip, llm_result in zip(clips, parsed_list):
-                score = llm_result.get('final_score')
-                reason = llm_result.get('recommend_reason')
-                
-                if score is None or reason is None:
-                    logger.warning(f"LLM returned result missing score or reason: {llm_result}")
-                    original_clip['final_score'] = 0.0
-                    original_clip['recommend_reason'] = "Evaluation failed"
+
+            if not isinstance(parsed_list, list):
+                logger.error(f"LLM scoring returned a non-list response: {type(parsed_list)}")
+                return self._mark_failed(clips, "Invalid scoring response")
+
+            # Index results by id when present.
+            results_by_id = {}
+            for result in parsed_list:
+                if isinstance(result, dict) and result.get('id') is not None:
+                    results_by_id[str(result['id'])] = result
+
+            use_positional = len(results_by_id) < len(parsed_list)
+
+            for index, clip in enumerate(clips):
+                llm_result = None
+                clip_id = clip.get('id')
+                if clip_id is not None and str(clip_id) in results_by_id:
+                    llm_result = results_by_id[str(clip_id)]
+                elif use_positional and index < len(parsed_list) and isinstance(parsed_list[index], dict):
+                    llm_result = parsed_list[index]
+
+                score = llm_result.get('final_score') if llm_result else None
+                reason = llm_result.get('recommend_reason') if llm_result else None
+
+                if score is None:
+                    logger.warning(f"No score returned for clip {clip_id}; defaulting to 0.")
+                    clip['final_score'] = 0.0
+                    clip['recommend_reason'] = reason or "Evaluation failed"
                 else:
-                    original_clip['final_score'] = round(float(score), 2)
-                    original_clip['recommend_reason'] = reason
-                    # Safely get outline title for log display
-                    outline = original_clip.get('outline', {})
-                    if isinstance(outline, dict):
-                        title = outline.get('title', 'Unknown title')
-                    else:
-                        title = str(outline)
-                    logger.info(f"  > Scoring successful: {title[:20]}... [Score: {score}]")
+                    try:
+                        clip['final_score'] = round(float(score), 2)
+                    except (TypeError, ValueError):
+                        clip['final_score'] = 0.0
+                    clip['recommend_reason'] = reason or ""
+                    outline = clip.get('outline', {})
+                    title = outline.get('title', 'Unknown') if isinstance(outline, dict) else str(outline)
+                    logger.info(f"  > Scored '{title[:30]}' -> {clip['final_score']}")
 
             return clips
 
         except Exception as e:
             logger.error(f"LLM batch evaluation failed: {e}")
-            # If batch fails, mark all clips as failed
-            for clip in clips:
-                clip['final_score'] = 0.0
-                clip['recommend_reason'] = "Batch evaluation failed"
-            return clips
+            return self._mark_failed(clips, "Batch evaluation failed")
+
+    @staticmethod
+    def _mark_failed(clips: List[Dict], reason: str) -> List[Dict]:
+        for clip in clips:
+            clip['final_score'] = 0.0
+            clip['recommend_reason'] = reason
+        return clips
 
     def save_scores(self, scored_clips: List[Dict], output_path: Path):
         """Save scoring results"""

@@ -11,7 +11,7 @@ from collections import defaultdict
 # Import dependencies
 from ..utils.llm_client import LLMClient
 from ..utils.text_processor import TextProcessor
-from ..core.shared_config import PROMPT_FILES, METADATA_DIR
+from ..core.shared_config import PROMPT_FILES, METADATA_DIR, MIN_CLIP_SECONDS, MAX_CLIP_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +74,10 @@ class TimelineExtractor:
         for chunk_index, chunk_outlines in outlines_by_chunk.items():
             logger.info(f"Processing chunk {chunk_index}, containing {len(chunk_outlines)} topics...")
             
-            # Reprocess each time, no caching
             chunk_output_path = self.timeline_chunks_dir / f"chunk_{chunk_index}.json"
+            if chunk_output_path.exists():
+                logger.info(f"  > Chunk {chunk_index} already processed, skipping.")
+                continue
 
             try:
                 # First load the corresponding SRT chunk file, needed regardless of caching
@@ -105,10 +107,10 @@ class TimelineExtractor:
                 else:
                     logger.info(f"  > No LLM cache found, starting API call...")
                     
-                    # Build SRT text for LLM
+                    # Build SRT text for LLM (real newlines so the model sees clean SRT)
                     srt_text_for_prompt = ""
                     for sub in srt_chunk_data:
-                        srt_text_for_prompt += f"{sub['index']}\\n{sub['start_time']} --> {sub['end_time']}\\n{sub['text']}\\n\\n"
+                        srt_text_for_prompt += f"{sub['index']}\n{sub['start_time']} --> {sub['end_time']}\n{sub['text']}\n\n"
                     
                     # Prepare a "clean" input for LLM, containing only the information it needs
                     llm_input_outlines = [
@@ -133,9 +135,11 @@ class TimelineExtractor:
                                 logger.warning(f"  > Chunk {chunk_index} LLM response is empty, skipping")
                                 break
                             
-                            # Save raw response to cache
+                            # Save raw response to cache (stable path for resume/retries)
                             cache_file = self.llm_raw_output_dir / f"chunk_{chunk_index}_attempt_{retry_count}.txt"
                             with open(cache_file, 'w', encoding='utf-8') as f:
+                                f.write(raw_response)
+                            with open(llm_cache_path, 'w', encoding='utf-8') as f:
                                 f.write(raw_response)
                             
                             # Parse LLM raw response
@@ -147,11 +151,18 @@ class TimelineExtractor:
                             )
                             
                             if parsed_items:
+                                # Enforce the 30s-3min clip duration window using SRT boundaries
+                                parsed_items = self._enforce_duration(parsed_items, srt_chunk_data)
+
+                                if not parsed_items:
+                                    logger.warning(f"  > Chunk {chunk_index} produced no clips within the {MIN_CLIP_SECONDS}-{MAX_CLIP_SECONDS}s window")
+                                    break
+
                                 # Save parsed results
                                 with open(chunk_output_path, 'w', encoding='utf-8') as f:
                                     json.dump(parsed_items, f, ensure_ascii=False, indent=2)
-                                
-                                logger.info(f"  > Chunk {chunk_index} successfully parsed {len(parsed_items)} time segments")
+
+                                logger.info(f"  > Chunk {chunk_index} kept {len(parsed_items)} clips within duration window")
                                 break  # Successfully parsed, break retry loop
                             else:
                                 if retry_count < max_parse_retries:
@@ -288,6 +299,82 @@ class TimelineExtractor:
             import json
             self._save_debug_response(json.dumps(error_info, indent=2, ensure_ascii=False), chunk_index, "parse_error")
             return []
+
+    def _enforce_duration(self, items: List[Dict], srt_entries: List[Dict]) -> List[Dict]:
+        """
+        Guarantee every clip falls inside [MIN_CLIP_SECONDS, MAX_CLIP_SECONDS].
+
+        - Too long (> max): snap end_time back to the latest SRT boundary that keeps
+          the clip <= max (and still >= min), so we never cut mid-sentence.
+        - Too short (< min): extend end_time to the earliest SRT boundary that reaches
+          min (and stays <= max). If that is impossible, drop the clip.
+
+        This is a safety net on top of the prompt; the LLM is asked to obey the window.
+        """
+        to_sec = self.text_processor.time_to_seconds
+
+        # Collect every subtitle boundary (start and end) as candidate cut points.
+        boundaries = set()
+        for entry in srt_entries:
+            boundaries.add(entry['start_time'])
+            boundaries.add(entry['end_time'])
+        # Sort boundary time-strings by their second value.
+        boundary_list = sorted(boundaries, key=to_sec)
+        boundary_secs = [to_sec(b) for b in boundary_list]
+
+        def boundary_at_or_before(target: float):
+            """Latest boundary whose time <= target."""
+            chosen = None
+            for b, s in zip(boundary_list, boundary_secs):
+                if s <= target:
+                    chosen = b
+                else:
+                    break
+            return chosen
+
+        def boundary_at_or_after(target: float):
+            """Earliest boundary whose time >= target."""
+            for b, s in zip(boundary_list, boundary_secs):
+                if s >= target:
+                    return b
+            return None
+
+        kept: List[Dict] = []
+        for item in items:
+            try:
+                start_s = to_sec(item['start_time'])
+                end_s = to_sec(item['end_time'])
+            except Exception:
+                continue
+            duration = end_s - start_s
+
+            if duration > MAX_CLIP_SECONDS:
+                snap = boundary_at_or_before(start_s + MAX_CLIP_SECONDS)
+                if snap is not None and to_sec(snap) - start_s >= MIN_CLIP_SECONDS:
+                    logger.info(
+                        f"  > Trimming '{item.get('outline')}' from {duration:.0f}s to "
+                        f"{to_sec(snap) - start_s:.0f}s (3min cap)"
+                    )
+                    item['end_time'] = snap
+                else:
+                    # Hard fallback: cap exactly at start + MAX even without a boundary.
+                    item['end_time'] = self.text_processor.seconds_to_time(start_s + MAX_CLIP_SECONDS) + ",000"
+                    logger.info(f"  > Hard-capping '{item.get('outline')}' to {MAX_CLIP_SECONDS}s")
+            elif duration < MIN_CLIP_SECONDS:
+                snap = boundary_at_or_after(start_s + MIN_CLIP_SECONDS)
+                if snap is not None and to_sec(snap) - start_s <= MAX_CLIP_SECONDS:
+                    logger.info(
+                        f"  > Extending '{item.get('outline')}' from {duration:.0f}s to "
+                        f"{to_sec(snap) - start_s:.0f}s (30s floor)"
+                    )
+                    item['end_time'] = snap
+                else:
+                    logger.info(f"  > Dropping '{item.get('outline')}' — only {duration:.0f}s, cannot reach 30s")
+                    continue
+
+            kept.append(item)
+
+        return kept
 
     def _validate_time_format(self, time_str: str) -> bool:
         """

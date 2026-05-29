@@ -1,0 +1,15 @@
+id: 2059962388296663406
+url: https://x.com/yonann/status/2059962388296663406
+created: 2026-05-28T11:38:00+00:00
+metrics: views=2902 likes=22 retweets=2 replies=3 bookmarks=3
+
+Nic Carter reveals his first angel investment was a $30M CoreWeave round before it turned into a 2000x trade
+
+"CoreWeave was my first angel investment. That round was, I think, a $30 million post money"
+
+"a couple years passed, I'm like, this company's going out of business for sure because Ethereum pivoted away from proof of work"
+
+"we have all these GPUs, who are we gonna sell it to? and then AI inflected. if Ethereum had waited another year, they would have been out of business"
+
+--- reply (ft) ---
+ft. @nic_carter @notthreadguy @counterpartytv

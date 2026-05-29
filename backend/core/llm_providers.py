@@ -419,7 +419,8 @@ class KiroGatewayProvider(LLMProvider):
         super().__init__(api_key, model_name or DEFAULT_KIRO_MODEL, **kwargs)
         self.api_key = get_gateway_api_key(api_key)
         self.base_url = get_gateway_base_url(kwargs.get("base_url"))
-        self.timeout = int(kwargs.get("timeout", 300))
+        default_timeout = int(os.environ.get("KIRO_GATEWAY_TIMEOUT", "900"))
+        self.timeout = int(kwargs.get("timeout", default_timeout))
 
         if not self.api_key:
             raise ValueError(
@@ -497,6 +498,20 @@ class KiroGatewayProvider(LLMProvider):
     def get_available_models(self) -> List[ModelInfo]:
         """Return common Kiro Gateway model aliases."""
         return [
+            ModelInfo(
+                name="claude-opus-4.8",
+                display_name="Claude Opus 4.8",
+                provider=ProviderType.KIRO,
+                max_tokens=200000,
+                description="Kiro Gateway latest high-quality Opus model (default)"
+            ),
+            ModelInfo(
+                name="claude-opus-4.7",
+                display_name="Claude Opus 4.7",
+                provider=ProviderType.KIRO,
+                max_tokens=200000,
+                description="Kiro Gateway Opus 4.7"
+            ),
             ModelInfo(
                 name="claude-sonnet-4-5",
                 display_name="Claude Sonnet 4.5",

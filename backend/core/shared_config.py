@@ -99,11 +99,12 @@ METADATA_DIR = OUTPUT_DIR / "metadata"
 PROMPT_DIR = Path(__file__).parent.parent / "prompt"
 PROMPT_FILES = {
     "outline": PROMPT_DIR / "outline.txt",
-    "timeline": PROMPT_DIR / "timestamps.txt", 
+    "timeline": PROMPT_DIR / "timestamps.txt",
     "recommendation": PROMPT_DIR / "recommendation.txt",
     "title": PROMPT_DIR / "title_generation.txt",
     "clustering": PROMPT_DIR / "topic_clustering.txt",
-    "collection_title": PROMPT_DIR / "collection_title.txt"
+    "collection_title": PROMPT_DIR / "collection_title.txt",
+    "caption": PROMPT_DIR / "caption.txt"
 }
 
 # API configuration
@@ -118,8 +119,14 @@ SPEECH_RECOGNITION_TIMEOUT = int(os.getenv("SPEECH_RECOGNITION_TIMEOUT", "1000")
 
 # Processing parameters
 CHUNK_SIZE = 5000  # Text chunk size
-MIN_SCORE_THRESHOLD = 0.7  # Minimum score threshold
-MAX_CLIPS_PER_COLLECTION = 5  # Maximum clips per collection
+MIN_SCORE_THRESHOLD = 0.75  # Minimum engagement score (0-1) a clip must reach to be kept. 0.75 = the "yes, publish" band in recommendation.txt; gates to only the few clips worth posting.
+MAX_CLIPS_PER_COLLECTION = 5  # (Legacy) collections/compilations are disabled for the X clipper
+
+# Clip duration bounds for the X (Twitter) podcast clipper.
+# Every published clip must fall inside [MIN_CLIP_SECONDS, MAX_CLIP_SECONDS].
+MIN_CLIP_SECONDS = 30    # Hard minimum: 30 seconds
+MAX_CLIP_SECONDS = 180   # Hard maximum: 3 minutes
+TARGET_CLIP_SECONDS = 75  # Sweet spot for a punchy standalone clip
 
 # Topic extraction control parameters
 MIN_TOPIC_DURATION_MINUTES = 2  # Minimum topic duration (minutes)
@@ -396,6 +403,7 @@ PROMPT_KEY_FILENAMES_ZH = {
     "title": "title_generation.txt",
     "clustering": "topic_clustering.txt",
     "collection_title": "collection_title.txt",
+    "caption": "caption.txt",
 }
 
 PROMPT_KEY_FILENAMES_EN = {
@@ -405,6 +413,7 @@ PROMPT_KEY_FILENAMES_EN = {
     "title": "title.txt",
     "clustering": "clustering.txt",
     "collection_title": "collection_title.txt",
+    "caption": "caption.txt",
 }
 
 

@@ -26,14 +26,11 @@ class VideoProcessor:
     """Video processing utility class"""
     
     def __init__(self, clips_dir: Optional[str] = None, collections_dir: Optional[str] = None):
-        # Force use of passed project-specific path, do not use global path as fallback
         if not clips_dir:
             raise ValueError("clips_dir parameter is required, cannot use global path")
-        if not collections_dir:
-            raise ValueError("collections_dir parameter is required, cannot use global path")
-        
+
         self.clips_dir = Path(clips_dir)
-        self.collections_dir = Path(collections_dir)
+        self.collections_dir = Path(collections_dir) if collections_dir else None
     
     @staticmethod
     def sanitize_filename(filename: str) -> str:
@@ -396,8 +393,13 @@ class VideoProcessor:
         Returns:
             List of successfully created collection paths
         """
+        if not collections_data:
+            return []
+        if self.collections_dir is None:
+            raise ValueError("collections_dir is required to build compilation videos")
+
         successful_collections = []
-        
+
         for collection_data in collections_data:
             collection_id = collection_data['id']
             collection_title = collection_data.get('collection_title', f'collection_{collection_id}')

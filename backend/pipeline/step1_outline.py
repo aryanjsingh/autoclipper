@@ -131,53 +131,73 @@ class OutlineExtractor:
 
     def _parse_outline_response(self, response: str, chunk_index: int) -> List[Dict]:
         """
-        Parse the LLM's outline response (consistent with previous version, no quality check)
-        
+        Parse the LLM's outline response.
+
+        The outline prompt returns a JSON array of clip moments:
+            [{"title": "...", "subtopics": ["...", "..."]}, ...]
+        We parse it robustly and attach the chunk_index to each moment.
+
         Args:
             response: LLM response
             chunk_index: Index of the currently processed chunk
-            
+
         Returns:
-            Parsed outline structure
+            Parsed outline structure (list of {title, subtopics, chunk_index})
         """
-        outlines = []
-        lines = response.split('\n')
-        current_outline = None
-        
-        for line in lines:
-            line = line.strip()
-            
-            if re.match(r'^\d+\.\s*\*\*', line):
-                if current_outline:
-                    outlines.append(current_outline)
-                
-                topic_name = line.split('**')[1] if '**' in line else line.split('.', 1)[1].strip()
-                current_outline = {
-                    'title': topic_name,
-                    'subtopics': [],
-                    'chunk_index': chunk_index
-                }
-            
-            elif line.startswith('-') and current_outline:
-                subtopic = line[1:].strip()
-                if subtopic and len(subtopic) <= 200:
-                    current_outline['subtopics'].append(subtopic)
-        
-        if current_outline:
-            outlines.append(current_outline)
-        
+        outlines: List[Dict] = []
+
+        try:
+            parsed = self.llm_client.parse_json_response(response)
+        except Exception as e:
+            logger.warning(f"Failed to parse outline JSON for chunk {chunk_index}: {e}")
+            return outlines
+
+        if isinstance(parsed, dict):
+            # Tolerate a wrapper object such as {"moments": [...]} or {"topics": [...]}
+            for key in ("moments", "topics", "outline", "outlines", "clips", "items"):
+                if isinstance(parsed.get(key), list):
+                    parsed = parsed[key]
+                    break
+            else:
+                parsed = [parsed]
+
+        if not isinstance(parsed, list):
+            logger.warning(f"Outline response for chunk {chunk_index} is not a list: {type(parsed)}")
+            return outlines
+
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
+            title = item.get('title') or item.get('outline') or item.get('name')
+            if not title or not isinstance(title, str):
+                continue
+            subtopics = item.get('subtopics') or item.get('content') or []
+            if isinstance(subtopics, str):
+                subtopics = [subtopics]
+            if not isinstance(subtopics, list):
+                subtopics = []
+            subtopics = [str(s).strip() for s in subtopics if str(s).strip()]
+            outlines.append({
+                'title': title.strip(),
+                'subtopics': subtopics,
+                'chunk_index': chunk_index,
+            })
+
         return outlines
     
     def _merge_outlines(self, outlines: List[Dict]) -> List[Dict]:
         """
-        Merge and deduplicate outlines, keeping the first occurrence
+        Deduplicate moments while preserving order. The same title may legitimately
+        recur in different chunks, so we key on (chunk_index, normalized title).
         """
         unique_outlines = {}
+        result = []
         for outline in outlines:
-            title = outline['title']
-            if title not in unique_outlines:
-                unique_outlines[title] = outline
-        return list(unique_outlines.values())
+            key = (outline.get('chunk_index'), outline['title'].strip().lower())
+            if key not in unique_outlines:
+                unique_outlines[key] = True
+                result.append(outline)
+        return result
     
     def save_outline(self, outlines: List[Dict], output_path: Optional[Path] = None) -> Path:
         """

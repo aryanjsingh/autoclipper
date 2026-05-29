@@ -13,8 +13,9 @@ from backend.pipeline.step1_outline import run_step1_outline
 from backend.pipeline.step2_timeline import run_step2_timeline
 from backend.pipeline.step3_scoring import run_step3_scoring
 from backend.pipeline.step4_title import run_step4_title
-from backend.pipeline.step5_clustering import run_step5_clustering
 from backend.pipeline.step6_video import run_step6_video
+# Note: step5 clustering (compilations) is intentionally not used — the X clipper
+# produces standalone clips only.
 
 logger = logging.getLogger(__name__)
 
@@ -198,8 +199,10 @@ class SimplePipelineAdapter:
             
             # Step 1: Outline extraction
             logger.info("Executing Step 1: Outline extraction")
+            effective_srt_path = None
             if input_srt_path and Path(input_srt_path).exists():
                 logger.info(f"Using existing SRT file: {input_srt_path}")
+                effective_srt_path = Path(input_srt_path)
                 outlines = run_step1_outline(
                     Path(input_srt_path), metadata_dir=metadata_dir, prompt_files=prompt_files
                 )
@@ -209,6 +212,7 @@ class SimplePipelineAdapter:
                 srt_path = await self._generate_subtitle_automatically(input_video_path, metadata_dir)
                 if srt_path and srt_path.exists():
                     logger.info(f"Automatic subtitle generation successful: {srt_path}")
+                    effective_srt_path = srt_path
                     outlines = run_step1_outline(
                         srt_path, metadata_dir=metadata_dir, prompt_files=prompt_files
                     )
@@ -269,21 +273,29 @@ class SimplePipelineAdapter:
                     metadata_dir=str(metadata_dir),
                     prompt_files=prompt_files,
                 )
-                emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_TITLES"), subpercent=40)
-                
-                # Step 5: Topic clustering
-                logger.info("Executing Step 5: Topic clustering")
-                collections = run_step5_clustering(
+                emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_TITLES"), subpercent=60)
+
+                # Caption generation: write an X (Twitter) caption for each clip.
+                # (Compilations/collections are intentionally disabled for the X clipper.)
+                logger.info("Executing caption generation (yonann-style tweet text)")
+                from backend.pipeline.step_caption import run_step_caption
+                titled_clips = run_step_caption(
                     metadata_dir / "step4_titles.json",
-                    metadata_dir=str(metadata_dir),
+                    effective_srt_path,
+                    metadata_dir=metadata_dir,
                     prompt_files=prompt_files,
                 )
+                # No collections: write an empty collections file for downstream compatibility.
+                collections = []
+                import json
+                with open(metadata_dir / "step5_collections.json", 'w', encoding='utf-8') as f:
+                    json.dump(collections, f, ensure_ascii=False, indent=2)
                 emit_progress(self.project_id, "HIGHLIGHT", _progress_msg("HIGHLIGHT_DONE"), subpercent=100)
-                
+
                 # Stage 5: Video export
                 emit_progress(self.project_id, "EXPORT", _progress_msg("EXPORT_START"))
-                
-                # Step 6: Video cutting
+
+                # Step 6: Video cutting (clips only, no collection videos)
                 logger.info("Executing Step 6: Video cutting")
                 video_result = run_step6_video(
                     metadata_dir / "step4_titles.json",

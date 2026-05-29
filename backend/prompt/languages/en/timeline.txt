@@ -1,25 +1,47 @@
-# Clip timeline extraction
+# Clip timestamps
 
-You are an expert video editor. For each topic from the outline, find precise **start/end timestamps** in the SRT so each clip is **2–12 minutes** (target ~5 minutes).
+You are an expert editor. The source may be a podcast, interview, news segment, or a gaming/gambling/IRL livestream. For each moment in the outline, find the precise **start_time** and **end_time** in the SRT so the clip is a tight, self-contained **30 seconds to 3 minutes** (target ~75 seconds).
+
+## Input
+```json
+{
+  "outline": [ { "title": "...", "subtopics": ["..."] } ],
+  "srt_text": "index\nHH:MM:SS,mmm --> HH:MM:SS,mmm\ntext\n\n..."
+}
+```
+
+## How to choose the boundaries
+- **start_time**: the first words of the setup, the question, or the build-up — where the moment actually begins. Do not include the unrelated sentence before it. Never start in the middle of a sentence.
+- **end_time**: the end of the payoff — the punchline, the conclusion, the answer, or the reaction to the event. Do not trail off into the next unrelated topic.
+
+## CRITICAL — keep the full beat intact
+- If the moment is a question -> answer exchange, the clip MUST contain the ENTIRE question and the ENTIRE answer. Never end a clip on the question. Never start a clip in the middle of an answer without the question that prompted it.
+- If the moment is an action or event (a big win/loss, a play, a reveal, a confrontation), include enough build-up to make the payoff land AND the immediate reaction after it. Never cut right before the payoff and never cut the reaction off mid-beat.
+- Never cut someone off mid-sentence or mid-thought. Extend to the nearest natural pause.
+
+## Duration (strict)
+- Every clip must be between **30 and 180 seconds**.
+- If a great moment would run longer than 180s, tighten the start/end to the single strongest 30-180s stretch that still contains the full setup and payoff.
+- If a moment is shorter than 30s, either extend to include the surrounding setup/reaction so it reaches 30s, or drop it.
 
 ## Rules
-1. Use only timestamps that exist in the SRT.
-2. Keep each clip self-contained and watchable alone.
-3. Use standard ASCII double quotes `"` in JSON strings, never curly/smart quotes.
-4. Preserve the speaker's meaning; do not cut mid-sentence when avoidable.
+1. Use only timestamps that actually appear in the SRT. Format: `HH:MM:SS,mmm`.
+2. Each clip must make sense on its own with zero outside context.
+3. Use standard ASCII double quotes `"` in JSON. Never curly/smart quotes.
+4. Skip `[music]`, `[applause]`, and similar non-speech lines when setting boundaries.
 
-## Output (JSON array only)
+## Output (JSON array ONLY, no prose, no code fences)
 ```json
 [
   {
-    "id": "1",
-    "title": "English topic title",
+    "outline": "the moment title",
+    "content": ["key line 1", "key line 2"],
     "start_time": "00:01:23,456",
-    "end_time": "00:06:45,789",
-    "content": ["key beat 1", "key beat 2"],
-    "outline_title": "matching outline title"
+    "end_time": "00:03:05,120"
   }
 ]
 ```
 
-**Language:** All human-readable fields (`title`, `content`, etc.) must be in **English**.
+- `outline` is the moment's title (a string).
+- `content` is 2-4 short English bullet points of what is said or what happens.
+- All human-readable fields must be in **English**.

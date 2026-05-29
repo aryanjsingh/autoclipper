@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 
-DEFAULT_MODEL = "claude-sonnet-4-5"
+DEFAULT_MODEL = "claude-opus-4.8"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = "8000"
 

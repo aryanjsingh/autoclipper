@@ -17,22 +17,21 @@ class VideoGenerator:
     """Video Generator"""
     
     def __init__(self, clips_dir: Optional[str] = None, collections_dir: Optional[str] = None, metadata_dir: Optional[str] = None):
-        # Force use project-specific directories, not global directories as fallback
         if not clips_dir:
             raise ValueError("clips_dir parameter is required, cannot use global path")
-        if not collections_dir:
-            raise ValueError("collections_dir parameter is required, cannot use global path")
-        
+
         self.clips_dir = Path(clips_dir)
-        self.collections_dir = Path(collections_dir)
+        self.collections_dir = Path(collections_dir) if collections_dir else None
         self.metadata_dir = Path(metadata_dir) if metadata_dir else METADATA_DIR
-        
-        # Ensure directories exist
+
         self.clips_dir.mkdir(parents=True, exist_ok=True)
-        self.collections_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Create VideoProcessor instance, force use project paths
-        self.video_processor = VideoProcessor(clips_dir=str(self.clips_dir), collections_dir=str(self.collections_dir))
+        if self.collections_dir is not None:
+            self.collections_dir.mkdir(parents=True, exist_ok=True)
+
+        self.video_processor = VideoProcessor(
+            clips_dir=str(self.clips_dir),
+            collections_dir=str(self.collections_dir) if self.collections_dir else None,
+        )
     
     def generate_clips(self, clips_with_titles: List[Dict], input_video: Path) -> List[Path]:
         """
@@ -159,22 +158,27 @@ def run_step6_video(clips_with_titles_path: Path, collections_path: Path,
     # Create video generator
     generator = VideoGenerator(clips_dir=clips_dir, collections_dir=collections_dir, metadata_dir=metadata_dir)
     
-    # Generate clip videos
+    # Generate clip videos (X clipper path: individual clips only, no compilations)
     successful_clips = generator.generate_clips(clips_with_titles, input_video)
-    
-    # Generate collection videos
-    successful_collections = generator.generate_collections(collections_data)
-    
+
+    successful_collections: List[Path] = []
+    if collections_data:
+        successful_collections = generator.generate_collections(collections_data)
+    else:
+        logger.info("No collections defined; skipping compilation videos (clips only).")
+
     # Save metadata to project directory
     # Note: clips_metadata.json is saved here, containing final clip metadata (including video paths etc.)
     # This is different from step4's step4_titles.json, which only saves clip data with titles
     if metadata_dir:
         project_metadata_dir = Path(metadata_dir)
         generator.save_clip_metadata(clips_with_titles, project_metadata_dir / "clips_metadata.json")
-        generator.save_collection_metadata(collections_data, project_metadata_dir / "collections_metadata.json")
+        if collections_data:
+            generator.save_collection_metadata(collections_data, project_metadata_dir / "collections_metadata.json")
     else:
         generator.save_clip_metadata(clips_with_titles)
-        generator.save_collection_metadata(collections_data)
+        if collections_data:
+            generator.save_collection_metadata(collections_data)
     
     # Return result information
     result = {

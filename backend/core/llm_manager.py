@@ -46,7 +46,8 @@ class LLMManager:
             "model_name": DEFAULT_KIRO_MODEL,
             "chunk_size": 5000,
             "min_score_threshold": 0.7,
-            "max_clips_per_collection": 5
+            "max_clips_per_collection": 5,
+            "kiro_timeout_seconds": 900,
         }
         
         if self.settings_file.exists():
@@ -88,6 +89,9 @@ class LLMManager:
                 provider_kwargs = {}
                 if provider_type == ProviderType.KIRO:
                     provider_kwargs["base_url"] = self.settings.get("kiro_base_url", "")
+                    provider_kwargs["timeout"] = int(
+                        self.settings.get("kiro_timeout_seconds", 900)
+                    )
 
                 self.current_provider = LLMProviderFactory.create_provider(
                     provider_type, api_key, model_name, **provider_kwargs
@@ -151,6 +155,9 @@ class LLMManager:
             provider_kwargs = {}
             if provider_type == ProviderType.KIRO:
                 provider_kwargs["base_url"] = self.settings.get("kiro_base_url", "")
+                provider_kwargs["timeout"] = int(
+                    self.settings.get("kiro_timeout_seconds", 900)
+                )
 
             self.current_provider = LLMProviderFactory.create_provider(
                 provider_type, api_key, model_name, **provider_kwargs
