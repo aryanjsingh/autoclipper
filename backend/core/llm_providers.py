@@ -419,8 +419,18 @@ class KiroGatewayProvider(LLMProvider):
         super().__init__(api_key, model_name or DEFAULT_KIRO_MODEL, **kwargs)
         self.api_key = get_gateway_api_key(api_key)
         self.base_url = get_gateway_base_url(kwargs.get("base_url"))
-        default_timeout = int(os.environ.get("KIRO_GATEWAY_TIMEOUT", "900"))
-        self.timeout = int(kwargs.get("timeout", default_timeout))
+        # Connect: fail fast if gateway is down (default 5s). Read: None = no cap.
+        env_read = os.environ.get("KIRO_GATEWAY_READ_TIMEOUT", "")
+        if kwargs.get("timeout") is None and env_read.strip() in ("", "0", "none", "None"):
+            self.timeout = None
+        elif kwargs.get("timeout") is None and env_read:
+            self.timeout = float(env_read)
+        else:
+            self.timeout = kwargs.get("timeout")
+        self.connect_timeout = int(
+            kwargs.get("connect_timeout")
+            or os.environ.get("KIRO_GATEWAY_CONNECT_TIMEOUT", 5)
+        )
 
         if not self.api_key:
             raise ValueError(
@@ -438,10 +448,12 @@ class KiroGatewayProvider(LLMProvider):
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
             }
+            request_model = kwargs.get("model") or self.model_name
             payload = {
-                "model": self.model_name,
+                "model": request_model,
                 "messages": [{"role": "user", "content": full_input}],
                 "stream": False,
+                "max_tokens": int(kwargs.get("max_tokens", 65536)),
             }
 
             passthrough_keys = {
@@ -452,13 +464,20 @@ class KiroGatewayProvider(LLMProvider):
                 "frequency_penalty",
                 "stop",
             }
-            payload.update({key: value for key, value in kwargs.items() if key in passthrough_keys})
+            payload.update(
+                {key: value for key, value in kwargs.items() if key in passthrough_keys}
+            )
 
+            http_timeout = (
+                (self.connect_timeout, self.timeout)
+                if self.timeout is not None
+                else (self.connect_timeout, None)
+            )
             response = requests.post(
                 f"{self.base_url}/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=self.timeout,
+                timeout=http_timeout,
             )
 
             if response.status_code >= 400:
@@ -499,25 +518,25 @@ class KiroGatewayProvider(LLMProvider):
         """Return common Kiro Gateway model aliases."""
         return [
             ModelInfo(
-                name="claude-opus-4.8",
+                name="claude-opus-4-8",
                 display_name="Claude Opus 4.8",
                 provider=ProviderType.KIRO,
                 max_tokens=200000,
-                description="Kiro Gateway latest high-quality Opus model (default)"
+                description="Kiro Opus — outline & timeline steps",
             ),
             ModelInfo(
-                name="claude-opus-4.7",
-                display_name="Claude Opus 4.7",
+                name="claude-sonnet-4-6",
+                display_name="Claude Sonnet 4.6",
                 provider=ProviderType.KIRO,
                 max_tokens=200000,
-                description="Kiro Gateway Opus 4.7"
+                description="Kiro Sonnet — scoring, titles, captions",
             ),
             ModelInfo(
                 name="claude-sonnet-4-5",
                 display_name="Claude Sonnet 4.5",
                 provider=ProviderType.KIRO,
                 max_tokens=200000,
-                description="Kiro Gateway default high-quality model"
+                description="Kiro Sonnet 4.5 (legacy)",
             ),
             ModelInfo(
                 name="claude-haiku-4-5",

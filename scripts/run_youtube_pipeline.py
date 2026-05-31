@@ -31,6 +31,23 @@ logging.basicConfig(
 logger = logging.getLogger("run_youtube_pipeline")
 
 
+def _resolve_node_binary() -> str | None:
+    """yt-dlp needs a JS runtime on servers where `node` is not on PATH."""
+    for candidate in (
+        os.getenv("YTDLP_NODE_PATH"),
+        os.getenv("NODE_BINARY"),
+        shutil.which("node"),
+    ):
+        if candidate and Path(candidate).is_file():
+            return candidate
+    cursor_bins = Path("/root/.cursor-server/bin/linux-x64")
+    if cursor_bins.is_dir():
+        matches = sorted(cursor_bins.glob("*/node"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if matches:
+            return str(matches[0])
+    return None
+
+
 def _video_id(url: str) -> str:
     match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]{11})", url)
     if not match:
@@ -55,9 +72,14 @@ def _build_ydl_opts(
         "noplaylist": True,
         "quiet": False,
         "no_warnings": False,
-        "js_runtimes": {"node": {}},
         "remote_components": ["ejs:github"],
     }
+    node_bin = _resolve_node_binary()
+    if node_bin:
+        opts["js_runtimes"] = {"node": {"path": node_bin}}
+        logger.info("Using Node.js for yt-dlp: %s", node_bin)
+    else:
+        logger.warning("No Node.js found; YouTube download may fail (set YTDLP_NODE_PATH)")
     if cookies and cookies.exists():
         opts["cookiefile"] = str(cookies)
         logger.info("Using cookies file: %s", cookies)

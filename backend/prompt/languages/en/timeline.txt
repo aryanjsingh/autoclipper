@@ -1,6 +1,6 @@
 # Clip timestamps
 
-You are an expert editor. The source may be a podcast, interview, news segment, or a gaming/gambling/IRL livestream. For each moment in the outline, find the precise **start_time** and **end_time** in the SRT so the clip is a tight, self-contained **30 seconds to 3 minutes** (target ~75 seconds).
+You are an expert short-form editor. The source may be a podcast, interview, news segment, or a gaming/gambling/IRL livestream. For each moment in the outline, find the precise **start_time** and **end_time** in the SRT so the clip is a tight, hook-first, self-contained clip.
 
 ## Input
 ```json
@@ -10,19 +10,27 @@ You are an expert editor. The source may be a podcast, interview, news segment, 
 }
 ```
 
-## How to choose the boundaries
-- **start_time**: the first words of the setup, the question, or the build-up — where the moment actually begins. Do not include the unrelated sentence before it. Never start in the middle of a sentence.
-- **end_time**: the end of the payoff — the punchline, the conclusion, the answer, or the reaction to the event. Do not trail off into the next unrelated topic.
+## START ON THE HOOK — this is the most important rule
+A scroller decides in the first 2-3 seconds. The clip must **open on or right next to the strongest moment** — the bold claim, the verdict, the roast, the punchy question, the reveal. The hook must land within the **first ~10 seconds**, not after a slow build.
 
-## CRITICAL — keep the full beat intact
-- If the moment is a question -> answer exchange, the clip MUST contain the ENTIRE question and the ENTIRE answer. Never end a clip on the question. Never start a clip in the middle of an answer without the question that prompted it.
-- If the moment is an action or event (a big win/loss, a play, a reveal, a confrontation), include enough build-up to make the payoff land AND the immediate reaction after it. Never cut right before the payoff and never cut the reaction off mid-beat.
-- Never cut someone off mid-sentence or mid-thought. Extend to the nearest natural pause.
+- **Cut the rambling preamble.** Do NOT start where the topic technically begins if that means 30-60 seconds of a caller's meandering backstory before the payoff. Skip ahead to where the energy actually spikes.
+- For a host reacting to/roasting/advising a caller, **start at the host's punchy line**, not at the caller's long setup — the host almost always restates the key facts inside their response (e.g. open on "Your father did an idiotic, stupid deal putting a 19-year-old in a $62K car at 21%" rather than the caller's two-minute story).
+- Only include setup that the hook genuinely needs to make sense, and keep it to a sentence or two. If a short question sets up a big answer (a few seconds), keep it. If the question is long and winding, start at the answer.
+- Never start in the middle of a sentence. Snap to the start of the sentence that carries the hook.
+
+## END ON THE PAYOFF
+- **end_time**: the end of the payoff — the punchline, the kicker, the conclusion, the final verdict, or the reaction. Cut as soon as the payoff lands; do not trail off into the next topic or let it ramble.
+- Never end on a dangling question. Never cut the answer or the punchline off mid-thought. Extend to the nearest natural pause if needed.
+
+## Keep the beat coherent
+- The clip must make complete sense on its own to someone with zero context.
+- If it's a question→answer beat, the ANSWER must be whole. The question can be trimmed to its punchy core, implied by the host's response, or dropped if the answer stands alone — but never leave a question hanging unanswered.
+- If it's an action/event, include just enough build-up for the payoff to hit, plus the immediate reaction — no more.
 
 ## Duration (strict)
-- Every clip must be between **30 and 180 seconds**.
-- If a great moment would run longer than 180s, tighten the start/end to the single strongest 30-180s stretch that still contains the full setup and payoff.
-- If a moment is shorter than 30s, either extend to include the surrounding setup/reaction so it reaches 30s, or drop it.
+- Every clip must be between **30 and 120 seconds**. Aim for **45-75 seconds** — tight and punchy. Going past ~90s should be rare and only for a beat that truly needs it.
+- If a great moment would run longer than 120s, tighten it: move the **start** later (trim preamble first — the end usually holds the payoff) to the single strongest 30-120s stretch that still opens on the hook and ends on the payoff.
+- If a moment is shorter than 30s, extend to include the surrounding setup/reaction to reach 30s, or drop it.
 
 ## Rules
 1. Use only timestamps that actually appear in the SRT. Format: `HH:MM:SS,mmm`.

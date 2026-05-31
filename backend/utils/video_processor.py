@@ -22,6 +22,14 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+try:
+    from ..core.shared_config import WATERMARK_ENABLED, WATERMARK_USERNAME
+except ImportError:
+    WATERMARK_ENABLED = True
+    WATERMARK_USERNAME = "ARYNNSGH"
+
+from .watermark import apply_watermark, ensure_twitter_compatible
+
 class VideoProcessor:
     """Video processing utility class"""
     
@@ -376,6 +384,16 @@ class VideoProcessor:
             logger.info(f"Extracting clip {clip_id}: {start_time} -> {end_time}, output: {output_path}")
             
             if VideoProcessor.extract_clip(input_video, output_path, start_time, end_time):
+                # apply_watermark re-encodes to H.264/yuv420p (X-compatible). When
+                # the watermark is disabled or fails, the clip is still a stream
+                # copy of the source (often yuv444p), which X rejects — so always
+                # run the compatibility normalizer as a safety net. It no-ops when
+                # the clip is already yuv420p, so marked clips aren't re-encoded.
+                if WATERMARK_ENABLED:
+                    if not apply_watermark(output_path, username=WATERMARK_USERNAME):
+                        logger.warning(f"Clip {clip_id} watermark failed; keeping unmarked clip")
+                if not ensure_twitter_compatible(output_path):
+                    logger.warning(f"Clip {clip_id} could not be normalized for X; posting may fail")
                 successful_clips.append(output_path)
                 logger.info(f"Clip {clip_id} extraction succeeded")
             else:

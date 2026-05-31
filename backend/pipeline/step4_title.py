@@ -63,7 +63,9 @@ class TitleGenerator:
                     } for clip in chunk_clips
                 ]
                 
-                raw_response = self.llm_client.call_with_retry(self.title_prompt, input_for_llm)
+                raw_response = self.llm_client.call_with_retry(
+                    self.title_prompt, input_for_llm, pipeline_step="step4"
+                )
                 
                 if raw_response:
                     # Save LLM raw response for debugging (but not used as cache)

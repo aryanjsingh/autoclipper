@@ -97,93 +97,114 @@ class TimelineExtractor:
                 chunk_start_time = srt_chunk_data[0]['start_time']
                 chunk_end_time = srt_chunk_data[-1]['end_time']
 
-                raw_response = ""
                 llm_cache_path = self.llm_raw_output_dir / f"chunk_{chunk_index}.txt"
 
-                if llm_cache_path.exists():
-                    logger.info(f"  > Found cached LLM raw response for chunk {chunk_index}, reading directly.")
-                    with open(llm_cache_path, 'r', encoding='utf-8') as f:
-                        raw_response = f.read()
-                else:
-                    logger.info(f"  > No LLM cache found, starting API call...")
-                    
-                    # Build SRT text for LLM (real newlines so the model sees clean SRT)
-                    srt_text_for_prompt = ""
-                    for sub in srt_chunk_data:
-                        srt_text_for_prompt += f"{sub['index']}\n{sub['start_time']} --> {sub['end_time']}\n{sub['text']}\n\n"
-                    
-                    # Prepare a "clean" input for LLM, containing only the information it needs
-                    llm_input_outlines = [
-                        {"title": o.get("title"), "subtopics": o.get("subtopics")}
-                        for o in chunk_outlines
-                    ]
+                # Build SRT text for LLM (real newlines so the model sees clean SRT)
+                srt_text_for_prompt = ""
+                for sub in srt_chunk_data:
+                    srt_text_for_prompt += f"{sub['index']}\n{sub['start_time']} --> {sub['end_time']}\n{sub['text']}\n\n"
 
-                    input_data = {
-                        "outline": llm_input_outlines,  # Use clean data
-                        "srt_text": srt_text_for_prompt
-                    }
-                    
-                    # Call LLM to get raw response with retry mechanism
-                    parsed_items = None
-                    max_parse_retries = 2
-                    
-                    for retry_count in range(max_parse_retries + 1):
-                        try:
-                            raw_response = self.llm_client.call_with_retry(self.timeline_prompt, input_data)
-                            
-                            if not raw_response:
-                                logger.warning(f"  > Chunk {chunk_index} LLM response is empty, skipping")
-                                break
-                            
-                            # Save raw response to cache (stable path for resume/retries)
-                            cache_file = self.llm_raw_output_dir / f"chunk_{chunk_index}_attempt_{retry_count}.txt"
-                            with open(cache_file, 'w', encoding='utf-8') as f:
-                                f.write(raw_response)
-                            with open(llm_cache_path, 'w', encoding='utf-8') as f:
-                                f.write(raw_response)
-                            
-                            # Parse LLM raw response
-                            parsed_items = self._parse_and_validate_response(
-                                raw_response, 
-                                chunk_start_time, 
-                                chunk_end_time,
-                                chunk_index
+                llm_input_outlines = [
+                    {"title": o.get("title"), "subtopics": o.get("subtopics")}
+                    for o in chunk_outlines
+                ]
+                input_data = {
+                    "outline": llm_input_outlines,
+                    "srt_text": srt_text_for_prompt,
+                }
+
+                parsed_items = None
+                max_parse_retries = 2
+                raw_response = ""
+
+                for retry_count in range(max_parse_retries + 1):
+                    try:
+                        use_cache = retry_count == 0 and llm_cache_path.exists()
+                        if use_cache:
+                            logger.info(
+                                f"  > Reusing cached LLM response for chunk {chunk_index} (will re-parse)"
                             )
-                            
-                            if parsed_items:
-                                # Enforce the 30s-3min clip duration window using SRT boundaries
-                                parsed_items = self._enforce_duration(parsed_items, srt_chunk_data)
+                            raw_response = llm_cache_path.read_text(encoding="utf-8")
+                        else:
+                            if retry_count > 0:
+                                llm_cache_path.unlink(missing_ok=True)
+                            logger.info(
+                                f"  > LLM call for chunk {chunk_index} "
+                                f"(attempt {retry_count + 1}/{max_parse_retries + 1})"
+                            )
+                            raw_response = self.llm_client.call_with_retry(
+                                self.timeline_prompt,
+                                input_data,
+                                pipeline_step="step2",
+                            )
 
-                                if not parsed_items:
-                                    logger.warning(f"  > Chunk {chunk_index} produced no clips within the {MIN_CLIP_SECONDS}-{MAX_CLIP_SECONDS}s window")
-                                    break
+                        if not raw_response:
+                            logger.warning(f"  > Chunk {chunk_index} LLM response is empty, skipping")
+                            break
 
-                                # Save parsed results
-                                with open(chunk_output_path, 'w', encoding='utf-8') as f:
-                                    json.dump(parsed_items, f, ensure_ascii=False, indent=2)
+                        attempt_path = (
+                            self.llm_raw_output_dir / f"chunk_{chunk_index}_attempt_{retry_count}.txt"
+                        )
+                        attempt_path.write_text(raw_response, encoding="utf-8")
 
-                                logger.info(f"  > Chunk {chunk_index} kept {len(parsed_items)} clips within duration window")
-                                break  # Successfully parsed, break retry loop
-                            else:
-                                if retry_count < max_parse_retries:
-                                    logger.warning(f"  > Chunk {chunk_index} parsing failed, attempting retry ({retry_count + 1}/{max_parse_retries + 1})")
-                                    # Strengthen prompt on retry, emphasizing JSON format
-                                    input_data['additional_instruction'] = "\n\n[IMPORTANT] Output requirements:\n1. Must start with [ and end with ]\n2. Use English double quotes, not Chinese quotes\n3. Quotes in strings must be escaped as \\\"\n4. Do not add any explanatory text or code block markers\n5. Ensure JSON format is completely correct"
-                                else:
-                                    logger.error(f"  > Chunk {chunk_index} still failed to parse after {max_parse_retries + 1} attempts")
-                                    # Save last raw response for debugging
-                                    self._save_debug_response(raw_response, chunk_index, "final_parse_failure")
-                                    
-                        except Exception as parse_error:
-                            logger.error(f"  > Chunk {chunk_index} attempt {retry_count + 1} encountered exception during parsing: {parse_error}")
-                            if retry_count == max_parse_retries:
-                                # Save raw response for debugging
-                                self._save_debug_response(raw_response if 'raw_response' in locals() else "No response", chunk_index, "parse_exception")
-                            continue
-                    
-                    if not parsed_items:
-                         logger.warning(f"  > Chunk {chunk_index} final parsing failed, skipping")
-                         continue
+                        parsed_items = self._parse_and_validate_response(
+                            raw_response,
+                            chunk_start_time,
+                            chunk_end_time,
+                            chunk_index,
+                        )
+
+                        if parsed_items:
+                            parsed_items = self._enforce_duration(parsed_items, srt_chunk_data)
+                            if not parsed_items:
+                                logger.warning(
+                                    f"  > Chunk {chunk_index} produced no clips within the "
+                                    f"{MIN_CLIP_SECONDS}-{MAX_CLIP_SECONDS}s window"
+                                )
+                                break
+
+                            with open(chunk_output_path, "w", encoding="utf-8") as f:
+                                json.dump(parsed_items, f, ensure_ascii=False, indent=2)
+                            llm_cache_path.write_text(raw_response, encoding="utf-8")
+                            logger.info(
+                                f"  > Chunk {chunk_index} kept {len(parsed_items)} clips within duration window"
+                            )
+                            break
+
+                        if retry_count < max_parse_retries:
+                            logger.warning(
+                                f"  > Chunk {chunk_index} parsing failed, immediate retry "
+                                f"({retry_count + 2}/{max_parse_retries + 1})"
+                            )
+                            input_data["additional_instruction"] = (
+                                "\n\n[IMPORTANT] Output requirements:\n"
+                                "1. Return ONE complete JSON array only — start with [ and end with ]\n"
+                                "2. Use standard English double quotes\n"
+                                "3. Escape quotes inside strings as \\\"\n"
+                                "4. No markdown fences or commentary\n"
+                                "5. Do not truncate — include every clip object fully"
+                            )
+                        else:
+                            logger.error(
+                                f"  > Chunk {chunk_index} still failed to parse after "
+                                f"{max_parse_retries + 1} attempts"
+                            )
+                            self._save_debug_response(raw_response, chunk_index, "final_parse_failure")
+
+                    except Exception as parse_error:
+                        logger.error(
+                            f"  > Chunk {chunk_index} attempt {retry_count + 1} failed: {parse_error}"
+                        )
+                        if retry_count == max_parse_retries:
+                            self._save_debug_response(
+                                raw_response if raw_response else "No response",
+                                chunk_index,
+                                "parse_exception",
+                            )
+
+                if not parsed_items:
+                    logger.warning(f"  > Chunk {chunk_index} final parsing failed, skipping")
+                    continue
 
             except Exception as e:
                 logger.error(f"  > Error processing chunk {chunk_index}: {str(e)}")

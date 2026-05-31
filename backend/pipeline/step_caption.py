@@ -86,7 +86,9 @@ class CaptionGenerator:
             }
 
             try:
-                raw = self.llm_client.call_with_retry(self.caption_prompt, input_data)
+                raw = self.llm_client.call_with_retry(
+                    self.caption_prompt, input_data, pipeline_step="caption"
+                )
                 parsed = self.llm_client.parse_json_response(raw)
                 if isinstance(parsed, list) and parsed:
                     parsed = parsed[0]

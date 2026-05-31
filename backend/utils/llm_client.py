@@ -41,24 +41,41 @@ class LLMClient:
         self.model = MODEL_NAME
         self.llm_manager = get_llm_manager()
     
-    def call(self, prompt: str, input_data: Any = None) -> str:
+    def call(
+        self,
+        prompt: str,
+        input_data: Any = None,
+        pipeline_step: str | None = None,
+        model: str | None = None,
+    ) -> str:
         """
         Call LLM API - Uses new LLM manager
         
         Args:
             prompt: Prompt
             input_data: Input data
+            pipeline_step: e.g. step1, step2, step3, step4, caption — picks Opus vs Sonnet
+            model: Override model id (Kiro API name)
             
         Returns:
             Model response text
         """
+        if model is None and pipeline_step:
+            model = self.llm_manager.model_for_pipeline_step(pipeline_step)
         try:
-            return self.llm_manager.call(prompt, input_data)
+            return self.llm_manager.call(prompt, input_data, model=model)
         except Exception as e:
             logger.error(f"LLM call failed: {str(e)}")
             raise
     
-    def call_with_retry(self, prompt: str, input_data: Any = None, max_retries: int = 3) -> str:
+    def call_with_retry(
+        self,
+        prompt: str,
+        input_data: Any = None,
+        max_retries: int = 3,
+        pipeline_step: str | None = None,
+        model: str | None = None,
+    ) -> str:
         """
         API call with retry mechanism
         
@@ -66,12 +83,18 @@ class LLMClient:
             prompt: Prompt
             input_data: Input data
             max_retries: Maximum retry count
+            pipeline_step: e.g. step1, step2, step3, step4, caption
+            model: Override model id
             
         Returns:
             Model response text
         """
+        if model is None and pipeline_step:
+            model = self.llm_manager.model_for_pipeline_step(pipeline_step)
         try:
-            return self.llm_manager.call_with_retry(prompt, input_data, max_retries)
+            return self.llm_manager.call_with_retry(
+                prompt, input_data, max_retries, model=model
+            )
         except Exception as e:
             logger.error(f"LLM retry call failed: {str(e)}")
             raise
@@ -142,15 +165,28 @@ class LLMClient:
         
         return True
     
+    def _try_close_truncated_json(self, text: str) -> str:
+        """Best-effort close arrays/objects cut off by output token limits."""
+        s = text.strip()
+        if not s or s[0] not in "[{":
+            return s
+        for suffix in ("", "]", "}]", "\"}]", "\"}]\n}", "}"):
+            candidate = s + suffix
+            try:
+                json.loads(candidate)
+                return candidate
+            except json.JSONDecodeError:
+                continue
+        return s
+
     def parse_json_response(self, response: str) -> Any:
         """
         Parse JSON objects from text that may contain Markdown formatting.
         This function has multi-layer error tolerance:
         1. Preprocess response, remove non-JSON content
-        2. Prioritize extracting from Markdown code blocks.
-        3. If failed, try parsing the entire response directly (after sanitization).
-        4. If failed again, use generic regex to find and parse JSON.
-        5. Finally try fixing common JSON errors before parsing.
+        2. Direct json.loads (models usually return clean JSON)
+        3. Close truncated arrays/objects when output was cut off
+        4. Markdown extraction, regex extraction, and light repairs as fallback
         """
         
         def sanitize_string(s: str) -> str:
@@ -214,8 +250,19 @@ class LLMClient:
         # 0. Preprocess response, remove non-JSON content
         response = self._preprocess_llm_response(response)
         logger.debug(f"Preprocessed response: {response[:200]}...")
+
+        # 1. Fast path — avoid aggressive "fixers" that can break valid JSON
+        try:
+            return json.loads(sanitize_string(response))
+        except json.JSONDecodeError:
+            pass
+
+        try:
+            return json.loads(sanitize_string(self._try_close_truncated_json(response)))
+        except json.JSONDecodeError:
+            pass
         
-        # 1. Prioritize extracting from Markdown code blocks
+        # 2. Prioritize extracting from Markdown code blocks
         match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', response, re.DOTALL)
         if match:
             json_str = sanitize_string(match.group(1))
@@ -237,12 +284,12 @@ class LLMClient:
                 except json.JSONDecodeError:
                     logger.warning("Still failed to parse after fix, will try parsing the entire response.")
         
-        # 2. If no Markdown or Markdown parsing failed, try the entire response
+        # 3. If no Markdown or Markdown parsing failed, try the entire response
         try:
             sanitized_response = sanitize_string(response)
             return json.loads(sanitized_response)
         except json.JSONDecodeError:
-            # 3. If direct parsing of entire response also failed, make one last attempt with generic regex
+            # 4. If direct parsing of entire response also failed, make one last attempt with generic regex
             logger.warning("Direct response parsing failed, trying generic regex to find JSON...")
             json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', response, re.DOTALL)
             if json_match:
@@ -250,7 +297,7 @@ class LLMClient:
                 try:
                     return json.loads(json_str)
                 except json.JSONDecodeError as e:
-                    # 4. Final attempt to fix common errors
+                    # 5. Final attempt to fix common errors
                     try:
                         fixed_json = fix_common_json_errors(json_str)
                         return json.loads(fixed_json)

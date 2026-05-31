@@ -120,13 +120,18 @@ SPEECH_RECOGNITION_TIMEOUT = int(os.getenv("SPEECH_RECOGNITION_TIMEOUT", "1000")
 # Processing parameters
 CHUNK_SIZE = 5000  # Text chunk size
 MIN_SCORE_THRESHOLD = 0.75  # Minimum engagement score (0-1) a clip must reach to be kept. 0.75 = the "yes, publish" band in recommendation.txt; gates to only the few clips worth posting.
+TOP_FALLBACK_CLIP_COUNT = 3  # If none pass MIN_SCORE_THRESHOLD, keep this many highest-scored clips anyway
 MAX_CLIPS_PER_COLLECTION = 5  # (Legacy) collections/compilations are disabled for the X clipper
 
 # Clip duration bounds for the X (Twitter) podcast clipper.
 # Every published clip must fall inside [MIN_CLIP_SECONDS, MAX_CLIP_SECONDS].
 MIN_CLIP_SECONDS = 30    # Hard minimum: 30 seconds
-MAX_CLIP_SECONDS = 180   # Hard maximum: 3 minutes
-TARGET_CLIP_SECONDS = 75  # Sweet spot for a punchy standalone clip
+MAX_CLIP_SECONDS = 120   # Hard maximum: 2 minutes (tightened from 180 — clips were drifting long)
+TARGET_CLIP_SECONDS = 60  # Sweet spot for a punchy, hook-first standalone clip (~45-75s)
+
+# Corner watermark on final clips (X logo + @handle), applied in step 6.
+WATERMARK_ENABLED = os.getenv("AUTOCLIP_WATERMARK_ENABLED", "true").lower() in ("1", "true", "yes")
+WATERMARK_USERNAME = os.getenv("AUTOCLIP_WATERMARK_USERNAME", "ARYNNSGH")
 
 # Topic extraction control parameters
 MIN_TOPIC_DURATION_MINUTES = 2  # Minimum topic duration (minutes)

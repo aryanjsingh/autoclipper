@@ -13,7 +13,10 @@ from .llm_providers import (
 )
 from .kiro_gateway import (
     DEFAULT_MODEL as DEFAULT_KIRO_MODEL,
+    KIRO_MODEL_OPUS,
+    KIRO_MODEL_SONNET,
     get_gateway_api_key,
+    model_for_pipeline_step,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,10 +47,14 @@ class LLMManager:
             "kiro_api_key": "",
             "kiro_base_url": "",
             "model_name": DEFAULT_KIRO_MODEL,
+            "kiro_model_sonnet": KIRO_MODEL_SONNET,
             "chunk_size": 5000,
             "min_score_threshold": 0.7,
             "max_clips_per_collection": 5,
-            "kiro_timeout_seconds": 900,
+            "kiro_connect_timeout_seconds": 5,
+            "kiro_read_timeout_seconds": 0,
+            "kiro_max_tokens": 65536,
+            "llm_retry_delay_seconds": 0,
         }
         
         if self.settings_file.exists():
@@ -88,10 +95,7 @@ class LLMManager:
             if api_key or provider_type == ProviderType.KIRO:
                 provider_kwargs = {}
                 if provider_type == ProviderType.KIRO:
-                    provider_kwargs["base_url"] = self.settings.get("kiro_base_url", "")
-                    provider_kwargs["timeout"] = int(
-                        self.settings.get("kiro_timeout_seconds", 900)
-                    )
+                    provider_kwargs.update(self._kiro_provider_kwargs())
 
                 self.current_provider = LLMProviderFactory.create_provider(
                     provider_type, api_key, model_name, **provider_kwargs
@@ -104,6 +108,16 @@ class LLMManager:
             logger.error(f"Failed to initialize provider: {e}")
             self.current_provider = None
     
+    def _kiro_provider_kwargs(self) -> Dict[str, Any]:
+        """Kiro HTTP: short connect timeout, no read cap (0 = unlimited)."""
+        read_raw = self.settings.get("kiro_read_timeout_seconds", 0)
+        read_timeout = None if int(read_raw or 0) <= 0 else int(read_raw)
+        return {
+            "base_url": self.settings.get("kiro_base_url", ""),
+            "connect_timeout": int(self.settings.get("kiro_connect_timeout_seconds", 5)),
+            "timeout": read_timeout,
+        }
+
     def _get_api_key_for_provider(self, provider_type: ProviderType) -> Optional[str]:
         """Get API key for specified provider"""
         key_mapping = {
@@ -154,10 +168,7 @@ class LLMManager:
             # Create new provider instance
             provider_kwargs = {}
             if provider_type == ProviderType.KIRO:
-                provider_kwargs["base_url"] = self.settings.get("kiro_base_url", "")
-                provider_kwargs["timeout"] = int(
-                    self.settings.get("kiro_timeout_seconds", 900)
-                )
+                provider_kwargs.update(self._kiro_provider_kwargs())
 
             self.current_provider = LLMProviderFactory.create_provider(
                 provider_type, api_key, model_name, **provider_kwargs
@@ -169,11 +180,19 @@ class LLMManager:
             logger.error(f"Failed to set provider: {e}")
             raise
     
-    def call(self, prompt: str, input_data: Any = None, **kwargs) -> str:
+    def model_for_pipeline_step(self, step: str) -> str:
+        return model_for_pipeline_step(step, self.settings)
+
+    def call(self, prompt: str, input_data: Any = None, model: Optional[str] = None, **kwargs) -> str:
         """Call LLM"""
         if not self.current_provider:
             raise ValueError("LLM provider not configured. Please configure API key in the settings page.")
         
+        if model:
+            kwargs["model"] = model
+        kwargs = self._with_provider_defaults(**kwargs)
+        used_model = kwargs.get("model", self.settings.get("model_name"))
+        logger.info("LLM call model=%s", used_model)
         try:
             response = self.current_provider.call(prompt, input_data, **kwargs)
             return response.content
@@ -181,11 +200,27 @@ class LLMManager:
             logger.error(f"LLM call failed: {e}")
             raise
     
-    def call_with_retry(self, prompt: str, input_data: Any = None, max_retries: int = 3, **kwargs) -> str:
-        """LLM call with retry mechanism"""
+    def _with_provider_defaults(self, **kwargs) -> Dict[str, Any]:
+        """Apply provider-specific defaults (output budget, etc.)."""
+        out = dict(kwargs)
+        if self.settings.get("llm_provider") == "kiro":
+            if "max_tokens" not in out:
+                out["max_tokens"] = int(self.settings.get("kiro_max_tokens", 65536))
+        return out
+
+    def call_with_retry(
+        self,
+        prompt: str,
+        input_data: Any = None,
+        max_retries: int = 3,
+        model: Optional[str] = None,
+        **kwargs,
+    ) -> str:
+        """LLM call with retry mechanism (no backoff delay by default)."""
+        retry_delay = float(self.settings.get("llm_retry_delay_seconds", 0))
         for attempt in range(max_retries):
             try:
-                return self.call(prompt, input_data, **kwargs)
+                return self.call(prompt, input_data, model=model, **kwargs)
             except ValueError:  # If API key or parameter error, do not retry
                 raise
             except Exception as e:
@@ -193,8 +228,9 @@ class LLMManager:
                     logger.error(f"LLM call failed completely after {max_retries} retries.")
                     raise
                 logger.warning(f"Attempt {attempt + 1} failed, preparing to retry: {str(e)}")
-                import time
-                time.sleep(2 ** attempt)  # Exponential backoff
+                if retry_delay > 0:
+                    import time
+                    time.sleep(retry_delay)
         return ""
     
     def test_provider_connection(self, provider_type: ProviderType, api_key: str, model_name: str) -> bool:

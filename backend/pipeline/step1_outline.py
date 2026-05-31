@@ -83,7 +83,9 @@ class OutlineExtractor:
                 
                 # Call LLM for each chunk
                 input_data = {"text": chunk_text}
-                response = self.llm_client.call_with_retry(self.outline_prompt, input_data)
+                response = self.llm_client.call_with_retry(
+                    self.outline_prompt, input_data, pipeline_step="step1"
+                )
                 
                 if response:
                     # Parse response and attach chunk index

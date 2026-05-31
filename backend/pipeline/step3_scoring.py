@@ -11,7 +11,12 @@ from collections import defaultdict
 # Import dependencies
 from ..utils.llm_client import LLMClient
 from ..utils.text_processor import TextProcessor
-from ..core.shared_config import PROMPT_FILES, METADATA_DIR, MIN_SCORE_THRESHOLD
+from ..core.shared_config import (
+    PROMPT_FILES,
+    METADATA_DIR,
+    MIN_SCORE_THRESHOLD,
+    TOP_FALLBACK_CLIP_COUNT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +99,9 @@ class ClipScorer:
                 } for clip in clips
             ]
 
-            response = self.llm_client.call_with_retry(self.recommendation_prompt, input_for_llm)
+            response = self.llm_client.call_with_retry(
+                self.recommendation_prompt, input_for_llm, pipeline_step="step3"
+            )
             parsed_list = self.llm_client.parse_json_response(response)
 
             if not isinstance(parsed_list, list):
@@ -153,6 +160,34 @@ class ClipScorer:
             json.dump(scored_clips, f, ensure_ascii=False, indent=2)
         logger.info(f"Scoring results saved to: {output_path}")
 
+
+def select_clips_for_pipeline(
+    scored_clips: List[Dict],
+    threshold: float = MIN_SCORE_THRESHOLD,
+    fallback_count: int = TOP_FALLBACK_CLIP_COUNT,
+) -> List[Dict]:
+    """
+    Keep clips at or above threshold. If none qualify, take the top N by score.
+    """
+    passing = [clip for clip in scored_clips if clip.get('final_score', 0) >= threshold]
+
+    if passing:
+        return passing
+
+    if not scored_clips:
+        return []
+
+    ranked = sorted(scored_clips, key=lambda clip: clip.get('final_score', 0), reverse=True)
+    selected = ranked[:fallback_count]
+    logger.info(
+        "No clips passed score threshold %.2f; using top %d by score: %s",
+        threshold,
+        len(selected),
+        ", ".join(f"id={c.get('id')} score={c.get('final_score')}" for c in selected),
+    )
+    return selected
+
+
 def run_step3_scoring(timeline_path: Path, metadata_dir: Path = None, output_path: Optional[Path] = None, prompt_files: Dict = None) -> List[Dict]:
     """
     Run Step 3: Content Scoring and Filtering
@@ -175,8 +210,7 @@ def run_step3_scoring(timeline_path: Path, metadata_dir: Path = None, output_pat
     # Score
     scored_clips = scorer.score_clips(timeline_data)
     
-    # Filter high-scoring clips
-    high_score_clips = [clip for clip in scored_clips if clip['final_score'] >= MIN_SCORE_THRESHOLD]
+    high_score_clips = select_clips_for_pipeline(scored_clips)
     
     # Save results
     if metadata_dir is None:

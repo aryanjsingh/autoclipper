@@ -11,7 +11,22 @@ from pathlib import Path
 from typing import Dict, Optional
 
 
-DEFAULT_MODEL = "claude-opus-4.8"
+# Exact Kiro API model IDs (not zeph-* client aliases).
+KIRO_MODEL_OPUS = "claude-opus-4-8"
+KIRO_MODEL_SONNET = "claude-sonnet-4-6"
+DEFAULT_MODEL = KIRO_MODEL_OPUS
+
+# Pipeline steps that use Sonnet (structured JSON); Opus for outline + timeline.
+KIRO_SONNET_PIPELINE_STEPS = frozenset({"step3", "step4", "caption"})
+
+
+def model_for_pipeline_step(step: str, settings: Optional[dict] = None) -> str:
+    """Resolve Opus vs Sonnet for an autoclip pipeline step."""
+    cfg = settings or {}
+    sonnet_steps = frozenset(cfg.get("kiro_sonnet_steps") or KIRO_SONNET_PIPELINE_STEPS)
+    if step in sonnet_steps:
+        return cfg.get("kiro_model_sonnet", KIRO_MODEL_SONNET)
+    return cfg.get("model_name", KIRO_MODEL_OPUS)
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = "8000"
 

@@ -18,7 +18,7 @@ with engagement-optimized captions. Source language can be anything; **output is
 
 ## Model
 Claude **Opus 4.8** via the local kiro-gateway. Configured in `data/settings.json`
-(`model_name: "claude-opus-4.8"`). The gateway must be running (see `../kiro-gateway`).
+(`model_name: "zeph-opus-4-7"`). The gateway must be running (see `../kiro-gateway`).
 
 ## Run it standalone (no web stack / DB / Celery)
 ```bash
